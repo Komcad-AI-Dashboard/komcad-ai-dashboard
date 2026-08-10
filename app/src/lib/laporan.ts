@@ -4,7 +4,7 @@
 import PDFDocument from "pdfkit";
 import ExcelJS from "exceljs";
 import { prisma } from "@/lib/prisma";
-import { STATUS_MISI } from "@/lib/constants";
+import { PRODUK_KEPANJANGAN, PRODUK_NAMA, STATUS_MISI } from "@/lib/constants";
 import { getAnalitikKpi, getReadinessPerWilayah } from "@/lib/analitik-data";
 
 function pdfToBuffer(build: (doc: PDFKit.PDFDocument) => void): Promise<Buffer> {
@@ -20,7 +20,14 @@ function pdfToBuffer(build: (doc: PDFKit.PDFDocument) => void): Promise<Buffer> 
 }
 
 function pdfHeader(doc: PDFKit.PDFDocument, title: string, subtitle: string) {
-  doc.fontSize(16).text("SIAGA — Command Center Komponen Cadangan", { align: "left" });
+  // Laporan dibaca pihak di luar sistem, jadi nama produk selalu ditulis lengkap dengan
+  // kepanjangannya — pembaca dokumen belum tentu kenal akronimnya.
+  doc.fontSize(16).text(PRODUK_NAMA, { align: "left" });
+  doc
+    .fontSize(9)
+    .fillColor("#666666")
+    .text(`${PRODUK_KEPANJANGAN} — Command Center Komponen Cadangan`);
+  doc.fillColor("#000000");
   doc.moveDown(0.2);
   doc.fontSize(20).text(title);
   doc.fontSize(10).fillColor("#666666").text(subtitle);
@@ -75,7 +82,7 @@ export async function generateRekapMobilisasiXlsx(): Promise<Buffer> {
   });
 
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "SIAGA Command Center";
+  workbook.creator = `${PRODUK_NAMA} — ${PRODUK_KEPANJANGAN}`;
   workbook.created = new Date();
   const sheet = workbook.addWorksheet("Rekap Mobilisasi");
 

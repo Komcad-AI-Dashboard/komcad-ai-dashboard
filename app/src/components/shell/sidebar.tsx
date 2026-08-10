@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Session } from "next-auth";
-import { COMMAND_NAV, ROLE_LABELS } from "@/lib/constants";
+import { COMMAND_NAV, PRODUK_NAMA, ROLE_LABELS } from "@/lib/constants";
 import { NavIcon } from "./nav-icon";
+import { BrandTagline } from "./brand-tagline";
 import { cn } from "@/lib/utils";
 import type { TopbarKpi } from "./app-shell";
 
@@ -27,17 +28,21 @@ export function Sidebar({
         collapsed ? "w-0 border-r-0 opacity-0" : "w-[236px] opacity-100"
       )}
     >
-      <div className="flex items-center gap-[9px] border-b border-border-soft p-4">
-        <div className="flex h-[22px] w-[28px] shrink-0 flex-col overflow-hidden rounded-[3px] shadow-[0_0_0_1px_rgba(255,255,255,0.1),0_2px_10px_rgba(225,76,69,0.35)]">
-          <div className="flex-1 bg-[#D8302A]" />
-          <div className="flex-1 bg-[#F2F2F2]" />
-        </div>
-        <div>
-          <div className="text-[15px] font-black tracking-[0.13em]">SIAGA</div>
-          <div className="mt-px text-[8.5px] font-bold tracking-[0.28em] text-accent-bright">
-            COMMAND CENTER
+      <div className="border-b border-border-soft p-4">
+        <div className="flex items-center gap-[9px]">
+          <div className="flex h-[22px] w-[28px] shrink-0 flex-col overflow-hidden rounded-[3px] shadow-[0_0_0_1px_rgba(255,255,255,0.1),0_2px_10px_rgba(225,76,69,0.35)]">
+            <div className="flex-1 bg-[#D8302A]" />
+            <div className="flex-1 bg-[#F2F2F2]" />
+          </div>
+          <div>
+            <div className="text-[15px] font-black tracking-[0.13em]">{PRODUK_NAMA}</div>
+            <div className="mt-px text-[8.5px] font-bold tracking-[0.28em] text-accent-bright">
+              COMMAND CENTER
+            </div>
           </div>
         </div>
+        {/* Kepanjangan akronim — selalu tampil, huruf S-I-A-G-A ber-aksen (lihat BrandTagline). */}
+        <BrandTagline className="mt-[9px] border-t border-border-soft pt-[8px]" />
       </div>
 
       <nav className="flex-1 overflow-y-auto p-[10px] pt-[14px]">

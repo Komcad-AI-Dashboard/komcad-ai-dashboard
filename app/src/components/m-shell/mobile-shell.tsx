@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell } from "lucide-react";
-import { MEMBER_NAV } from "@/lib/constants";
+import { MEMBER_NAV, PRODUK_NAMA } from "@/lib/constants";
 import { NavIcon } from "@/components/shell/nav-icon";
+import { BrandTagline } from "@/components/shell/brand-tagline";
 import { cn } from "@/lib/utils";
 
 export function MobileShell({ children, unreadCount }: { children: React.ReactNode; unreadCount: number }) {
@@ -13,25 +14,29 @@ export function MobileShell({ children, unreadCount }: { children: React.ReactNo
   return (
     <div className="flex justify-center bg-base">
       <div className="flex min-h-screen w-full max-w-[430px] flex-col bg-base">
-        <header className="sticky top-0 z-50 flex items-center gap-[10px] border-b border-border bg-base px-4 py-[13px]">
-          <div className="flex h-5 w-[26px] shrink-0 flex-col overflow-hidden rounded-[3px] border border-border">
-            <div className="flex-1 bg-[#D8302A]" />
-            <div className="flex-1 bg-[#F2F2F2]" />
+        <header className="sticky top-0 z-50 border-b border-border bg-base px-4 py-[11px]">
+          <div className="flex items-center gap-[10px]">
+            <div className="flex h-5 w-[26px] shrink-0 flex-col overflow-hidden rounded-[3px] border border-border">
+              <div className="flex-1 bg-[#D8302A]" />
+              <div className="flex-1 bg-[#F2F2F2]" />
+            </div>
+            <div>
+              <div className="text-[14px] font-black tracking-[0.13em]">{PRODUK_NAMA}</div>
+              <div className="text-[8px] font-bold tracking-[0.28em] text-accent-bright">SISI ANGGOTA</div>
+            </div>
+            <div className="flex-1" />
+            <Link
+              href="/m/notifikasi"
+              className="relative flex size-8 items-center justify-center rounded-[8px] border border-border bg-elevated text-ink-2"
+            >
+              <Bell className="size-4" strokeWidth={1.5} />
+              {unreadCount > 0 && (
+                <span className="absolute -right-[3px] -top-[3px] size-[9px] rounded-full border-2 border-base bg-red" />
+              )}
+            </Link>
           </div>
-          <div>
-            <div className="text-[14px] font-black tracking-[0.13em]">SIAGA</div>
-            <div className="text-[8px] font-bold tracking-[0.28em] text-accent-bright">SISI ANGGOTA</div>
-          </div>
-          <div className="flex-1" />
-          <Link
-            href="/m/notifikasi"
-            className="relative flex size-8 items-center justify-center rounded-[8px] border border-border bg-elevated text-ink-2"
-          >
-            <Bell className="size-4" strokeWidth={1.5} />
-            {unreadCount > 0 && (
-              <span className="absolute -right-[3px] -top-[3px] size-[9px] rounded-full border-2 border-base bg-red" />
-            )}
-          </Link>
+          {/* Layar 430px cukup lebar untuk menampung kepanjangan dalam satu baris di 8px. */}
+          <BrandTagline className="mt-[7px] border-t border-border-soft pt-[6px]" />
         </header>
 
         <main className="flex flex-1 flex-col gap-[14px] px-4 pb-[90px] pt-[14px]">{children}</main>

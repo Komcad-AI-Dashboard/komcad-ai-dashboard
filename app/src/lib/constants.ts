@@ -1,6 +1,25 @@
 // Konstanta domain — satu sumber kebenaran untuk istilah, role, status, dan struktur navigasi.
 // Selaras dengan FRD §4 (Roles) dan §5/10-struktur-navigasi.md (Sitemap). Lihat CLAUDE.md §4/§6.
 
+/** Nama produk (Fase 15). Berbeda dari nama program "Komcad" — jangan saling menggantikan. */
+export const PRODUK_NAMA = "SIAGA";
+
+/** Kepanjangan akronim SIAGA, dipakai apa adanya di header laporan PDF/XLSX & atribut title. */
+export const PRODUK_KEPANJANGAN = "Sistem Identifikasi, Analitik & Gerak Anggota";
+
+/**
+ * Kepanjangan yang sudah dipecah per huruf akronim, supaya UI bisa mewarnai S-I-A-G-A tanpa
+ * regex rapuh atas `PRODUK_KEPANJANGAN`. Gabungan seluruh pasangan HARUS sama persis dengan
+ * `PRODUK_KEPANJANGAN` di atas — kalau salah satunya diubah, ubah keduanya.
+ */
+export const PRODUK_KEPANJANGAN_SEGMEN = [
+  ["S", "istem "],
+  ["I", "dentifikasi, "],
+  ["A", "nalitik & "],
+  ["G", "erak "],
+  ["A", "nggota"],
+] as const;
+
 export const ROLES = {
   SUPER_ADMIN: "SUPER_ADMIN",
   OPERATOR: "OPERATOR",

@@ -221,7 +221,17 @@ Dua konsep yang ditolak **tetap disimpan di repo** sebagai catatan keputusan des
 
 **Bug pra-existing ditemukan lewat screenshot verifikasi:** kontrol zoom Leaflet memakai posisi bawaan kiri-atas, persis di belakang panel Layers di Overview — jadi tombol +/− praktis tidak bisa dipakai sejak Fase 4 dan tidak pernah ketahuan karena verifikasi sebelumnya fokus ke fungsi, bukan ke tata letak visual. Dipindah ke kanan-bawah (`ZoomControl position="bottomright"` + `zoomControl={false}` di `MapContainer`) dan digayakan mengikuti chrome HUD.
 
-**Verifikasi:** `tsc --noEmit`, `npm run lint`, dan `npm run build` bersih. Screenshot Playwright untuk login, Overview, Direktori Anggota, Analitik, Manajemen Misi, Pengaturan, drawer CV, dan Sisi Anggota mobile (viewport 430×880) — nol console error di semuanya. Screenshot benar-benar dilihat satu per satu, bukan cuma dicek "tidak error".
+**Kepanjangan akronim ditampilkan permanen, bukan disembunyikan di tooltip.** Setelah rebrand, muncul pertanyaan wajar: "SIAGA" itu singkatan, tapi kepanjangannya tidak kelihatan di mana pun kecuali halaman login. Tiga opsi ditawarkan ke user (baris permanen di bawah wordmark / hover-reveal / footer sidebar) dan user memilih baris permanen. Alasan opsi hover-reveal tidak direkomendasikan meski paling "bersih": tidak terlihat di layar sentuh dan tidak muncul di screenshot demo ke pemangku kepentingan — dua konteks yang justru paling butuh penjelasan nama.
+
+Solusinya `components/shell/brand-tagline.tsx`: kepanjangan ditulis penuh di 8px, dengan huruf pembentuk akronim **S-I-A-G-A diwarnai accent**. Ini yang membuatnya tetap sleek — mata langsung menangkap hubungan huruf-ke-wordmark tanpa perlu teks penjelas seperti "singkatan dari", dan kalimatnya terbaca sebagai tekstur desain, bukan sebagai keterangan yang menambah berat. Ternyata muat **satu baris** di kedua permukaan (sidebar 236px dan header mobile 430px), jadi tambahan tingginya cuma ~14px, bukan tiga baris seperti perkiraan awal.
+
+Subteks **"COMMAND CENTER" sengaja dipertahankan** — FRD §10.1 mengunci subteks itu di bawah wordmark, jadi kepanjangan ditambahkan sebagai baris terpisah di bawah hairline, bukan menggantikannya. Ini dikonfirmasi ke user sebelum memilih, bukan diputuskan diam-diam.
+
+Pecahan per huruf ditulis eksplisit sebagai array pasangan di `lib/constants.ts` (`PRODUK_KEPANJANGAN_SEGMEN`), bukan hasil regex atas string kepanjangan. Regex akan diam-diam salah warna kalau kalimatnya nanti diubah; array eksplisit memaksa perubahan itu dilakukan sadar di dua tempat sekaligus (dan komentarnya menyebut kewajiban itu).
+
+Selain sidebar, user juga memilih memasangnya di **header Sisi Anggota mobile** dan **header laporan PDF/XLSX**. Yang terakhir punya alasan berbeda: laporan keluar dari sistem dan dibaca pihak luar yang belum tentu kenal akronimnya, jadi di sana nama produk selalu ditulis lengkap dengan kepanjangannya.
+
+**Verifikasi:** `tsc --noEmit`, `npm run lint`, dan `npm run build` bersih. Screenshot Playwright untuk login, Overview, Direktori Anggota, Analitik, Manajemen Misi, Pengaturan, drawer CV, dan Sisi Anggota mobile (viewport 430×880) — nol console error di semuanya. Screenshot benar-benar dilihat satu per satu, bukan cuma dicek "tidak error". Header laporan PDF diverifikasi dengan mendekompresi content stream dari file hasil unduhan sungguhan (baris 1 `SIAGA`, baris 2 kepanjangan penuh) — bukan diasumsikan dari kode.
 
 ## Status: Semua 13 Fase Rencana Awal + Fase 14 & 15 (Penyempurnaan) Selesai
 

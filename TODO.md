@@ -159,6 +159,10 @@ User menilai tampilan sebelumnya "basic, plain, membosankan" dan minta 3 konsep 
   - **Aksesibilitas dijaga**: kedua overlay viewport-wide WAJIB `pointer-events: none` (kalau tidak, seluruh aplikasi termasuk modal Radix jadi tidak bisa diklik), dan `@media (prefers-reduced-motion: reduce)` mematikan scanline + meredam grid
 - [x] **Bug pra-existing ditemukan & diperbaiki**: kontrol zoom Leaflet (posisi bawaan kiri-atas) selama ini tertimbun panel Layers di Overview — baru ketahuan saat screenshot verifikasi fase ini. Dipindah ke kanan-bawah (`ZoomControl position="bottomright"`, `zoomControl={false}` di `MapContainer`) dan digayakan mengikuti chrome HUD
 - [x] Diverifikasi: `tsc --noEmit` + `npm run lint` + `npm run build` bersih; screenshot Playwright untuk login, Overview, Direktori Anggota, Analitik, Manajemen Misi, Pengaturan, drawer CV, dan Sisi Anggota mobile (viewport 430px) — nol console error di semuanya
+- [x] Kepanjangan akronim SIAGA ditampilkan permanen (bukan tooltip/hover) — komponen `components/shell/brand-tagline.tsx`, huruf pembentuk akronim **S-I-A-G-A diwarnai accent** supaya hubungannya ke wordmark terbaca sekali lihat tanpa teks penjelas tambahan. Dipasang di 3 permukaan sesuai pilihan user: baris mikro di bawah wordmark sidebar Command Center, header Sisi Anggota mobile, dan header laporan PDF + `creator` XLSX. Subteks "COMMAND CENTER" **tetap dipertahankan** sesuai FRD §10.1 — kepanjangan ditambahkan sebagai baris terpisah di bawah hairline, bukan menggantikannya
+  - String kepanjangan dan pecahan per-huruf-nya jadi konstanta di `lib/constants.ts` (`PRODUK_NAMA`, `PRODUK_KEPANJANGAN`, `PRODUK_KEPANJANGAN_SEGMEN`) — pemecahan per huruf ditulis eksplisit sebagai array pasangan, bukan hasil regex atas string kepanjangan, supaya tidak rapuh kalau kalimatnya diubah
+  - Muat **satu baris** di kedua permukaan (sidebar 236px & mobile 430px pada ukuran 8px) — dicek lewat screenshot, bukan diasumsikan dari perhitungan lebar
+  - Header laporan PDF diverifikasi dengan mendekompresi content stream PDF hasil unduhan sungguhan: baris 1 = `SIAGA`, baris 2 = kepanjangan penuh + "Command Center Komponen Cadangan"
 
 ---
 
