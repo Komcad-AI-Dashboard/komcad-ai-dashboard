@@ -1,12 +1,12 @@
-import { PagePlaceholder } from "@/components/shell/page-placeholder";
+import { auth } from "@/lib/auth";
+import { getMisiMenungguApproval } from "@/lib/misi-data";
+import { AiMobilizationView } from "@/components/misi/ai-mobilization-view";
 
-export default function AiMobilizationPage() {
+export default async function AiMobilizationPage() {
+  const [session, misiMenunggu] = await Promise.all([auth(), getMisiMenungguApproval()]);
   return (
-    <PagePlaceholder
-      title="AI Mobilization"
-      description="Rekomendasi kandidat aktif dan parameter model AI: bobot Readiness Score, jarak/ETA, dan kompetensi, serta radius pencarian default (placeholder 25km, dikonfigurasi Admin)."
-      frIds="FR-09, FR-10, FR-11"
-      fase="FASE 6 — BELUM DIKERJAKAN"
-    />
+    <div className="flex flex-1 flex-col overflow-hidden">
+      <AiMobilizationView misiMenunggu={misiMenunggu} role={session?.user?.role} />
+    </div>
   );
 }

@@ -42,6 +42,23 @@ export const STATUS_SERTIFIKASI = {
   KEDALUWARSA: "Kedaluwarsa",
 } as const;
 
+export const STATUS_KEHADIRAN = {
+  MENUNGGU_RESPONS: "Menunggu Respons",
+  DIKONFIRMASI: "Dikonfirmasi",
+  DITOLAK: "Ditolak",
+  HADIR: "Hadir",
+  SELESAI: "Selesai",
+} as const;
+
+export const JENIS_KEJADIAN_OPTIONS = [
+  "Banjir",
+  "Longsor",
+  "Gempa Bumi",
+  "Kebakaran Hutan",
+  "Angin Puting Beliung",
+  "Lainnya",
+] as const;
+
 export type NavItem = {
   label: string;
   href: string;

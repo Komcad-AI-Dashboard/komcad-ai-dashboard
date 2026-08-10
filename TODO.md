@@ -52,8 +52,8 @@ Entitas dari FRD §9.1 + `09-data-dummy.md` (baca dulu isi file itu kalau ada, a
 - [x] Show/hide semua panel sekaligus (situation bar) — FR-25
 - [x] Diverifikasi dengan Playwright (browser headless sungguhan, bukan cuma curl): tiles peta termuat, klik marker membuka drawer, toggle panel individual jalan, nol console error
 - [x] Klik marker anggota di peta membuka Drawer ringkas; profil CV lengkap sekarang ada tapi cuma dari menu Direktori Anggota (Fase 5) — drawer dari peta belum diarahkan ke CV lengkap, masih versi ringkas (nice-to-have, bukan blocker)
-- [ ] Ringkasan AI di panel bawah masih placeholder teks kalau `Misi.ringkasanAI` belum diisi (baru terisi nyata setelah AI Mobilization di Fase 6 jalan)
-- [ ] Klik zona Misi di peta masih membuka Drawer ringkas — drawer detail Misi penuh (dengan rekomendasi AI) menyusul di Fase 6
+- [x] Ringkasan AI di panel bawah kini terisi nyata — `Misi.ringkasanAI` diisi oleh AI Mobilization (Fase 6) begitu Misi dibuat lewat modal Buat Misi
+- [ ] Klik zona Misi di peta masih membuka Drawer ringkas — drawer detail Misi penuh (dengan rekomendasi AI) sudah ada, tapi cuma di menu Manajemen Misi (Fase 6); drawer dari peta belum diarahkan otomatis ke sana (nice-to-have, bukan blocker)
 
 ## Fase 5 — Modul Manajemen Data Anggota (FR-01 s.d. FR-07)
 - [x] Direktori Anggota: tabel, search, filter status, bar Readiness Score — FR-01, FR-04
@@ -66,15 +66,17 @@ Entitas dari FRD §9.1 + `09-data-dummy.md` (baca dulu isi file itu kalau ada, a
 
 ## Fase 6 — Modul Manajemen Misi & AI Mobilization (FR-08 s.d. FR-16)
 Ini modul paling kompleks — AI-nya benar-benar generate, bukan hardcode.
-- [ ] Modal "Buat Misi": Pemberi Perintah, Jenis Kejadian (dropdown), Urgensi (dropdown), Lokasi, Deskripsi Misi (textarea) — FR-08
-- [ ] Server Action / route handler: query kandidat dari DB (filter jarak/status/sertifikasi) → panggil OpenAI untuk skoring+ringkasan+alasan (grounded, bukan LLM mengarang personel) — FR-09, FR-10
-- [ ] Hitung ETA per kandidat (jarak Haversine dari lokasi anggota ke lokasi Misi / kecepatan asumsi) — FR-11
-- [ ] State loading ("AI Mobilization sedang menganalisis...") ≤ mockup 1.5 detik simulasi, target produksi ≤30 detik
-- [ ] Approval "Setujui & Kirim Notifikasi" → generate ID Misi `MISI-{tahun}-{urutan}`, catat Penugasan, kirim Notifikasi — FR-12, FR-13
-- [ ] Menu Manajemen Misi: tabel + search + filter chip (Semua/Kritis/Tinggi/Selesai), drawer detail — FR-14
-- [ ] Pemantauan kehadiran & progres personel dalam drawer Misi — FR-15
-- [ ] Penutupan Misi + form evaluasi → masuk Riwayat Mobilisasi otomatis — FR-16
-- [ ] Menu AI Mobilization terpisah: parameter model (bobot Readiness/jarak/kompetensi, radius default 25km) dapat diatur Admin
+- [x] Modal "Buat Misi" (global, dibuka dari tombol BUAT MISI di topbar via `AppShell`): Pemberi Perintah, Jenis Kejadian (dropdown), Urgensi (dropdown), Lokasi (dropdown dari `lib/wilayah.ts`, bukan teks bebas — lihat catatan di bawah), Deskripsi Misi (textarea), Kebutuhan Personel — FR-08. Hanya tampil untuk Super Admin/Operator (Analis read-only, akhirnya ditegakkan di sini)
+- [x] `generateMisiAction` (`lib/misi-actions.ts`): query kandidat dari DB (`getKandidatPool` — anggota Aktif/Siaga terdekat by Haversine) → panggil OpenAI (`lib/ai-mobilization.ts`, model `gpt-4o-mini`, `response_format: json_schema` dengan `anggotaId` di-enum ke pool asli) untuk skoring+ringkasan+alasan grounded — FR-09, FR-10. **Fallback deterministik** (skor dari formula readiness/jarak/kompetensi/jeda) otomatis aktif kalau `OPENAI_API_KEY` kosong atau panggilan API gagal — diuji manual keduanya, ringkasan menandai "mode fallback" secara eksplisit di UI, tidak pernah gagal total
+- [x] ETA dihitung deterministik (bukan dari AI) via Haversine + asumsi kecepatan 40 km/jam (`lib/geo.ts`) — FR-11
+- [x] State loading "AI Mobilization sedang menganalisis..." selama request OpenAI asli berjalan (bukan simulasi setTimeout) — FR-09
+- [x] Approval "Setujui & Kirim Notifikasi" (`approveMisiAction`) → Misi Draft→Dimobilisasi, buat `Notifikasi` per kandidat — FR-12, FR-13. **Catatan**: `kodeMisi` (`MISI-{tahun}-{urutan}`) di-generate saat submit form (bukan saat approval) supaya field unique di skema selalu terisi sejak status Draft — beda kecil dari urutan di mockup, didokumentasikan di sini
+- [x] Menu Manajemen Misi (`/misi`): KPI row + tabel + search + filter chip (Semua/Kritis/Tinggi/Selesai), drawer detail lengkap (info Misi + Ringkasan AI + daftar kandidat+alasan+ETA) — FR-14
+- [x] Pemantauan kehadiran: dropdown status per personel (Menunggu Respons/Dikonfirmasi/Ditolak/Hadir/Selesai) di drawer Misi Dimobilisasi, via `updateKehadiranAction` — FR-15. **Catatan jujur**: ini kontrol manual Operator, BUKAN respons real dari Anggota via app mobile (menyusul Fase 11)
+- [x] Tombol "Tutup Misi & Evaluasi" (status Dimobilisasi saja) → form catatan evaluasi → `closeMisiAction` set status Selesai, `selesaiAt`, semua Penugasan jadi "Selesai" — otomatis akan muncul di Riwayat Mobilisasi begitu Fase 7 dibangun (field-nya sudah benar di DB, halaman listnya menyusul) — FR-16
+- [x] Menu AI Mobilization terpisah (`/ai-mobilization`): daftar Misi Draft menunggu approval + tombol approve langsung dari sini, plus kartu "Parameter Model" (radius 25km, bobot Readiness 40%/jarak 35%/kompetensi 25%). **Belum**: parameter ini masih nilai tampilan statis dari kode, belum ada UI untuk Admin mengubah & menyimpannya — butuh tabel pengaturan baru, ditunda ke Fase 10 (Modul Sistem → Pengaturan) supaya tidak scope-creep di sini
+- [ ] **Simplifikasi yang perlu diketahui**: field "Lokasi" di form Buat Misi memakai dropdown 8 kota referensi (`lib/wilayah.ts`, sama dengan sebaran provinsi seed), bukan input teks bebas + geocoding sungguhan — dibutuhkan supaya tiap Misi punya koordinat pasti untuk kalkulasi jarak/ETA. Produksi: ganti dengan geocoding API alamat bebas teks
+- [x] Diverifikasi dengan Playwright end-to-end sungguhan (bukan mock): login Operator → buka drawer Misi Dimobilisasi & ubah kehadiran → BUAT MISI lewat topbar → submit form → **OpenAI beneran dipanggil** (bukan fallback) → ringkasan AI menyebut Pemberi Perintah & kutip Deskripsi Misi persis → 3 kandidat dengan skor/alasan/ETA nyata → Setujui & Kirim Notifikasi → ID Misi baru muncul di tabel → Tutup Misi + evaluasi → status jadi Selesai. Nol console error di semua langkah. Data uji dihapus, dev DB direset & di-reseed ulang ke starter set bersih sebelum commit
 
 ## Fase 7 — Modul Analitik & Laporan (FR-26 s.d. FR-28)
 - [ ] Dashboard Analitik: KPI Readiness nasional, Misi selesai 30 hari, sertifikasi kedaluwarsa, uptime — FR-26

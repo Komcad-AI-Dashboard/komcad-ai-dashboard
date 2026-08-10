@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import type { Session } from "next-auth";
 import { Menu, Search, Settings, PlusCircle, LogOut } from "lucide-react";
-import { COMMAND_NAV } from "@/lib/constants";
+import { COMMAND_NAV, ROLES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { signOutAction } from "@/lib/auth-actions";
 import type { TopbarKpi } from "./app-shell";
@@ -54,13 +54,15 @@ export function Topbar({
           Nasional
         </div>
 
-        <button
-          onClick={onBuatMisi}
-          className="flex items-center gap-[6px] rounded-[6px] border border-accent px-3 py-[6px] text-[12px] font-bold tracking-wide text-accent-bright hover:bg-accent-bright/10"
-        >
-          <PlusCircle className="size-4" strokeWidth={1.5} />
-          BUAT MISI
-        </button>
+        {(user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.OPERATOR) && (
+          <button
+            onClick={onBuatMisi}
+            className="flex items-center gap-[6px] rounded-[6px] border border-accent px-3 py-[6px] text-[12px] font-bold tracking-wide text-accent-bright hover:bg-accent-bright/10"
+          >
+            <PlusCircle className="size-4" strokeWidth={1.5} />
+            BUAT MISI
+          </button>
+        )}
 
         <div className="hidden items-center gap-2 rounded-[6px] border border-border bg-elevated px-[10px] py-[5px] md:flex">
           <span className="text-[9.5px] font-extrabold tracking-widest text-ink-2">READINESS</span>

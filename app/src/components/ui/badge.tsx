@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { STATUS_MISI, STATUS_SERTIFIKASI, STATUS_SIAGA, URGENSI_MISI } from "@/lib/constants";
+import { STATUS_KEHADIRAN, STATUS_MISI, STATUS_SERTIFIKASI, STATUS_SIAGA, URGENSI_MISI } from "@/lib/constants";
 
 export type BadgeColor = "green" | "amber" | "red" | "cyan" | "gray";
 
@@ -57,4 +57,11 @@ export function statusSertifikasiColor(status: string): BadgeColor {
   if (status === STATUS_SERTIFIKASI.AKTIF) return "green";
   if (status === STATUS_SERTIFIKASI.AKAN_KEDALUWARSA) return "amber";
   return "red"; // Kedaluwarsa
+}
+
+export function statusKehadiranColor(status: string): BadgeColor {
+  if (status === STATUS_KEHADIRAN.HADIR || status === STATUS_KEHADIRAN.SELESAI) return "green";
+  if (status === STATUS_KEHADIRAN.DIKONFIRMASI) return "cyan";
+  if (status === STATUS_KEHADIRAN.DITOLAK) return "red";
+  return "amber"; // Menunggu Respons
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { Session } from "next-auth";
 import type { getTopbarKpi } from "@/lib/overview-data";
+import { BuatMisiModal } from "@/components/misi/buat-misi-modal";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 
@@ -20,6 +21,7 @@ export function AppShell({
   kpi: TopbarKpi;
 }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [buatMisiOpen, setBuatMisiOpen] = useState(false);
 
   useEffect(() => {
     // Baca preferensi tersimpan sekali setelah mount — localStorage tidak tersedia saat SSR,
@@ -43,9 +45,10 @@ export function AppShell({
     <div className="flex h-screen bg-base">
       <Sidebar collapsed={collapsed} user={user} kpi={kpi} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar onToggleSidebar={toggle} user={user} kpi={kpi} />
+        <Topbar onToggleSidebar={toggle} onBuatMisi={() => setBuatMisiOpen(true)} user={user} kpi={kpi} />
         <main className="flex min-h-0 flex-1 flex-col overflow-auto">{children}</main>
       </div>
+      <BuatMisiModal open={buatMisiOpen} onOpenChange={setBuatMisiOpen} />
     </div>
   );
 }
