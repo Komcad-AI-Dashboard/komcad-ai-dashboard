@@ -14,11 +14,41 @@ export type LayerVisibility = {
   siaga: boolean;
   misi: boolean;
   pos: boolean;
+  heatzone: boolean;
 };
 
 function urgensiColorHex(urgensi: string) {
   if (urgensi === "Kritis") return "#E14C45";
   if (urgensi === "Tinggi") return "#E0A83E";
+  return "#3FA9C9";
+}
+
+/** Kepadatan anggota per grid ~1° (kasar, cukup untuk visual "zona padat" tanpa perlu library
+ * heatmap tambahan) — dihitung di client dari titik lokasi yang sudah dimuat, bukan query terpisah. */
+function computeHeatBins(anggota: MapAnggota[]) {
+  const bins = new Map<string, { sumLat: number; sumLng: number; count: number }>();
+  for (const a of anggota) {
+    const key = `${Math.round(a.lat)}_${Math.round(a.lng)}`;
+    const bin = bins.get(key);
+    if (bin) {
+      bin.sumLat += a.lat;
+      bin.sumLng += a.lng;
+      bin.count += 1;
+    } else {
+      bins.set(key, { sumLat: a.lat, sumLng: a.lng, count: 1 });
+    }
+  }
+  return Array.from(bins.entries()).map(([key, b]) => ({
+    key,
+    lat: b.sumLat / b.count,
+    lng: b.sumLng / b.count,
+    count: b.count,
+  }));
+}
+
+function heatColor(count: number) {
+  if (count >= 6) return "#E14C45";
+  if (count >= 3) return "#E0A83E";
   return "#3FA9C9";
 }
 
@@ -70,6 +100,22 @@ export function SituationMap({
     >
       <ResizeHandler />
       <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" className="tactical-tiles" maxZoom={19} />
+
+      {layers.heatzone &&
+        computeHeatBins(anggota).map((b) => (
+          <Circle
+            key={b.key}
+            center={[b.lat, b.lng]}
+            radius={18000 + Math.min(b.count, 10) * 6000}
+            pathOptions={{
+              color: heatColor(b.count),
+              weight: 1,
+              fillColor: heatColor(b.count),
+              fillOpacity: Math.min(0.12 + b.count * 0.03, 0.35),
+            }}
+            interactive={false}
+          />
+        ))}
 
       {layers.anggota &&
         siap.map((a) => (

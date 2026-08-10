@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Maximize2, X } from "lucide-react";
-import { Badge, statusSiagaColor, statusMisiColor, urgensiColor } from "@/components/ui/badge";
 import { Drawer } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
 import type { LayerVisibility } from "./situation-map";
@@ -16,6 +15,12 @@ import { StatsPanelContent } from "./stats-panel-content";
 import { FeedPanelContent } from "./feed-panel-content";
 import { AiPanelContent } from "./ai-panel-content";
 import { SituationClock } from "./situation-clock";
+import { AnggotaCvDrawerContent } from "@/components/anggota/anggota-cv-drawer-content";
+import { MisiDetailDrawerContent } from "@/components/misi/misi-detail-drawer-content";
+import { getAnggotaCvAction, getMisiDetailForOverviewAction } from "@/lib/overview-actions";
+import type { AnggotaFull } from "@/lib/anggota-data";
+import type { MisiListItem } from "@/lib/misi-data";
+import type { Role } from "@/lib/constants";
 import type {
   MapAnggota,
   MapMisi,
@@ -56,6 +61,8 @@ export function OverviewView({
   feed,
   aiSummary,
   autoRefresh,
+  heatzoneDefault,
+  role,
 }: {
   anggota: MapAnggota[];
   misi: MapMisi[];
@@ -65,6 +72,8 @@ export function OverviewView({
   feed: FeedItem[];
   aiSummary: AiSummary;
   autoRefresh: boolean;
+  heatzoneDefault: boolean;
+  role: Role | undefined;
 }) {
   const router = useRouter();
   const [layers, setLayers] = useState<LayerVisibility>({
@@ -72,17 +81,42 @@ export function OverviewView({
     siaga: true,
     misi: true,
     pos: true,
+    heatzone: heatzoneDefault,
   });
   const [fullscreen, setFullscreen] = useState(false);
   const [hiddenPanels, setHiddenPanels] = useState<Set<PanelKey>>(new Set());
   const [selection, setSelection] = useState<Selection>(null);
+  const [fullAnggota, setFullAnggota] = useState<AnggotaFull | null>(null);
+  const [fullMisi, setFullMisi] = useState<MisiListItem | null>(null);
+  const [, startDetailTransition] = useTransition();
 
-  // Preferensi "Auto-refresh data peta" (menu Pengaturan) — polling revalidate data server tiap 15
-  // detik. Ini bukan push real-time sungguhan (masih request-based), tapi menutup sebagian gap
-  // FR-07/FR-24 yang sebelumnya cuma refresh-on-navigate.
+  // Klik marker/zona di peta cuma bawa data ringkas (MapAnggota/MapMisi) — begitu drawer terbuka,
+  // ambil detail penuh on-demand (bukan dimuat sekaligus di awal untuk seluruh anggota/Misi) supaya
+  // drawer ini bisa menampilkan CV lengkap / detail Misi lengkap yang sama dengan menu Direktori
+  // Anggota & Manajemen Misi, bukan versi ringkas terpisah.
+  useEffect(() => {
+    if (selection?.type === "anggota") {
+      const id = selection.data.id;
+      startDetailTransition(async () => {
+        const data = await getAnggotaCvAction(id);
+        setFullAnggota(data);
+      });
+    } else if (selection?.type === "misi") {
+      const id = selection.data.id;
+      startDetailTransition(async () => {
+        const data = await getMisiDetailForOverviewAction(id);
+        setFullMisi(data);
+      });
+    }
+  }, [selection]);
+
+  // Preferensi "Auto-refresh data peta" (menu Pengaturan) — polling revalidate data server tiap 5
+  // detik, mendekati target FR-07 (≤5 detik). Ini bukan push real-time sungguhan (masih
+  // request-based, jadi latensi sebenarnya sedikit di atas 5 detik tergantung waktu request), tapi
+  // jauh lebih dekat ke target dibanding interval 15 detik sebelumnya.
   useEffect(() => {
     if (!autoRefresh) return;
-    const interval = setInterval(() => router.refresh(), 15000);
+    const interval = setInterval(() => router.refresh(), 5000);
     return () => clearInterval(interval);
   }, [autoRefresh, router]);
 
@@ -228,58 +262,26 @@ export function OverviewView({
         }
       >
         {selection?.type === "anggota" && (
-          <div className="flex flex-col gap-3">
-            <div>
-              <div className="mb-1 text-[10px] font-extrabold tracking-wide text-ink-2">UNIT ASAL</div>
-              <div className="text-[13px] font-semibold">{selection.data.unitAsal}</div>
-            </div>
-            <div>
-              <div className="mb-1 text-[10px] font-extrabold tracking-wide text-ink-2">STATUS</div>
-              <Badge color={statusSiagaColor(selection.data.statusSiaga)}>
-                {selection.data.statusSiaga}
-              </Badge>
-            </div>
-            <div>
-              <div className="mb-1 text-[10px] font-extrabold tracking-wide text-ink-2">READINESS SCORE</div>
-              <div className="font-mono text-[13px] font-semibold">{selection.data.readinessScore}</div>
-            </div>
-            <div>
-              <div className="mb-1 text-[10px] font-extrabold tracking-wide text-ink-2">KOMPETENSI</div>
-              <div className="text-[13px]">{selection.data.kompetensi}</div>
-            </div>
-            <p className="text-[11px] text-ink-3">
-              Profil CV lengkap (kontak, sosial media, riwayat) tersedia di menu Direktori Anggota.
-            </p>
-          </div>
+          fullAnggota?.id === selection.data.id ? (
+            <AnggotaCvDrawerContent
+              anggota={fullAnggota}
+              role={role}
+              onEdit={() => router.push("/anggota")}
+              onDeactivated={() => {
+                setSelection(null);
+                router.refresh();
+              }}
+            />
+          ) : (
+            <div className="py-8 text-center text-[12px] text-ink-2">Memuat profil lengkap...</div>
+          )
         )}
         {selection?.type === "misi" && (
-          <div className="flex flex-col gap-3">
-            <div>
-              <div className="mb-1 text-[10px] font-extrabold tracking-wide text-ink-2">JENIS KEJADIAN</div>
-              <div className="text-[13px] font-semibold">{selection.data.jenisKejadian}</div>
-            </div>
-            <div>
-              <div className="mb-1 text-[10px] font-extrabold tracking-wide text-ink-2">LOKASI</div>
-              <div className="text-[13px] font-semibold">{selection.data.lokasi}</div>
-            </div>
-            <div className="flex gap-4">
-              <div>
-                <div className="mb-1 text-[10px] font-extrabold tracking-wide text-ink-2">URGENSI</div>
-                <Badge color={urgensiColor(selection.data.urgensi)}>{selection.data.urgensi}</Badge>
-              </div>
-              <div>
-                <div className="mb-1 text-[10px] font-extrabold tracking-wide text-ink-2">STATUS</div>
-                <Badge color={statusMisiColor(selection.data.status)}>{selection.data.status}</Badge>
-              </div>
-            </div>
-            <div>
-              <div className="mb-1 text-[10px] font-extrabold tracking-wide text-ink-2">PERSONEL</div>
-              <div className="font-mono text-[13px] font-semibold">{selection.data.personel}</div>
-            </div>
-            <p className="text-[11px] text-ink-3">
-              Detail lengkap & rekomendasi AI tersedia di menu Manajemen Misi.
-            </p>
-          </div>
+          fullMisi?.id === selection.data.id ? (
+            <MisiDetailDrawerContent misi={fullMisi} role={role} />
+          ) : (
+            <div className="py-8 text-center text-[12px] text-ink-2">Memuat detail Misi...</div>
+          )
         )}
         {selection?.type === "training" && (
           <div className="flex flex-col gap-3">

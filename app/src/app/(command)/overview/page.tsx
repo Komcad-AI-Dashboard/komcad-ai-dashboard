@@ -9,9 +9,15 @@ import {
   getAiMobilizationSummary,
 } from "@/lib/overview-data";
 import { getPengaturanSistem } from "@/lib/pengaturan-data";
+import { ensureReminderSertifikasi } from "@/lib/reminder-sertifikasi";
+import { auth } from "@/lib/auth";
 
 export default async function OverviewPage() {
-  const [anggota, misi, aktivitasPelatihan, stats, feed, aiSummary, pengaturan] = await Promise.all([
+  // Cek H-30 sertifikasi seluruh anggota tiap kali Overview dibuka — lihat lib/reminder-sertifikasi.ts.
+  await ensureReminderSertifikasi();
+
+  const [session, anggota, misi, aktivitasPelatihan, stats, feed, aiSummary, pengaturan] = await Promise.all([
+    auth(),
     getMapAnggota(),
     getMapMisi(),
     getAktivitasPelatihanTerbaru(),
@@ -31,6 +37,8 @@ export default async function OverviewPage() {
       feed={feed}
       aiSummary={aiSummary}
       autoRefresh={pengaturan.petaAutoRefresh}
+      heatzoneDefault={pengaturan.petaHeatzone}
+      role={session?.user?.role}
     />
   );
 }

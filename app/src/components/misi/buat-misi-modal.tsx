@@ -1,21 +1,21 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Sparkles, CheckCircle2 } from "lucide-react";
+import { Sparkles, CheckCircle2, Search, MapPin } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { JENIS_KEJADIAN_OPTIONS, URGENSI_MISI } from "@/lib/constants";
 import { LOKASI_REFERENSI } from "@/lib/wilayah";
-import { generateMisiAction, approveMisiAction, type GenerateMisiResult } from "@/lib/misi-actions";
+import { generateMisiAction, approveMisiAction, geocodeLokasiAction, type GenerateMisiResult } from "@/lib/misi-actions";
 
 type Step = "form" | "loading" | "result" | "done";
+type Lokasi = { label: string; lat: number; lng: number };
 
 const initialForm = {
   pemberiPerintah: "",
   jenisKejadian: JENIS_KEJADIAN_OPTIONS[0] as string,
   urgensi: URGENSI_MISI.KRITIS as string,
-  lokasiKey: LOKASI_REFERENSI[0].key as string,
   deskripsiMisi: "",
   kebutuhanPersonel: 5,
 };
@@ -23,6 +23,10 @@ const initialForm = {
 export function BuatMisiModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const [step, setStep] = useState<Step>("form");
   const [form, setForm] = useState(initialForm);
+  const [lokasi, setLokasi] = useState<Lokasi | null>(null);
+  const [alamatQuery, setAlamatQuery] = useState("");
+  const [geocodeError, setGeocodeError] = useState<string | null>(null);
+  const [geocodePending, startGeocodeTransition] = useTransition();
   const [result, setResult] = useState<Extract<GenerateMisiResult, { error: null }> | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [jumlahDinotifikasi, setJumlahDinotifikasi] = useState(0);
@@ -31,6 +35,9 @@ export function BuatMisiModal({ open, onOpenChange }: { open: boolean; onOpenCha
   function reset() {
     setStep("form");
     setForm(initialForm);
+    setLokasi(null);
+    setAlamatQuery("");
+    setGeocodeError(null);
     setResult(null);
     setErrorMsg(null);
   }
@@ -40,12 +47,33 @@ export function BuatMisiModal({ open, onOpenChange }: { open: boolean; onOpenCha
     onOpenChange(next);
   }
 
+  function handleCariLokasi() {
+    setGeocodeError(null);
+    startGeocodeTransition(async () => {
+      const res = await geocodeLokasiAction(alamatQuery);
+      if (res.error) {
+        setGeocodeError(res.error);
+        return;
+      }
+      if (res.result) setLokasi(res.result);
+    });
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!lokasi) {
+      setErrorMsg("Tentukan Lokasi Misi dulu — cari alamat atau pilih dari Lokasi Referensi.");
+      return;
+    }
     setErrorMsg(null);
     setStep("loading");
     startTransition(async () => {
-      const res = await generateMisiAction(form);
+      const res = await generateMisiAction({
+        ...form,
+        lokasiLabel: lokasi.label,
+        lokasiLat: lokasi.lat,
+        lokasiLng: lokasi.lng,
+      });
       if (res.error !== null) {
         setErrorMsg(res.error);
         setStep("form");
@@ -70,8 +98,6 @@ export function BuatMisiModal({ open, onOpenChange }: { open: boolean; onOpenCha
       setStep("done");
     });
   }
-
-  const lokasiLabel = LOKASI_REFERENSI.find((l) => l.key === form.lokasiKey)?.label ?? "";
 
   return (
     <Modal
@@ -126,14 +152,55 @@ export function BuatMisiModal({ open, onOpenChange }: { open: boolean; onOpenCha
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="lokasiKey">Lokasi</Label>
+          <div>
+            <Label htmlFor="alamatQuery">Lokasi Misi</Label>
+            <div className="flex gap-2">
+              <Input
+                id="alamatQuery"
+                placeholder="mis. Kecamatan Baleendah, Kabupaten Bandung"
+                value={alamatQuery}
+                onChange={(e) => setAlamatQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleCariLokasi();
+                  }
+                }}
+              />
+              <Button type="button" variant="outline" onClick={handleCariLokasi} disabled={geocodePending}>
+                <Search className="size-3.5" strokeWidth={1.5} />
+                {geocodePending ? "Mencari..." : "Cari Lokasi"}
+              </Button>
+            </div>
+            {geocodeError && <p className="mt-1 text-[11px] text-[#F5A9A5]">{geocodeError}</p>}
+            {lokasi && (
+              <div className="mt-2 flex items-start gap-[6px] rounded-[6px] border border-accent-bright/30 bg-accent-bright/5 px-3 py-2 text-[11.5px] text-accent-bright">
+                <MapPin className="mt-[1px] size-3.5 shrink-0" strokeWidth={1.5} />
+                <span>
+                  {lokasi.label}
+                  <span className="ml-2 font-mono text-[10.5px] text-ink-3">
+                    {lokasi.lat.toFixed(4)}, {lokasi.lng.toFixed(4)}
+                  </span>
+                </span>
+              </div>
+            )}
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-[10.5px] text-ink-3">atau pilih dari Lokasi Referensi:</span>
               <Select
-                id="lokasiKey"
-                value={form.lokasiKey}
-                onChange={(e) => setForm((f) => ({ ...f, lokasiKey: e.target.value }))}
+                className="max-w-[220px]"
+                value=""
+                onChange={(e) => {
+                  const l = LOKASI_REFERENSI.find((r) => r.key === e.target.value);
+                  if (l) {
+                    setLokasi({ label: l.label, lat: l.lat, lng: l.lng });
+                    setAlamatQuery("");
+                    setGeocodeError(null);
+                  }
+                }}
               >
+                <option value="" disabled>
+                  Pilih kota referensi...
+                </option>
                 {LOKASI_REFERENSI.map((l) => (
                   <option key={l.key} value={l.key}>
                     {l.label}
@@ -141,17 +208,17 @@ export function BuatMisiModal({ open, onOpenChange }: { open: boolean; onOpenCha
                 ))}
               </Select>
             </div>
-            <div>
-              <Label htmlFor="kebutuhanPersonel">Kebutuhan Personel</Label>
-              <Input
-                id="kebutuhanPersonel"
-                type="number"
-                min={1}
-                max={50}
-                value={form.kebutuhanPersonel}
-                onChange={(e) => setForm((f) => ({ ...f, kebutuhanPersonel: Number(e.target.value) }))}
-              />
-            </div>
+          </div>
+          <div>
+            <Label htmlFor="kebutuhanPersonel">Kebutuhan Personel</Label>
+            <Input
+              id="kebutuhanPersonel"
+              type="number"
+              min={1}
+              max={50}
+              value={form.kebutuhanPersonel}
+              onChange={(e) => setForm((f) => ({ ...f, kebutuhanPersonel: Number(e.target.value) }))}
+            />
           </div>
           <div>
             <Label htmlFor="deskripsiMisi">Deskripsi Misi</Label>
@@ -173,7 +240,7 @@ export function BuatMisiModal({ open, onOpenChange }: { open: boolean; onOpenCha
             <Button type="button" variant="ghost" onClick={() => handleClose(false)}>
               Batal
             </Button>
-            <Button type="submit" variant="outline" disabled={pending}>
+            <Button type="submit" variant="outline" disabled={pending || !lokasi}>
               <Sparkles className="size-3.5" strokeWidth={1.5} />
               Generate Rekomendasi AI
             </Button>
@@ -185,7 +252,7 @@ export function BuatMisiModal({ open, onOpenChange }: { open: boolean; onOpenCha
         <div className="flex flex-col items-center gap-4 py-10 text-center">
           <div className="size-10 animate-spin rounded-full border-2 border-accent-bright border-t-transparent" />
           <p className="max-w-[380px] text-[13px] text-ink-2">
-            AI Mobilization sedang menganalisis Big Data anggota berdasarkan lokasi ({lokasiLabel}), kompetensi, dan
+            AI Mobilization sedang menganalisis Big Data anggota berdasarkan lokasi ({lokasi?.label}), kompetensi, dan
             Readiness Score...
           </p>
         </div>
@@ -194,7 +261,7 @@ export function BuatMisiModal({ open, onOpenChange }: { open: boolean; onOpenCha
       {step === "result" && result && (
         <div className="flex flex-col gap-4">
           <div className="text-[11.5px] font-mono text-ink-2">
-            {result.kodeMisi} · {form.jenisKejadian} — {lokasiLabel} · Urgensi {form.urgensi}
+            {result.kodeMisi} · {form.jenisKejadian} — {lokasi?.label} · Urgensi {form.urgensi}
           </div>
           <div className="rounded-[8px] border border-accent-bright/30 bg-accent-bright/5 p-3 text-[12.5px] leading-relaxed">
             <b className="text-accent-bright">◈ Ringkasan AI</b>

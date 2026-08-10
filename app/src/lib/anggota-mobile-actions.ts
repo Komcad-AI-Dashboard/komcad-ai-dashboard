@@ -7,6 +7,7 @@ import { writeAuditLog } from "@/lib/audit-log";
 import { STATUS_KEHADIRAN, STATUS_SIAGA } from "@/lib/constants";
 import { requireSelfAnggotaId } from "@/lib/anggota-mobile-data";
 import { decryptSensitive, encryptSensitive, hashSensitive } from "@/lib/crypto";
+import { recalculateReadinessScore } from "@/lib/readiness";
 
 type ActionState = { error: string | null };
 
@@ -199,6 +200,7 @@ export async function respondNotifikasiAction(notifikasiId: string, responsTipe:
           statusKehadiran: parsedTipe.data === "Konfirmasi" ? STATUS_KEHADIRAN.DIKONFIRMASI : STATUS_KEHADIRAN.DITOLAK,
         },
       });
+      await recalculateReadinessScore(self.anggotaId);
     }
   }
 

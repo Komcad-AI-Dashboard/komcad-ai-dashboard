@@ -1,6 +1,6 @@
-// Referensi lokasi untuk form Buat Misi. MVP: pilih dari daftar tetap (sama dengan sebaran
-// provinsi seed anggota) supaya tiap Misi punya koordinat pasti untuk kalkulasi jarak/ETA (FR-11)
-// tanpa perlu geocoding API sungguhan. Produksi: ganti dengan integrasi geocoding alamat bebas teks.
+// Referensi lokasi untuk form Buat Misi — alternatif tanpa dependensi jaringan dari pencarian
+// alamat bebas teks (lib/geocoding.ts, Nominatim). Dipakai kalau geocoding gagal/lokasi tidak
+// spesifik, atau Operator memang mau koordinat pasti yang cocok dengan sebaran provinsi seed.
 export const LOKASI_REFERENSI = [
   { key: "jakarta-selatan", label: "Jakarta Selatan, DKI Jakarta", lat: -6.2615, lng: 106.781 },
   { key: "bandung", label: "Bandung, Jawa Barat", lat: -6.9175, lng: 107.6191 },

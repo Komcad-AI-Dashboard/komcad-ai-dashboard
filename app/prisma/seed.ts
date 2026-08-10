@@ -1,11 +1,11 @@
-// Seed data dummy. Fase 3 penuh (50-100 anggota) belum dikerjakan — ini starter set
-// secukupnya untuk mencoba login per role & melihat data di UI saat modul-modul berikutnya
-// dibangun. SEMUA data di bawah ini FIKTIF, bukan data personel TNI/Komcad sungguhan.
+// Seed data dummy — 60 anggota tersebar 12 provinsi (skala target FRD §3, 50-100 anggota).
+// SEMUA data di bawah ini FIKTIF, bukan data personel TNI/Komcad sungguhan.
 
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { computeSertifikasiStatus } from "../src/lib/sertifikasi";
 import { encryptSensitive, hashSensitive } from "../src/lib/crypto";
+import { computeReadinessScore } from "../src/lib/readiness";
 
 const prisma = new PrismaClient();
 
@@ -20,6 +20,10 @@ const PROVINSI = [
   { nama: "Sulawesi Selatan", kab: "Makassar", lat: -5.1477, lng: 119.4327 },
   { nama: "Bali", kab: "Denpasar", lat: -8.65, lng: 115.2167 },
   { nama: "Kalimantan Timur", kab: "Balikpapan", lat: -1.2379, lng: 116.8529 },
+  { nama: "Sumatera Selatan", kab: "Palembang", lat: -2.9909, lng: 104.7566 },
+  { nama: "Nusa Tenggara Barat", kab: "Mataram", lat: -8.5833, lng: 116.1167 },
+  { nama: "Kalimantan Barat", kab: "Pontianak", lat: -0.0263, lng: 109.3425 },
+  { nama: "Sulawesi Utara", kab: "Manado", lat: 1.4748, lng: 124.8421 },
 ];
 
 const NAMA_DEPAN = [
@@ -87,12 +91,12 @@ async function main() {
 
   console.log("Seeding anggota dummy...");
 
+  const JUMLAH_ANGGOTA = 60;
   const anggotaList = [];
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < JUMLAH_ANGGOTA; i++) {
     const prov = pick(PROVINSI, i);
     const nama = `${pick(NAMA_DEPAN, i)} ${pick(NAMA_BELAKANG, i + 3)}`;
     const statusSiaga = i % 5 === 0 ? "Tidak Tersedia" : i % 3 === 0 ? "Siaga" : "Aktif";
-    const readiness = 55 + ((i * 7) % 45);
     const nikPlain = nikDummy(i);
 
     const anggota = await prisma.anggota.create({
@@ -103,7 +107,7 @@ async function main() {
         nama,
         unitAsal: pick(UNIT, i),
         statusSiaga,
-        readinessScore: readiness,
+        readinessScore: 50, // placeholder — dihitung ulang sungguhan di akhir seed via computeReadinessScore()
         readinessUpdatedAt: new Date(),
         telepon: `08${(1000000000 + i).toString().slice(0, 10)}`,
         email: `${nama.toLowerCase().replace(/\s+/g, ".")}@komcad-demo.id`,
@@ -182,9 +186,9 @@ async function main() {
       namaPelatihan: pelatihan1.nama,
       lokasi: pelatihan1.lokasi,
       tanggal: pelatihan1.tanggal,
-      jumlahPeserta: 5,
+      jumlahPeserta: 8,
       peserta: {
-        create: anggotaList.slice(0, 5).map((a) => ({ anggotaId: a.id })),
+        create: anggotaList.slice(0, 8).map((a) => ({ anggotaId: a.id })),
       },
     },
   });
@@ -193,16 +197,16 @@ async function main() {
       namaPelatihan: pelatihan2.nama,
       lokasi: pelatihan2.lokasi,
       tanggal: pelatihan2.tanggal,
-      jumlahPeserta: 4,
+      jumlahPeserta: 6,
       peserta: {
-        create: anggotaList.slice(5, 9).map((a) => ({ anggotaId: a.id })),
+        create: anggotaList.slice(8, 14).map((a) => ({ anggotaId: a.id })),
       },
     },
   });
 
   // Riwayat Pelatihan personal (FR-06 menu Riwayat Pelatihan) — tercatat untuk peserta di atas
   console.log("Seeding riwayat pelatihan personal...");
-  for (const a of anggotaList.slice(0, 5)) {
+  for (const a of anggotaList.slice(0, 8)) {
     await prisma.pelatihan.create({
       data: {
         anggotaId: a.id,
@@ -212,7 +216,7 @@ async function main() {
       },
     });
   }
-  for (const a of anggotaList.slice(5, 9)) {
+  for (const a of anggotaList.slice(8, 14)) {
     await prisma.pelatihan.create({
       data: {
         anggotaId: a.id,
@@ -222,15 +226,17 @@ async function main() {
       },
     });
   }
-  // satu contoh belum lulus, untuk variasi tampilan status
-  await prisma.pelatihan.create({
-    data: {
-      anggotaId: anggotaList[9].id,
-      namaPelatihan: "Refreshment Evakuasi Vertikal",
-      tanggal: new Date(2026, 8, 20),
-      statusKelulusan: "Sedang Berjalan",
-    },
-  });
+  // beberapa contoh belum lulus, untuk variasi tampilan status
+  for (const a of anggotaList.slice(14, 17)) {
+    await prisma.pelatihan.create({
+      data: {
+        anggotaId: a.id,
+        namaPelatihan: "Refreshment Evakuasi Vertikal",
+        tanggal: new Date(2026, 8, 20),
+        statusKelulusan: "Sedang Berjalan",
+      },
+    });
+  }
 
   console.log("Seeding contoh Misi...");
   await prisma.misi.create({
@@ -284,6 +290,22 @@ async function main() {
       },
     },
   });
+
+  // Readiness Score dihitung sungguhan (bukan angka acak) dari sertifikasi/pelatihan/penugasan
+  // yang baru saja di-seed — lihat src/lib/readiness.ts untuk formula & catatan asumsinya.
+  console.log("Menghitung Readiness Score...");
+  const semuaAnggota = await prisma.anggota.findMany({
+    select: {
+      id: true,
+      sertifikasi: { select: { tanggalBerlaku: true } },
+      pelatihan: { select: { tanggal: true, statusKelulusan: true } },
+      penugasan: { select: { statusKehadiran: true } },
+    },
+  });
+  for (const a of semuaAnggota) {
+    const skor = computeReadinessScore(a);
+    await prisma.anggota.update({ where: { id: a.id }, data: { readinessScore: skor } });
+  }
 
   console.log("Seed selesai.");
 }

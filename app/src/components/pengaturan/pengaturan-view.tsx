@@ -81,7 +81,7 @@ export function PengaturanView({ pengaturan }: { pengaturan: PengaturanSistem })
           />
           <SettingsRow
             title="Reminder sertifikasi kedaluwarsa"
-            desc='H-30 sebelum masa berlaku habis — saat ini terwakili lewat status "Akan Kedaluwarsa" otomatis di UI, belum ada notifikasi terpisah yang dikirim'
+            desc="H-30 sebelum masa berlaku habis, dikirim sebagai Notifikasi ke Anggota — dicek ulang tiap kali Beranda Sisi Anggota atau Overview dibuka (bukan cron terjadwal, tapi selalu jalan begitu ada yang mengecek)"
             checked={pref.reminderSertifikasi}
             onChange={(v) => setPref((p) => ({ ...p, reminderSertifikasi: v }))}
           />
@@ -97,7 +97,7 @@ export function PengaturanView({ pengaturan }: { pengaturan: PengaturanSistem })
           <h3 className="mb-1 text-[12px] font-extrabold">Preferensi Peta</h3>
           <SettingsRow
             title="Tampilkan kepadatan wilayah otomatis"
-            desc="Heat-zone aktif saat zoom keluar — layer ini belum diimplementasikan di peta, preferensi belum berpengaruh"
+            desc='Layer "Kepadatan Wilayah" di panel Layers Overview aktif/nonaktif secara default saat halaman pertama dibuka — Operator tetap bisa toggle manual dari panel Layers kapan saja'
             checked={pref.petaHeatzone}
             onChange={(v) => setPref((p) => ({ ...p, petaHeatzone: v }))}
           />

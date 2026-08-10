@@ -57,6 +57,9 @@ export async function getKpiAnggota() {
   return { total, aktif, siaga, tidakTersedia };
 }
 
+/** Fetch satu anggota (bukan seluruh list) dengan shape yang sama persis dengan `AnggotaFull` —
+ * dipakai untuk drawer CV lengkap yang dibuka on-demand (mis. klik marker di peta Overview),
+ * supaya tidak perlu memuat `getAnggotaFullList()` (semua anggota) hanya untuk menampilkan satu. */
 export async function getAnggotaDetail(id: string) {
   const anggota = await prisma.anggota.findUnique({
     where: { id },
@@ -69,6 +72,7 @@ export async function getAnggotaDetail(id: string) {
         orderBy: { createdAt: "desc" },
         include: { misi: true },
       },
+      permintaanUbahData: { where: { status: "Menunggu" }, orderBy: { createdAt: "desc" } },
     },
   });
   if (!anggota) return null;
@@ -76,6 +80,7 @@ export async function getAnggotaDetail(id: string) {
   return {
     ...anggota,
     nik: decryptSensitive(anggota.nik),
+    permintaanUbahData: decryptPermintaan(anggota.permintaanUbahData),
     sertifikasi: anggota.sertifikasi.map((s) => ({
       ...s,
       status: computeSertifikasiStatus(s.tanggalBerlaku),

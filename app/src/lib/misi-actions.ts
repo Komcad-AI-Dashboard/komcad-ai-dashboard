@@ -6,11 +6,12 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/audit-log";
 import { ROLES, STATUS_KEHADIRAN, STATUS_MISI, URGENSI_MISI, JENIS_KEJADIAN_OPTIONS } from "@/lib/constants";
-import { findLokasi } from "@/lib/wilayah";
 import { getKandidatPool } from "@/lib/misi-data";
 import { generateAiMobilizationRecommendation, type AiRecommendation } from "@/lib/ai-mobilization";
 import { getPengaturanSistem } from "@/lib/pengaturan-data";
 import { deliverNotifikasiBatch } from "@/lib/notifikasi-delivery";
+import { recalculateReadinessScore } from "@/lib/readiness";
+import { geocodeAlamat, type GeocodeResult } from "@/lib/geocoding";
 
 async function requireOperatorPermission() {
   const session = await auth();
@@ -28,11 +29,17 @@ async function nextKodeMisi(): Promise<string> {
   return `${prefix}${String(count + 1).padStart(3, "0")}`;
 }
 
+/** Lokasi bisa dari dropdown Lokasi Referensi (`lib/wilayah.ts`) atau hasil pencarian alamat
+ * (Nominatim, `lib/geocoding.ts`) — keduanya diseragamkan client-side jadi {label, lat, lng} yang
+ * sama sebelum submit, jadi action ini tidak perlu tahu asalnya. Batas lat/lng divalidasi ulang di
+ * sini (defense-in-depth) sama seperti batas di `geocodeAlamat`, karena nilai ini datang dari client.*/
 const buatMisiSchema = z.object({
   pemberiPerintah: z.string().min(1).default("Operator Komcad"),
   jenisKejadian: z.enum(JENIS_KEJADIAN_OPTIONS),
   urgensi: z.enum([URGENSI_MISI.KRITIS, URGENSI_MISI.TINGGI, URGENSI_MISI.SEDANG]),
-  lokasiKey: z.string().min(1),
+  lokasiLabel: z.string().min(1),
+  lokasiLat: z.coerce.number().min(-11.5).max(7),
+  lokasiLng: z.coerce.number().min(93.5).max(141.5),
   deskripsiMisi: z.string().min(1).default("(deskripsi belum diisi)"),
   kebutuhanPersonel: z.coerce.number().int().min(1).max(50).default(5),
 });
@@ -63,9 +70,7 @@ export async function generateMisiAction(input: unknown): Promise<GenerateMisiRe
   const parsed = buatMisiSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Data tidak valid" };
   const data = parsed.data;
-
-  const lokasi = findLokasi(data.lokasiKey);
-  if (!lokasi) return { error: "Lokasi tidak dikenali." };
+  const lokasi = { label: data.lokasiLabel, lat: data.lokasiLat, lng: data.lokasiLng };
 
   const pengaturan = await getPengaturanSistem();
   const kandidatPool = await getKandidatPool(lokasi.lat, lokasi.lng, 15, pengaturan.aiRadiusKm);
@@ -194,7 +199,7 @@ export async function closeMisiAction(misiId: string, hasilEvaluasi: string): Pr
   const { session, error } = await requireOperatorPermission();
   if (error) return { error };
 
-  const misi = await prisma.misi.findUnique({ where: { id: misiId } });
+  const misi = await prisma.misi.findUnique({ where: { id: misiId }, include: { penugasan: { select: { anggotaId: true } } } });
   if (!misi) return { error: "Misi tidak ditemukan." };
   if (misi.status !== STATUS_MISI.DIMOBILISASI) return { error: "Misi ini belum dimobilisasi." };
 
@@ -210,6 +215,10 @@ export async function closeMisiAction(misiId: string, hasilEvaluasi: string): Pr
       data: { statusKehadiran: STATUS_KEHADIRAN.SELESAI },
     }),
   ]);
+
+  // Readiness Score anggota terlibat berubah karena riwayat kehadiran mereka baru saja bertambah.
+  const anggotaIdUnik = [...new Set(misi.penugasan.map((p) => p.anggotaId))];
+  await Promise.all(anggotaIdUnik.map((id) => recalculateReadinessScore(id)));
 
   await writeAuditLog({
     userId: session!.user.id,
@@ -235,10 +244,11 @@ export async function updateKehadiranAction(penugasanId: string, status: string)
     return { error: "Status kehadiran tidak valid." };
   }
 
-  await prisma.penugasan.update({
+  const penugasan = await prisma.penugasan.update({
     where: { id: penugasanId },
     data: { statusKehadiran: status },
   });
+  await recalculateReadinessScore(penugasan.anggotaId);
 
   await writeAuditLog({
     userId: session!.user.id,
@@ -250,4 +260,13 @@ export async function updateKehadiranAction(penugasanId: string, status: string)
 
   revalidatePath("/misi");
   return { error: null };
+}
+
+/** Cari koordinat dari alamat/nama lokasi bebas teks (Nominatim) untuk field Lokasi di form Buat
+ * Misi — alternatif dari dropdown Lokasi Referensi. Dipanggil per klik tombol "Cari Lokasi", bukan
+ * per-keystroke. */
+export async function geocodeLokasiAction(query: string): Promise<{ result: GeocodeResult | null; error: string | null }> {
+  const { error } = await requireOperatorPermission();
+  if (error) return { result: null, error };
+  return geocodeAlamat(query);
 }
