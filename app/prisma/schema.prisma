@@ -1,14 +1,16 @@
-// AI Komcad — Prisma schema
-// Dev: SQLite (zero-setup). Prod: ganti provider ke "postgresql" + DATABASE_URL Postgres (lihat CLAUDE.md §2).
-// SQLite tidak mendukung native enum Prisma, jadi status/role dipakai sebagai String
-// dengan nilai yang divalidasi di layer aplikasi (Zod) — lihat src/lib/constants.ts.
+// SIAGA — Prisma schema
+// Provider: PostgreSQL (Neon), sejak deploy ke Vercel. Sebelumnya SQLite lokal selama dev
+// tanpa akses cloud — lihat CLAUDE.md §2 & app/README.md bagian Deployment untuk riwayatnya.
+// Status/role tetap dipakai sebagai String (bukan native enum Prisma) supaya schema ini portable
+// kalau provider Postgres-nya diganti lagi nanti — nilainya divalidasi di layer aplikasi (Zod),
+// lihat src/lib/constants.ts.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

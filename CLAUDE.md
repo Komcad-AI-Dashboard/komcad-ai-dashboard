@@ -35,7 +35,7 @@ Satu aplikasi Next.js (bukan monorepo terpisah) — Command Center dan Sisi Angg
 | Styling | Tailwind CSS, custom theme dari token warna FRD §10.2 | Mockup sudah pakai CSS variable yang jadi Tailwind theme 1:1 |
 | Komponen UI | Radix primitives (dialog, drawer/sheet, tabs, dropdown) dibungkus custom, gaya "gelap taktis" | Aksesibilitas (WCAG AA per NFR di FRD §10.8) tanpa menulis primitive dari nol |
 | Peta | react-leaflet + Leaflet.js, tile OpenStreetMap + filter CSS tactical dark | FRD §10.5 eksplisit minta OpenStreetMap + filter CSS, bukan provider lain |
-| ORM & DB | Prisma. **Dev: SQLite** (`prisma/dev.db`, zero-setup). **Prod: PostgreSQL** | Mesin dev ini tidak ada Docker/Postgres terpasang; skema Prisma portable, migrasi provider ke Postgres tinggal ganti `provider` + `DATABASE_URL` saat rilis. Hindari fitur khusus Postgres (native enum, full-text search) di schema — pakai `String` + validasi Zod supaya tetap portable. |
+| ORM & DB | Prisma + **PostgreSQL (Neon)**, dev dan deployment publik sama-sama Postgres, branch/project Neon terpisah untuk masing-masing | Sebelum deploy (Fase 15+) dev sempat pakai SQLite lokal karena mesin dev ini tidak ada Docker/Postgres terpasang — provider diganti sekali secara permanen saat pertama kali deploy ke Vercel, lihat `app/README.md` bagian Deployment. Hindari fitur khusus Postgres (native enum, full-text search) di schema — tetap pakai `String` + validasi Zod, bukan karena portabilitas provider lagi dibutuhkan, tapi supaya diff schema tetap kecil & mudah di-review. |
 | Auth | Auth.js (NextAuth v5), Credentials provider + JWT session, RBAC middleware | 4 role eksplisit di FRD §4: Super Admin, Operator Komcad, Analis/Evaluator, Anggota Komcad |
 | AI Mobilization | OpenAI API (`openai` SDK), server-side only, dipanggil dari Server Action/Route Handler | FRD FR-09–FR-11: skor + alasan (explainability) + ETA, dikutip dari data anggota riil di DB (bukan LLM mengarang kandidat — LLM meranking & menjelaskan kandidat yang sudah difilter dari DB) |
 | AI Chat | OpenAI API, grounded ke DB (query dulu → susun context → LLM merangkai jawaban bahasa natural) | FRD FR-30/FR-31 mensyaratkan jawaban konsisten dengan data Analitik & Manajemen Misi — tidak boleh LLM freestyle |
@@ -122,7 +122,7 @@ Lihat `app/.env.example`. Isi nyata ada di `app/.env` (**gitignored, jangan pern
 
 ```bash
 npm install
-npm run db:push       # sync Prisma schema ke SQLite dev.db
+npm run db:push       # sync Prisma schema ke Postgres (Neon dev branch) — lihat DATABASE_URL di .env
 npm run db:seed       # isi data dummy
 npm run dev           # jalankan di http://localhost:3000
 npm run lint

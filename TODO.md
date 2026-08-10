@@ -171,10 +171,20 @@ User menilai tampilan sebelumnya "basic, plain, membosankan" dan minta 3 konsep 
   - **Bug ditemukan & diperbaiki saat verifikasi**: pemulihan tinggi dari `localStorage` mulanya ditaruh di dalam updater `setBottomHeight` bersama flag "sudah dipulihkan" — updater jadi tidak murni, dan React StrictMode yang sengaja memanggil updater dua kali membuang hasil pemulihannya, jadi tinggi selalu balik ke default setiap reload. Diperbaiki dengan membaca `localStorage` di luar updater
   - Diverifikasi lewat drag sungguhan: 298px → tarik atas 160px → 458px → tarik bawah 300px → 158px → reload → tetap 158px → 2× panah atas → 206px
 
+## Fase 16 — Persiapan Deployment: Vercel + Neon Postgres (di luar 13 fase rencana awal, atas permintaan user)
+User minta cara deploy ke cloud supaya dashboard bisa diakses orang lain. Ditawarkan 3 opsi platform (Vercel+Neon / Railway / VPS Docker sendiri), user memilih **Vercel + Neon Postgres**. Ini demo publik dengan data dummy yang sudah ada — BUKAN rilis produksi dengan data personel TNI/Komcad sungguhan (dua hal itu sengaja dipisah eksplisit di README supaya tidak tertukar).
+- [x] `prisma/schema.prisma`: provider `sqlite` → **`postgresql`** secara permanen. Tidak ada fitur khusus SQLite yang perlu diportasi (di-grep dulu — nol `$queryRaw`/`$executeRaw`/sintaks SQLite di seluruh kode)
+- [x] Dev lokal ikut pindah ke Postgres (bukan dual-provider) — konsekuensi langsung dari keputusan ini: `dev.db` SQLite lokal jadi tidak terpakai lagi, `.env` perlu `DATABASE_URL` Postgres baru (disarankan branch Neon terpisah untuk dev vs demo publik supaya `--force-reset` saat iterasi lokal tidak pernah menyentuh data yang sedang diakses orang lain)
+- [x] `package.json`: `postinstall: prisma generate` (Vercel install fresh `node_modules` tiap build, Prisma Client hasil generate tidak ikut ter-commit) + script baru `db:migrate`/`db:migrate:deploy` sebagai pembeda eksplisit dev (`migrate dev`) vs prod (`migrate deploy`)
+- [x] `app/README.md` ditulis ulang bagian Deployment: dipisah tegas jadi 2 sub-bagian — "Demo Publik: Vercel + Neon Postgres" (langkah konkret provisioning Neon, root directory `app` di Vercel, env var per environment, override Build Command jadi `prisma generate && prisma migrate deploy && next build` supaya migrasi jalan otomatis tiap deploy, migrasi awal manual sekali dari lokal) dan "Rilis Produksi Sungguhan" (checklist lama, tetap belum dilakukan)
+- [x] `CLAUDE.md` §2 (tabel tech stack) & §8 (perintah dev) disamakan ke keadaan baru — dev bukan lagi SQLite
+- [x] Diverifikasi: `npx prisma generate` sukses terhadap schema provider baru (nol koneksi DB dibutuhkan untuk ini), `tsc --noEmit` + `npm run lint` + `npm run build` bersih tanpa perlu Postgres sungguhan (seluruh route selain `/` & `/login` sudah `ƒ Dynamic`, tidak di-query saat build)
+- [ ] **Belum dilakukan** (butuh akun cloud milik user, di luar kemampuan agent): buat project Neon (branch dev + production), buat project Vercel + hubungkan repo GitHub, isi environment variables di Vercel, jalankan `prisma migrate deploy` + `db:seed` awal ke Neon production, verifikasi URL publik bisa diakses & login dengan akun demo — semua langkah konkretnya sudah ditulis di `app/README.md`
+
 ---
 
 ## Backlog / Perlu Klarifikasi User (jangan asumsikan sendiri saat sampai sini)
 - Formula final Readiness Score & bobot AI Mobilization — **Readiness Score kini punya formula nyata** (Fase 14, `lib/readiness.ts`) tapi tetap berstatus ASUMSI belum divalidasi user, sama seperti bobot AI Mobilization
 - Provider notifikasi SMS/push produksi
 - Kebijakan retensi data pasca-nonaktif keanggotaan
-- Target hosting/deployment (Vercel? on-prem Kemenhan/TNI?) — relevan karena data ini sensitif secara keamanan nasional
+- Target hosting **untuk data personel sungguhan** (Vercel tetap? on-prem Kemenhan/TNI?) — relevan karena data ini sensitif secara keamanan nasional. **Untuk demo publik dengan data dummy, ini sudah diputuskan: Vercel + Neon Postgres (Fase 16)** — jangan tertukar dua konteks ini

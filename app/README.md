@@ -9,21 +9,24 @@ Dashboard AI untuk Komponen Cadangan (Komcad) di bawah Kemenhan/Mabes TNI. Aplik
 ## Prasyarat
 
 - Node.js 20+ dan npm
-- Tidak butuh Docker/Postgres untuk dev — database dev pakai SQLite file lokal (zero-setup)
+- Database Postgres (Neon direkomendasikan, tier gratis cukup untuk dev & demo) — sejak deploy ke Vercel, dev **dan** prod sama-sama Postgres, bukan lagi SQLite lokal. Pakai branch/project Neon terpisah untuk dev vs prod supaya data uji tidak bercampur
 
 ## Setup Pertama Kali
 
 ```bash
 npm install
 cp .env.example .env
-# edit .env: isi OPENAI_API_KEY (untuk AI Mobilization & AI Chat) dan ENCRYPTION_KEY
+# edit .env: isi DATABASE_URL (connection string Neon — dashboard Neon > Connect > Prisma),
+# OPENAI_API_KEY (AI Mobilization & AI Chat), dan ENCRYPTION_KEY
 # generate ENCRYPTION_KEY dengan: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 # generate AUTH_SECRET dengan:    node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 
-npm run db:push    # sync Prisma schema -> SQLite dev.db
-npm run db:seed    # isi 20 anggota dummy + 4 user demo + 3 contoh Misi
-npm run dev         # http://localhost:3000
+npx prisma migrate dev --name init   # bikin tabel di Postgres + riwayat migrasi (sekali di awal)
+npm run db:seed                       # isi 60 anggota dummy + 4 user demo + 3 contoh Misi
+npm run dev                            # http://localhost:3000
 ```
+
+`npm run db:push` (tanpa riwayat migrasi) masih ada dan valid untuk iterasi schema cepat saat dev, tapi begitu schema dianggap stabil, tetap butuh `prisma migrate dev` supaya migrasinya bisa dipakai `migrate deploy` di prod (lihat bagian Deployment).
 
 Kalau `localhost:3000` tidak resolve di mesin kamu, coba `http://127.0.0.1:3000` — tapi perhatikan: Next dev di Next.js 16 memblokir cross-origin dev resource secara default untuk origin yang bukan `localhost` (lihat warning `allowedDevOrigins` di terminal). Paling aman selalu akses lewat `localhost`, bukan `127.0.0.1`, kecuali kamu tambahkan origin itu ke `allowedDevOrigins` di `next.config.ts`.
 
@@ -61,7 +64,7 @@ npx prisma db push --force-reset
 npm run db:seed
 ```
 
-`--force-reset` **menghapus semua data** di `dev.db`. Kalau kamu menjalankan ini lewat AI coding agent (Claude Code dkk), agent akan/harus minta konfirmasi eksplisit dulu sebelum menjalankan — ini bukan perintah yang aman dijalankan tanpa sadar. Untuk data produksi (Postgres), **jangan pernah** pakai `--force-reset` — pakai `prisma migrate` (lihat bagian Deployment di bawah).
+`--force-reset` **menghapus semua data** di database yang ditunjuk `DATABASE_URL` saat itu. Kalau kamu menjalankan ini lewat AI coding agent (Claude Code dkk), agent akan/harus minta konfirmasi eksplisit dulu sebelum menjalankan — ini bukan perintah yang aman dijalankan tanpa sadar. **Pastikan `.env` menunjuk ke branch/project Neon dev, bukan yang dipakai deployment publik** — kalau `DATABASE_URL` kebetulan menunjuk ke database demo yang sedang diakses orang lain, perintah ini akan menghapus data mereka juga. Untuk database yang sudah dipakai (demo publik atau produksi sungguhan), **jangan pernah** pakai `--force-reset` — pakai `prisma migrate deploy` (lihat bagian Deployment di bawah).
 
 ## Testing
 
@@ -103,35 +106,80 @@ Lihat `.env.example` untuk daftar lengkap dengan komentar. Ringkasan:
 
 | Variable | Untuk apa |
 |---|---|
-| `DATABASE_URL` | Prisma — `file:./dev.db` untuk dev, connection string Postgres untuk prod |
-| `AUTH_SECRET` | Auth.js (NextAuth) — tanda tangan JWT session |
-| `NEXTAUTH_URL` | Base URL aplikasi (dipakai Auth.js untuk redirect callback) |
+| `DATABASE_URL` | Prisma — connection string Postgres (Neon). Pakai branch/project **berbeda** untuk dev lokal vs deployment publik |
+| `AUTH_SECRET` | Auth.js (NextAuth) — tanda tangan JWT session. **Generate nilai baru khusus untuk tiap environment** (dev/demo publik/prod), jangan pakai ulang |
+| `NEXTAUTH_URL` | Base URL aplikasi (dipakai Auth.js untuk redirect callback). Di Vercel: URL deployment sungguhan (mis. `https://siaga-xxx.vercel.app`), bukan `localhost` |
 | `OPENAI_API_KEY` | AI Mobilization (FR-09/10) & AI Chat (FR-30/31). Kalau kosong/invalid, kedua fitur otomatis jatuh ke fallback deterministik — **tidak pernah blank/error**, cuma kehilangan kualitas ranking/jawaban natural |
 | `ENCRYPTION_KEY` | Enkripsi at-rest NIK (NFR-04), 32 byte hex. **Wajib diisi** — server akan throw runtime error saat menyentuh data NIK kalau kosong |
 
 ## Deployment
 
-Lihat [`PROGRESS.md`](../PROGRESS.md) bagian "Fase 12/13" dan [`../TODO.md`](../TODO.md) bagian Backlog untuk keputusan yang masih terbuka (target hosting, provider SMS/push produksi). Ringkasan teknis migrasi:
+Ada dua skenario berbeda di bawah ini — **jangan tertukar**:
 
-### SQLite (dev) → PostgreSQL (prod)
+1. **Demo publik** (bagian ini) — deploy dengan data dummy yang sudah ada, supaya orang lain bisa membuka & mencoba dashboard-nya. Ini yang sedang berjalan sejak Fase 15+.
+2. **Rilis produksi sungguhan** dengan data personel TNI/Komcad asli — keputusan terpisah yang jauh lebih berat (klasifikasi data, hosting, retensi), lihat sub-bagian "Rilis Produksi Sungguhan" di bawah. **Belum dilakukan, dan tidak boleh diasumsikan sendiri kapan itu terjadi.**
 
-1. Provisikan database Postgres, dapatkan connection string
-2. Ubah `prisma/schema.prisma`: `datasource db { provider = "postgresql" ... }` (dari `"sqlite"`)
-3. Set `DATABASE_URL` di environment prod ke connection string Postgres
-4. Jalankan `npx prisma migrate deploy` (bukan `db push`) untuk lingkungan prod — `migrate` menghasilkan riwayat migrasi yang bisa direview, `db push` cocok untuk dev tapi tidak untuk prod
-5. Schema sengaja portable (tidak pakai fitur khusus Postgres seperti native enum) supaya migrasi ini tidak butuh perubahan besar di skema — lihat `CLAUDE.md` §2
+### Demo Publik: Vercel + Neon Postgres
 
-### Yang Perlu Diputuskan Sebelum Rilis (jangan diasumsikan sendiri)
+Schema (`prisma/schema.prisma`) sudah di-set ke provider `postgresql`. Dev lokal sekarang juga memakai Postgres (bukan lagi SQLite) — lihat "Setup Pertama Kali" di atas.
 
-- Target hosting (Vercel? on-prem Kemenhan/TNI? — relevan karena data ini sensitif keamanan nasional)
+**1. Provisikan database (Neon)**
+- Buat akun di [neon.tech](https://neon.tech) (free tier cukup untuk demo)
+- Buat project baru, misal nama `siaga`
+- Di dalam project itu, buat **dua branch/database terpisah**: satu untuk dev lokal (`dev`), satu untuk demo publik (`main`/`production`) — supaya `prisma db push --force-reset` yang dijalankan saat iterasi lokal tidak pernah menyentuh data yang sedang diakses orang lain
+- Ambil connection string tiap branch dari dashboard Neon: **Connect → pilih "Prisma"** (formatnya sudah termasuk `?sslmode=require` yang dibutuhkan Prisma)
+
+**2. Push kode ke GitHub**
+
+Repo ini sudah terhubung ke `https://github.com/arsyiadlani/komcad-ai-dashboard.git` — pastikan branch `main` sudah ter-push (lihat riwayat commit terakhir).
+
+**3. Buat project di Vercel**
+- Buat akun di [vercel.com](https://vercel.com), **Add New Project**, import repo `komcad-ai-dashboard` dari GitHub
+- **Root Directory**: set ke `app` (kode Next.js ada di subfolder `app/`, bukan di root repo) — ini wajib diisi manual, Vercel tidak selalu mendeteksinya otomatis
+- Framework Preset akan otomatis terdeteksi "Next.js" — biarkan default
+
+**4. Set Environment Variables** (Project Settings → Environment Variables, isi untuk Production)
+
+| Variable | Nilai |
+|---|---|
+| `DATABASE_URL` | Connection string branch Neon `production` (dari langkah 1) |
+| `AUTH_SECRET` | Generate baru: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` — **jangan pakai nilai dev** |
+| `NEXTAUTH_URL` | Isi setelah deploy pertama berhasil dan kamu tahu domain Vercel-nya (mis. `https://siaga-xxx.vercel.app`), lalu redeploy |
+| `OPENAI_API_KEY` | Key OpenAI kamu. Kalau belum ada/mau hemat kuota untuk demo publik, boleh dikosongkan — AI Mobilization & AI Chat otomatis jatuh ke fallback deterministik, tidak pernah blank/error |
+| `ENCRYPTION_KEY` | Generate baru: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` — **jangan pakai nilai dev** |
+
+**5. Set Build Command supaya migrasi jalan otomatis tiap deploy**
+
+Di Project Settings → Build & Development Settings → Build Command, override jadi:
+
+```
+prisma generate && prisma migrate deploy && next build
+```
+
+(`postinstall: prisma generate` di `package.json` sebenarnya sudah menjalankan generate setelah `npm install`, override ini menambahkan `migrate deploy` supaya perubahan schema di commit berikutnya otomatis diterapkan ke Postgres prod tanpa langkah manual.)
+
+**6. Deploy**
+
+Klik Deploy. Build pertama akan gagal kalau tabel belum ada di database Neon — jalankan migrasi awal sekali dari mesin lokal dulu, dengan `DATABASE_URL` di `.env` **untuk sesaat** diarahkan ke branch production:
+
+```bash
+npx prisma migrate deploy   # terapkan migrasi ke Neon production
+npm run db:seed              # isi 60 anggota dummy + 4 user demo + 3 contoh Misi
+```
+
+Lalu kembalikan `.env` lokal ke branch `dev`, dan trigger deploy lagi di Vercel (atau push commit kosong).
+
+**7. Verifikasi**
+
+Buka URL Vercel-nya, login dengan salah satu akun demo (lihat bagian "Akun Demo" di atas, password `komcad123`), pastikan Overview memuat peta & data. Kalau login gagal dengan error terkait host, cek `NEXTAUTH_URL` sudah diisi domain Vercel yang benar dan sudah redeploy.
+
+### Rilis Produksi Sungguhan (belum dilakukan — jangan diasumsikan sendiri)
+
+Ini skenario berbeda dari demo publik di atas: data personel TNI/Komcad **asli**, bukan dummy. Yang masih perlu diputuskan sebelum ini terjadi (lihat `TODO.md` bagian Backlog):
+
+- Target hosting final — tetap Vercel, atau on-prem Kemenhan/TNI? (relevan karena sensitivitas keamanan nasional, bukan cuma teknis)
 - Provider notifikasi SMS/push produksi (saat ini notifikasi cuma tersimpan sebagai record in-app, channel "Aplikasi", dengan jalur fallback "SMS (Simulasi)" — lihat NFR-07 di `notifikasi-delivery.ts`)
 - Kebijakan retensi data pasca-nonaktif keanggotaan
+- Review ulang formula Readiness Score & bobot AI Mobilization — masih berstatus asumsi (FRD §11), belum divalidasi
 - Rotasi `ENCRYPTION_KEY`: kalau key ini berubah, seluruh NIK yang sudah terenkripsi dengan key lama tidak bisa didekripsi lagi — butuh proses re-encrypt terjadwal (decrypt-dengan-key-lama → encrypt-dengan-key-baru) sebelum key lama dibuang, bukan sekadar ganti env var
-
-### Checklist Sebelum Rilis Produksi
-
-- [ ] `ENCRYPTION_KEY` & `AUTH_SECRET` di-generate baru untuk prod (jangan pakai nilai dev)
-- [ ] `OPENAI_API_KEY` prod dengan kuota memadai
-- [ ] `prisma migrate deploy` (bukan `db push --force-reset`) untuk setup schema prod
-- [ ] Seed data dummy **tidak** dijalankan di prod — buat proses onboarding data anggota sungguhan yang terpisah
-- [ ] Review ulang formula Readiness Score & bobot AI Mobilization (masih placeholder — lihat `PROGRESS.md`)
+- Seed data dummy **tidak boleh** dijalankan di database ini — perlu proses onboarding data anggota sungguhan yang terpisah dan diverifikasi
