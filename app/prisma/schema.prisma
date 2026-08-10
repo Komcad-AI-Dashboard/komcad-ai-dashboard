@@ -39,7 +39,8 @@ model User {
 model Anggota {
   id                String    @id @default(cuid())
   kodeAnggota       String    @unique // ID tampilan, format ANG-00001 (beda dari primary key internal)
-  nik               String    @unique // 16 digit, tervalidasi di aplikasi (FR-01)
+  nik               String // NFR-04: terenkripsi AES-256-GCM at-rest (lib/crypto.ts), IV acak per baris jadi TIDAK bisa @unique langsung
+  nikHash           String    @unique // HMAC-SHA256(nik) deterministik — dipakai untuk cek duplikat & lookup, bukan buat dekripsi
   nama              String
   fotoUrl           String? // null = pakai placeholder siluet SVG di UI (FRD §10.6)
   unitAsal          String
@@ -232,6 +233,7 @@ model Notifikasi {
   pesan       String
   channel     String   @default("Aplikasi")
   status      String   @default("Terkirim")
+  deliveryAttempts Int @default(1) // NFR-07: jumlah percobaan tulis notifikasi; >1 berarti retry sempat terjadi
   responsTipe String? // Konfirmasi | Tolak
   responsAlasan String?
   createdAt   DateTime @default(now())
@@ -250,8 +252,8 @@ model PermintaanUbahData {
   anggotaId      String
   anggota        Anggota   @relation(fields: [anggotaId], references: [id], onDelete: Cascade)
   field          String // "nik" — bisa diperluas ke field sensitif lain di masa depan
-  nilaiLama      String
-  nilaiBaru      String
+  nilaiLama      String // NFR-04: terenkripsi AES-256-GCM at-rest kalau field == "nik" (lib/crypto.ts)
+  nilaiBaru      String // idem
   status         String    @default("Menunggu") // Menunggu | Disetujui | Ditolak
   alasanTolak    String?
   diprosesOlehId String?

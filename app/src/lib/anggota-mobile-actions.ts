@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { writeAuditLog } from "@/lib/audit-log";
 import { STATUS_KEHADIRAN, STATUS_SIAGA } from "@/lib/constants";
 import { requireSelfAnggotaId } from "@/lib/anggota-mobile-data";
+import { decryptSensitive, encryptSensitive, hashSensitive } from "@/lib/crypto";
 
 type ActionState = { error: string | null };
 
@@ -40,8 +41,9 @@ export async function updateProfilSelfAction(input: unknown): Promise<ActionStat
   if (!anggota) return { error: "Data Anggota tidak ditemukan.", nikMenunggu: false };
 
   let nikMenunggu = false;
-  if (data.nik !== anggota.nik) {
-    const nikDipakai = await prisma.anggota.findUnique({ where: { nik: data.nik } });
+  const nikSaatIni = decryptSensitive(anggota.nik);
+  if (data.nik !== nikSaatIni) {
+    const nikDipakai = await prisma.anggota.findUnique({ where: { nikHash: hashSensitive(data.nik) } });
     if (nikDipakai) return { error: "NIK sudah terdaftar untuk anggota lain.", nikMenunggu: false };
 
     const existingRequest = await prisma.permintaanUbahData.findFirst({
@@ -50,11 +52,16 @@ export async function updateProfilSelfAction(input: unknown): Promise<ActionStat
     if (existingRequest) {
       await prisma.permintaanUbahData.update({
         where: { id: existingRequest.id },
-        data: { nilaiBaru: data.nik },
+        data: { nilaiBaru: encryptSensitive(data.nik) },
       });
     } else {
       await prisma.permintaanUbahData.create({
-        data: { anggotaId: self.anggotaId, field: "nik", nilaiLama: anggota.nik, nilaiBaru: data.nik },
+        data: {
+          anggotaId: self.anggotaId,
+          field: "nik",
+          nilaiLama: encryptSensitive(nikSaatIni),
+          nilaiBaru: encryptSensitive(data.nik),
+        },
       });
     }
     nikMenunggu = true;

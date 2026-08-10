@@ -6,7 +6,8 @@ import { Badge, statusSiagaColor, statusSertifikasiColor } from "@/components/ui
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { STATUS_SIAGA, type Role, ROLES } from "@/lib/constants";
-import { calcUsia, type AnggotaFull } from "@/lib/anggota-data";
+import type { AnggotaFull } from "@/lib/anggota-data";
+import { calcUsia } from "@/lib/usia";
 import { updateStatusSiagaAction, deactivateAnggotaAction } from "@/lib/anggota-actions";
 import { approvePermintaanNikAction, rejectPermintaanNikAction } from "@/lib/permintaan-actions";
 import { AvatarPlaceholder } from "./avatar-placeholder";

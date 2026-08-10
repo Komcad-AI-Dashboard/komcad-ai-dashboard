@@ -5,6 +5,7 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { computeSertifikasiStatus } from "../src/lib/sertifikasi";
+import { encryptSensitive, hashSensitive } from "../src/lib/crypto";
 
 const prisma = new PrismaClient();
 
@@ -92,11 +93,13 @@ async function main() {
     const nama = `${pick(NAMA_DEPAN, i)} ${pick(NAMA_BELAKANG, i + 3)}`;
     const statusSiaga = i % 5 === 0 ? "Tidak Tersedia" : i % 3 === 0 ? "Siaga" : "Aktif";
     const readiness = 55 + ((i * 7) % 45);
+    const nikPlain = nikDummy(i);
 
     const anggota = await prisma.anggota.create({
       data: {
         kodeAnggota: `ANG-${String(i + 1).padStart(5, "0")}`,
-        nik: nikDummy(i),
+        nik: encryptSensitive(nikPlain),
+        nikHash: hashSensitive(nikPlain),
         nama,
         unitAsal: pick(UNIT, i),
         statusSiaga,

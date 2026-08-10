@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Phone, Mail, MessageCircle, AtSign, Link2, MapPin } from "lucide-react";
-import { calcUsia } from "@/lib/anggota-data";
+import { calcUsia } from "@/lib/usia";
 import { updateProfilSelfAction, updateLokasiSelfAction } from "@/lib/anggota-mobile-actions";
 import { AvatarPlaceholder } from "@/components/anggota/avatar-placeholder";
 import type { SelfProfil } from "@/lib/anggota-mobile-data";

@@ -10,6 +10,7 @@ import { findLokasi } from "@/lib/wilayah";
 import { getKandidatPool } from "@/lib/misi-data";
 import { generateAiMobilizationRecommendation, type AiRecommendation } from "@/lib/ai-mobilization";
 import { getPengaturanSistem } from "@/lib/pengaturan-data";
+import { deliverNotifikasiBatch } from "@/lib/notifikasi-delivery";
 
 async function requireOperatorPermission() {
   const session = await auth();
@@ -154,44 +155,38 @@ export async function approveMisiAction(misiId: string): Promise<ApproveMisiResu
 
   const pengaturan = await getPengaturanSistem();
 
-  await prisma.$transaction([
-    prisma.misi.update({
-      where: { id: misiId },
-      data: { status: STATUS_MISI.DIMOBILISASI, dimobilisasiAt: new Date() },
-    }),
-    // FR-13 / preferensi "Notifikasi Misi baru" (menu Pengaturan) — kalau dimatikan Admin, Misi
-    // tetap dimobilisasi tapi Notifikasi tidak dibuat.
-    ...(pengaturan.notifMisiBaru
-      ? [
-          prisma.notifikasi.createMany({
-            data: misi.penugasan.map((p) => ({
-              anggotaId: p.anggotaId,
-              misiId: misi.id,
-              judul: `Mobilisasi ${misi.kodeMisi}`,
-              pesan: `Anda direkomendasikan untuk Misi ${misi.jenisKejadian} di ${misi.lokasi}. Segera konfirmasi kehadiran. ETA perkiraan ${p.etaMenit ?? "-"} menit.`,
-              channel: "Aplikasi",
-              status: "Terkirim",
-            })),
-          }),
-        ]
-      : []),
-  ]);
+  await prisma.misi.update({
+    where: { id: misiId },
+    data: { status: STATUS_MISI.DIMOBILISASI, dimobilisasiAt: new Date() },
+  });
+
+  // FR-13 / preferensi "Notifikasi Misi baru" (menu Pengaturan) — kalau dimatikan Admin, Misi tetap
+  // dimobilisasi tapi Notifikasi tidak dibuat. Dikirim di luar transaksi status Misi (NFR-07: retry +
+  // fallback per-notifikasi lewat deliverNotifikasiBatch) supaya satu kandidat gagal tidak membatalkan
+  // perubahan status Misi yang sudah pasti terjadi.
+  const jumlahDinotifikasi = pengaturan.notifMisiBaru
+    ? await deliverNotifikasiBatch(
+        misi.penugasan.map((p) => ({
+          anggotaId: p.anggotaId,
+          misiId: misi.id,
+          judul: `Mobilisasi ${misi.kodeMisi}`,
+          pesan: `Anda direkomendasikan untuk Misi ${misi.jenisKejadian} di ${misi.lokasi}. Segera konfirmasi kehadiran. ETA perkiraan ${p.etaMenit ?? "-"} menit.`,
+        }))
+      )
+    : 0;
 
   await writeAuditLog({
     userId: session!.user.id,
     aksi: "APPROVE_MISI",
     entitas: "Misi",
     entitasId: misiId,
-    metadata: {
-      kodeMisi: misi.kodeMisi,
-      jumlahDinotifikasi: pengaturan.notifMisiBaru ? misi.penugasan.length : 0,
-    },
+    metadata: { kodeMisi: misi.kodeMisi, jumlahDinotifikasi },
   });
 
   revalidatePath("/misi");
   revalidatePath("/ai-mobilization");
   revalidatePath("/overview");
-  return { error: null, jumlahDinotifikasi: pengaturan.notifMisiBaru ? misi.penugasan.length : 0 };
+  return { error: null, jumlahDinotifikasi };
 }
 
 /** FR-16: penutupan Misi + evaluasi -> otomatis masuk Riwayat Mobilisasi (Misi berstatus Selesai). */

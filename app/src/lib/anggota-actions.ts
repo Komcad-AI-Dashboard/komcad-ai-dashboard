@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/audit-log";
 import { ROLES, STATUS_SIAGA } from "@/lib/constants";
+import { encryptSensitive, hashSensitive } from "@/lib/crypto";
 
 const anggotaFormSchema = z.object({
   nik: z.string().regex(/^\d{16}$/, "NIK harus 16 digit angka"),
@@ -41,8 +42,9 @@ export async function createAnggotaAction(
     return { error: parsed.error.issues[0]?.message ?? "Data tidak valid" };
   }
   const data = parsed.data;
+  const nikHash = hashSensitive(data.nik);
 
-  const existing = await prisma.anggota.findUnique({ where: { nik: data.nik } });
+  const existing = await prisma.anggota.findUnique({ where: { nikHash } });
   if (existing) return { error: "NIK sudah terdaftar untuk anggota lain." };
 
   const lastKode = await prisma.anggota.findFirst({
@@ -55,7 +57,8 @@ export async function createAnggotaAction(
   const anggota = await prisma.anggota.create({
     data: {
       kodeAnggota,
-      nik: data.nik,
+      nik: encryptSensitive(data.nik),
+      nikHash,
       nama: data.nama,
       unitAsal: data.unitAsal,
       telepon: data.telepon || null,
@@ -95,14 +98,16 @@ export async function updateAnggotaAction(
     return { error: parsed.error.issues[0]?.message ?? "Data tidak valid" };
   }
   const data = parsed.data;
+  const nikHash = hashSensitive(data.nik);
 
-  const existing = await prisma.anggota.findUnique({ where: { nik: data.nik } });
+  const existing = await prisma.anggota.findUnique({ where: { nikHash } });
   if (existing && existing.id !== id) return { error: "NIK sudah terdaftar untuk anggota lain." };
 
   await prisma.anggota.update({
     where: { id },
     data: {
-      nik: data.nik,
+      nik: encryptSensitive(data.nik),
+      nikHash,
       nama: data.nama,
       unitAsal: data.unitAsal,
       telepon: data.telepon || null,

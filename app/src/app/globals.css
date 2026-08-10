@@ -23,7 +23,7 @@
 
   --ink: #edf1f4;
   --ink-2: #8b96a0;
-  --ink-3: #565f67;
+  --ink-3: #70787f; /* §10.8 WCAG AA: dinaikkan dari #565f67 (kontras ~3.2:1, gagal AA teks kecil) ke ~4.7:1 di atas --base/--surface */
 
   --accent: #22c577;
   --accent-bright: #3cf29a;

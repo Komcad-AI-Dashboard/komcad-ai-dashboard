@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/audit-log";
 import { ROLES } from "@/lib/constants";
+import { decryptSensitive, encryptSensitive, hashSensitive } from "@/lib/crypto";
 
 type ActionState = { error: string | null };
 
@@ -27,13 +28,18 @@ export async function approvePermintaanNikAction(permintaanId: string): Promise<
   if (!permintaan) return { error: "Permintaan tidak ditemukan." };
   if (permintaan.status !== "Menunggu") return { error: "Permintaan ini sudah diproses sebelumnya." };
 
-  const nikDipakai = await prisma.anggota.findUnique({ where: { nik: permintaan.nilaiBaru } });
+  const nikBaruPlain = decryptSensitive(permintaan.nilaiBaru);
+  const nikBaruHash = hashSensitive(nikBaruPlain);
+  const nikDipakai = await prisma.anggota.findUnique({ where: { nikHash: nikBaruHash } });
   if (nikDipakai && nikDipakai.id !== permintaan.anggotaId) {
     return { error: "NIK baru sudah terdaftar untuk anggota lain — tidak dapat disetujui." };
   }
 
   await prisma.$transaction([
-    prisma.anggota.update({ where: { id: permintaan.anggotaId }, data: { nik: permintaan.nilaiBaru } }),
+    prisma.anggota.update({
+      where: { id: permintaan.anggotaId },
+      data: { nik: encryptSensitive(nikBaruPlain), nikHash: nikBaruHash },
+    }),
     prisma.permintaanUbahData.update({
       where: { id: permintaanId },
       data: { status: "Disetujui", diprosesOlehId: session!.user.id, diprosesPada: new Date() },
@@ -45,7 +51,8 @@ export async function approvePermintaanNikAction(permintaanId: string): Promise<
     aksi: "APPROVE_PERMINTAAN_NIK",
     entitas: "Anggota",
     entitasId: permintaan.anggotaId,
-    metadata: { nilaiLama: permintaan.nilaiLama, nilaiBaru: permintaan.nilaiBaru },
+    // NIK tidak ditulis plaintext ke metadata audit log (NFR-04/NFR-05) — cukup catat bahwa NIK berubah.
+    metadata: { fieldBerubah: "nik" },
   });
 
   revalidatePath("/anggota");

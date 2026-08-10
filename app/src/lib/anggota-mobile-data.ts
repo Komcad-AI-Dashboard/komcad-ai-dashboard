@@ -7,6 +7,7 @@ import { auth } from "@/lib/auth";
 import { ROLES } from "@/lib/constants";
 import { computeSertifikasiStatus } from "@/lib/sertifikasi";
 import { STATUS_SERTIFIKASI } from "@/lib/constants";
+import { decryptSensitive } from "@/lib/crypto";
 
 /** Ambil anggotaId dari sesi login, cuma untuk role ANGGOTA. Server Action/data-fetcher Sisi
  * Anggota manapun WAJIB lewat sini dulu — jangan pernah percaya anggotaId dari client. */
@@ -36,6 +37,12 @@ export async function getSelfProfil(anggotaId: string) {
   if (!anggota) return null;
   return {
     ...anggota,
+    nik: decryptSensitive(anggota.nik),
+    permintaanUbahData: anggota.permintaanUbahData.map((p) =>
+      p.field === "nik"
+        ? { ...p, nilaiLama: decryptSensitive(p.nilaiLama), nilaiBaru: decryptSensitive(p.nilaiBaru) }
+        : p
+    ),
     sertifikasi: anggota.sertifikasi.map((s) => ({ ...s, status: computeSertifikasiStatus(s.tanggalBerlaku) })),
   };
 }

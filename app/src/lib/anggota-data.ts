@@ -3,6 +3,17 @@
 import { prisma } from "@/lib/prisma";
 import { computeSertifikasiStatus } from "@/lib/sertifikasi";
 import { STATUS_SIAGA } from "@/lib/constants";
+import { decryptSensitive } from "@/lib/crypto";
+
+/** NIK & PermintaanUbahData terkait NIK tersimpan terenkripsi (NFR-04) — dekripsi di titik baca
+ * ini (server-only), supaya kode di atasnya tetap kerja dengan nilai plaintext seperti sebelumnya. */
+function decryptPermintaan<T extends { field: string; nilaiLama: string; nilaiBaru: string }>(list: T[]): T[] {
+  return list.map((p) =>
+    p.field === "nik"
+      ? { ...p, nilaiLama: decryptSensitive(p.nilaiLama), nilaiBaru: decryptSensitive(p.nilaiBaru) }
+      : p
+  );
+}
 
 /**
  * Fase 5 baru menangani ~20 anggota dummy, jadi seluruh detail dimuat sekaligus dan
@@ -25,6 +36,8 @@ export async function getAnggotaFullList() {
 
   return list.map((a) => ({
     ...a,
+    nik: decryptSensitive(a.nik),
+    permintaanUbahData: decryptPermintaan(a.permintaanUbahData),
     sertifikasi: a.sertifikasi.map((s) => ({
       ...s,
       status: computeSertifikasiStatus(s.tanggalBerlaku),
@@ -62,6 +75,7 @@ export async function getAnggotaDetail(id: string) {
 
   return {
     ...anggota,
+    nik: decryptSensitive(anggota.nik),
     sertifikasi: anggota.sertifikasi.map((s) => ({
       ...s,
       status: computeSertifikasiStatus(s.tanggalBerlaku),
@@ -102,13 +116,3 @@ export async function getAllPelatihan() {
   }));
 }
 
-export function calcUsia(tanggalLahir: Date | null | undefined): number | null {
-  if (!tanggalLahir) return null;
-  const now = new Date();
-  let usia = now.getFullYear() - tanggalLahir.getFullYear();
-  const belumUlangTahun =
-    now.getMonth() < tanggalLahir.getMonth() ||
-    (now.getMonth() === tanggalLahir.getMonth() && now.getDate() < tanggalLahir.getDate());
-  if (belumUlangTahun) usia -= 1;
-  return usia;
-}

@@ -28,8 +28,9 @@ export function BottomPanelShell({
         <button
           onClick={onHide}
           title="Sembunyikan panel"
+          aria-label={`Sembunyikan panel ${title}`}
           className={cn(
-            "flex size-5 shrink-0 items-center justify-center rounded-[4px] border border-border bg-elevated text-[14px] font-extrabold text-ink-2 hover:border-accent hover:text-accent-bright"
+            "flex size-[30px] shrink-0 items-center justify-center rounded-[4px] border border-border bg-elevated text-[14px] font-extrabold text-ink-2 hover:border-accent hover:text-accent-bright"
           )}
         >
           −
