@@ -2,12 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { COMMAND_NAV } from "@/lib/constants";
+import type { Session } from "next-auth";
+import { COMMAND_NAV, ROLE_LABELS } from "@/lib/constants";
 import { NavIcon } from "./nav-icon";
 import { cn } from "@/lib/utils";
 
-export function Sidebar({ collapsed }: { collapsed: boolean }) {
+export function Sidebar({
+  collapsed,
+  user,
+}: {
+  collapsed: boolean;
+  user: Session["user"] | null;
+}) {
   const pathname = usePathname();
+  const initial = user?.name?.[0]?.toUpperCase() ?? "?";
 
   return (
     <aside
@@ -57,11 +65,13 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
 
       <div className="flex items-center gap-[10px] border-t border-border p-3 px-4">
         <div className="flex size-[30px] shrink-0 items-center justify-center rounded-full border border-border bg-elevated text-xs">
-          A
+          {initial}
         </div>
-        <div>
-          <div className="text-[11.5px] font-bold">Mode Demo</div>
-          <div className="text-[10px] text-ink-3">Belum masuk</div>
+        <div className="min-w-0">
+          <div className="truncate text-[11.5px] font-bold">{user?.name ?? "Tidak dikenal"}</div>
+          <div className="truncate text-[10px] text-ink-3">
+            {user ? ROLE_LABELS[user.role] : "Belum masuk"}
+          </div>
         </div>
       </div>
     </aside>

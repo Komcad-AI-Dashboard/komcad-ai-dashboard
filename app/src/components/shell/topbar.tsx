@@ -1,18 +1,22 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Menu, Search, Settings, PlusCircle } from "lucide-react";
+import type { Session } from "next-auth";
+import { Menu, Search, Settings, PlusCircle, LogOut } from "lucide-react";
 import { COMMAND_NAV } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { signOutAction } from "@/lib/auth-actions";
 
 const ALL_ITEMS = COMMAND_NAV.flatMap((g) => g.items);
 
 export function Topbar({
   onToggleSidebar,
   onBuatMisi,
+  user,
 }: {
   onToggleSidebar: () => void;
   onBuatMisi?: () => void;
+  user: Session["user"] | null;
 }) {
   const pathname = usePathname();
   const current = ALL_ITEMS.find(
@@ -78,9 +82,24 @@ export function Topbar({
           <Settings className="size-4" strokeWidth={1.5} />
         </button>
 
-        <button className="rounded-[6px] bg-accent-bright px-3 py-[6px] text-[12px] font-extrabold text-[#00170C]">
-          Masuk
-        </button>
+        {user ? (
+          <form action={signOutAction}>
+            <button
+              type="submit"
+              className="flex items-center gap-[6px] rounded-[6px] bg-accent-bright px-3 py-[6px] text-[12px] font-extrabold text-[#00170C]"
+            >
+              <LogOut className="size-3.5" strokeWidth={2} />
+              Keluar
+            </button>
+          </form>
+        ) : (
+          <a
+            href="/login"
+            className="rounded-[6px] bg-accent-bright px-3 py-[6px] text-[12px] font-extrabold text-[#00170C]"
+          >
+            Masuk
+          </a>
+        )}
       </div>
     </header>
   );

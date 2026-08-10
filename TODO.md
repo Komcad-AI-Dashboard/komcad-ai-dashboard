@@ -18,24 +18,28 @@ Centang `[x]` hanya kalau sudah benar-benar selesai & sudah dicoba jalan. Status
 
 ## Fase 1 — Design System & App Shell
 Referensi visual: FRD §10.4, `komcad-dashboard.html` baris 1–830-an (CSS & markup shell).
-- [ ] Komponen dasar: Button, Badge/Pill (status color mapping), Chip, IconButton, Card/Panel, Input/Select/Textarea (dark style)
-- [ ] Sidebar 236px, 5 grup nav (RINGKASAN, OPERASI, DATA ANGGOTA, LAPORAN, ASISTEN, SISTEM), 13 menu sesuai `10-struktur-navigasi.md`, collapse ke 0px via ☰ (transisi width+opacity 180ms)
-- [ ] Topbar 52px: toggle sidebar → judul halaman+breadcrumb → indikator LIVE berdenyut → wilayah selector → tombol BUAT MISI → chip Readiness nasional → tombol MISI AKTIF (badge merah) → search → settings icon → tombol Masuk
-- [ ] Routing: 13 route Command Center + halaman Sisi Anggota, layout terpisah per route group
-- [ ] State UI sidebar-collapsed & panel show/hide persist di localStorage (NFR-09)
+- [x] Komponen dasar: Button, Badge/Pill (status color mapping), Chip, Card/Panel, Input/Select/Textarea/Label (dark style) — `src/components/ui/`
+- [x] Drawer & Modal primitive (Radix Dialog based) — `src/components/ui/drawer.tsx`, `modal.tsx`
+- [x] Sidebar 236px, 5 grup nav (RINGKASAN, OPERASI, DATA ANGGOTA, LAPORAN, ASISTEN, SISTEM), 13 menu sesuai `10-struktur-navigasi.md`, collapse ke 0px via ☰ (transisi width+opacity 180ms)
+- [x] Topbar 52px: toggle sidebar → judul halaman+breadcrumb → indikator LIVE berdenyut → wilayah selector → tombol BUAT MISI → chip Readiness nasional → tombol MISI AKTIF (badge merah) → search → settings icon → tombol Masuk/Keluar (terhubung ke session asli)
+- [x] Routing: 13 route Command Center + halaman Sisi Anggota, layout terpisah per route group
+- [x] State UI sidebar-collapsed persist di localStorage (NFR-09) — panel show/hide individual (FR-24) belum, itu bagian Fase 4
+- [ ] IconButton generik terpisah (saat ini masih inline per komponen) — nice-to-have, bukan blocker
 
 ## Fase 2 — Auth & RBAC
-- [ ] Auth.js Credentials provider, session JWT, halaman login (styling gelap sesuai brand)
-- [ ] Model `User` + `Role` (Super Admin, Operator Komcad, Analis/Evaluator, Anggota Komcad)
-- [ ] Middleware proteksi route per role (Command Center vs Sisi Anggota; Analis read-only di Misi aktif)
-- [ ] Seed user demo per role untuk testing
+- [x] Auth.js (NextAuth v5) Credentials provider, session JWT, halaman login (styling gelap sesuai brand) — `src/lib/auth.ts`, `src/app/login/`
+- [x] Model `User` + `Role` (Super Admin, Operator Komcad, Analis/Evaluator, Anggota Komcad) — sudah ada di `prisma/schema.prisma` sejak Fase 0
+- [x] Proxy/middleware proteksi route per role (`src/proxy.ts`): unauthenticated → `/login`; ANGGOTA terkunci ke `/m/*`; role lain terkunci ke Command Center — diverifikasi end-to-end (login benar/salah, redirect per role, sign-out)
+- [x] Seed user demo per role untuk testing (lihat Fase 3 — satu seed script yang sama)
+- [ ] Analis read-only di Misi aktif — belum relevan, menunggu UI Misi (Fase 6) benar-benar ada aksi tulis untuk dibatasi
 
 ## Fase 3 — Data Layer (Prisma Schema + Seed)
 Entitas dari FRD §9.1 + `09-data-dummy.md` (baca dulu isi file itu kalau ada, atau derive dari mockup jika file belum lengkap).
-- [ ] Model: `Anggota`, `ProfilDemografi`, `Lokasi`(riwayat titik), `Sertifikasi`, `Pelatihan`, `Misi`, `Penugasan`, `ReadinessScoreHistory`, `AktivitasPelatihan`, `Notifikasi`, `AuditLog`, `User`
-- [ ] Field sensitif (NIK, kontak, sosial media) ditandai jelas di schema/comment sebagai data pribadi (NFR-05)
-- [ ] Seed script: minimal 50–100 anggota dummy tersebar provinsi, sertifikasi bervariasi status, beberapa Misi contoh (draft/dimobilisasi/selesai), aktivitas pelatihan
-- [ ] Util `calculateReadinessScore(anggota)` — formula placeholder terdokumentasi sebagai asumsi (FRD §11)
+- [x] Model: `Anggota`, `ProfilDemografi`, `Lokasi`(riwayat titik), `Sertifikasi`, `Pelatihan`, `Misi`, `Penugasan`, `ReadinessScoreHistory`, `AktivitasPelatihan`, `Notifikasi`, `AuditLog`, `User` — schema lengkap sejak Fase 0
+- [x] Field sensitif (NIK, kontak, sosial media) ditandai jelas di schema/comment sebagai data pribadi (NFR-05)
+- [x] Seed script starter: 4 user demo (satu per role) + 20 anggota dummy tersebar 8 provinsi, sertifikasi bervariasi status, 2 aktivitas pelatihan, 2 Misi contoh (Selesai & Dimobilisasi) dengan Penugasan — `prisma/seed.ts`
+- [ ] **Belum**: perluas ke 50–100 anggota (target FRD) — starter set 20 sudah cukup untuk uji UI, tapi belum representatif skala
+- [ ] Util `calculateReadinessScore(anggota)` — belum ada, saat ini `readinessScore` di seed cuma angka acak, bukan hasil kalkulasi. Formula placeholder terdokumentasi sebagai asumsi (FRD §11)
 
 ## Fase 4 — Modul Overview & Peta Situasi (FR-17 s.d. FR-25)
 - [ ] Peta Leaflet + OpenStreetMap + filter CSS tactical dark, `maxBounds` Indonesia (§10.5)

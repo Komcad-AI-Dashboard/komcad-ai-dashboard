@@ -98,3 +98,42 @@ body {
 .leaflet-container {
   background: #000 !important;
 }
+
+@keyframes overlay-show {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-show {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes drawer-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-overlay-show {
+  animation: overlay-show 150ms ease-out;
+}
+.animate-modal-show {
+  animation: modal-show 180ms ease-out;
+}
+.animate-drawer-slide-in {
+  animation: drawer-slide-in 200ms ease-out;
+}
