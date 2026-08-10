@@ -290,33 +290,9 @@ body::after {
   text-shadow: 0 0 18px rgba(60, 242, 154, 0.35);
 }
 
-/* Reticle peta: crosshair statis di titik tengah viewport peta.
- * Sengaja TANPA radar sweep berputar — animasi rotasi terus-menerus mengganggu
- * pembacaan sebaran marker dan tidak menambah informasi apa pun. */
-.hud-reticle {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 402;
-}
-.hud-reticle::before,
-.hud-reticle::after {
-  content: "";
-  position: absolute;
-  background: rgba(60, 242, 154, 0.22);
-}
-.hud-reticle::before {
-  left: 50%;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-}
-.hud-reticle::after {
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 1px;
-}
+/* Peta situasi sengaja TIDAK diberi overlay dekoratif apa pun — tidak ada radar sweep
+ * berputar maupun crosshair statis. Keduanya sempat ada di konsep Sentinel HUD, dan
+ * keduanya dicoret: mereka menimpa lapisan marker tanpa menambah informasi sedikit pun. */
 
 /* Label section dengan hairline memudar di kanan. */
 .hud-label::after {

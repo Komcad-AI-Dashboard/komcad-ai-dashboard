@@ -255,9 +255,6 @@ export function OverviewView({
           onSelectMisi={(m) => setSelection({ type: "misi", data: m })}
         />
 
-        {/* Crosshair statis penanda titik tengah viewport peta. Dekoratif, pointer-events:none. */}
-        <div className="hud-reticle" />
-
         <LayersPanel layers={layers} onToggle={toggleLayer} />
 
         <button

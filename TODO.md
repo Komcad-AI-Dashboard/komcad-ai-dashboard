@@ -1,4 +1,4 @@
-# TODO — AI Komcad Command Center Platform
+# TODO — SIAGA Command Center Platform
 
 Rencana kerja per fase. Setiap fase harus selesai (build jalan, fitur bisa dicoba manual) sebelum lanjut ke fase berikutnya, kecuali dicatat lain. FR-ID merujuk ke `FRD/FRD_Komcad_Digital_Platform.docx` Bab 6 & `FRD/02-functional-requirements.md`.
 
@@ -147,14 +147,14 @@ Menutup sebagian item "Simplifikasi/gap teknis" yang didokumentasikan honestly d
 ## Fase 15 — Rebrand SIAGA + Tema Visual Sentinel HUD (di luar 13 fase rencana awal, atas permintaan user)
 User menilai tampilan sebelumnya "basic, plain, membosankan" dan minta 3 konsep desain berbeda arah visual yang tetap comply penuh ke FRD, lalu memilih satu. Nama produk juga diganti dari hasil brainstorm nama-akronim.
 - [x] 3 konsep desain dibuat sebagai HTML mandiri di `mockup-konsep/` — masing-masing meng-cover SELURUH fungsionalitas FRD (13 menu × 5 grup, topbar lengkap, peta situasi + Layers + Aktivitas Pelatihan + legenda + layar penuh, 3 panel bawah + tombol "−" + chip restore, drawer CV anggota, drawer detail Misi, modal Buat Misi 4-state, AI Chat, seluruh halaman tabel/analitik/pengaturan/guideline). Peta Leaflet + OSM sungguhan di ketiganya, bukan gambar statis. Diverifikasi Playwright: nol console error, semua interaksi jalan
-  - `konsep-1-sentinel.html` — **DIPILIH USER**. Kokpit tempur: grid halus + vignette + scanline, corner bracket, glow tactical green, crosshair peta
+  - `konsep-1-sentinel.html` — **DIPILIH USER**. Kokpit tempur: grid halus + vignette + scanline, corner bracket, glow tactical green
   - `konsep-2-garuda.html` — ditolak. Ruang briefing kenegaraan: emas kuningan + gading, serif display, peta sepia berbingkai + mawar kompas
   - `konsep-3-nusantara-ops.html` — ditolak. Konsol lapangan neo-brutalist: radius 0, border tebal, hard-shadow, monospace dominan, peta fosfor hijau
   - **Permintaan eksplisit user**: radar sweep berputar di peta DIHAPUS dari konsep terpilih (dihapus juga dari file konsepnya, bukan cuma tidak diimplementasikan)
 - [x] Nama produk: **AI KOMCAD → SIAGA** (*Sistem Identifikasi, Analitik & Gerak Anggota*). Dipilih user dari 10 kandidat nama-akronim, lalu dari 10 variasi kepanjangan untuk kata SIAGA. Kata "Komcad" **sengaja dipertahankan** di mana pun ia merujuk program/entitas domain (Anggota Komcad, Operator Komcad, `@komcad.mil.id`, nama unit) — yang diganti hanya nama produk, bukan cari-ganti buta
   - Titik ganti: judul tab (`app/layout.tsx`), wordmark sidebar & login & mobile shell, fallback judul topbar, header PDF & creator XLSX (`lib/laporan.ts`), User-Agent Nominatim (`lib/geocoding.ts`), system prompt AI Chat + sapaan pembuka, key localStorage sidebar, `CLAUDE.md`, `app/README.md`
 - [x] Tema Sentinel HUD diterapkan **global** (seluruh 13 menu Command Center + 4 layar Sisi Anggota), bukan cuma Overview — pilihan user
-  - Pondasi di `globals.css`: overlay tekstur global (`body::before` grid+vignette, `body::after` scanline), utility `.hud-brk` (corner bracket), `.hud-panel`, `.hud-head`, `.hud-rule-x/y`, `.hud-num`, `.hud-reticle`, `.hud-label`. **Nol nilai hex FRD §10.2 diubah** — yang bertambah cuma kedalaman
+  - Pondasi di `globals.css`: overlay tekstur global (`body::before` grid+vignette, `body::after` scanline), utility `.hud-brk` (corner bracket), `.hud-panel`, `.hud-head`, `.hud-rule-x/y`, `.hud-num`, `.hud-label`. **Nol nilai hex FRD §10.2 diubah** — yang bertambah cuma kedalaman
   - Chrome komponen: sidebar (gradien + garis aksen kanan + indikator kiri ber-glow di item aktif + baris status sistem), topbar (garis gradien bawah + tombol BUAT MISI ber-glow), `Card`/`BottomPanelShell` (gradien + bracket + header sheen), panel peta (Layers/Pelatihan/legenda: blur 10px + bracket + shadow), `Modal`/`Drawer`, `Button` varian solid, kartu KPI Analitik, panel Statistik Anggota, dan seluruh wrapper tabel + header tabel (7 file, lewat penggantian mekanis terverifikasi)
   - **Aksesibilitas dijaga**: kedua overlay viewport-wide WAJIB `pointer-events: none` (kalau tidak, seluruh aplikasi termasuk modal Radix jadi tidak bisa diklik), dan `@media (prefers-reduced-motion: reduce)` mematikan scanline + meredam grid
 - [x] **Bug pra-existing ditemukan & diperbaiki**: kontrol zoom Leaflet (posisi bawaan kiri-atas) selama ini tertimbun panel Layers di Overview — baru ketahuan saat screenshot verifikasi fase ini. Dipindah ke kanan-bawah (`ZoomControl position="bottomright"`, `zoomControl={false}` di `MapContainer`) dan digayakan mengikuti chrome HUD

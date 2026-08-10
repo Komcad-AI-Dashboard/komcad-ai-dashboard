@@ -165,11 +165,8 @@ input,select{font-family:inherit;color:inherit}
 .leaflet-control-attribution{background:rgba(0,0,0,.6)!important;color:#4a5258!important;font-size:8.5px!important}
 .leaflet-control-attribution a{color:#5f6970!important}
 @keyframes spin{to{transform:rotate(360deg)}}
-/* reticle */
-.retic{position:absolute;inset:0;pointer-events:none;z-index:402;opacity:.35}
-.retic::before,.retic::after{content:"";position:absolute;background:rgba(60,242,154,.18)}
-.retic::before{left:50%;top:0;bottom:0;width:1px}
-.retic::after{top:50%;left:0;right:0;height:1px}
+/* Peta sengaja bersih dari overlay dekoratif: tidak ada radar sweep berputar
+   maupun crosshair statis. Keduanya menimpa lapisan marker tanpa menambah informasi. */
 
 .ov{position:absolute;z-index:600;background:rgba(4,6,7,.86);backdrop-filter:blur(10px);
   border:1px solid var(--border);border-radius:var(--r);box-shadow:0 12px 40px rgba(0,0,0,.85)}
@@ -427,7 +424,6 @@ textarea.inp{height:78px;padding:9px 11px;resize:none}
 
       <div class="mapwrap" id="mapwrap">
         <div id="map"></div>
-        <div class="retic"></div>
 
         <div class="ov brk" id="layers">
           <h4>LAYERS</h4>

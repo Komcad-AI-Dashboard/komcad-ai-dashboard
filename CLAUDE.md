@@ -19,7 +19,9 @@ Mockup ini **bukan** dipakai langsung sebagai kode produksi — tapi jadi refere
 
 Nama produk resmi sejak Fase 15 adalah **SIAGA** — akronim dari *Sistem Identifikasi, Analitik & Gerak Anggota*. Sebelumnya "AI KOMCAD". Yang berubah hanya **nama produk**; kata **"Komcad"** tetap dipakai di mana pun ia merujuk pada program/entitas domain (Komponen Cadangan, "Anggota Komcad", "Operator Komcad", domain email `@komcad.mil.id`, nama unit `Komcad Yon Zeni 1`) — jangan diganti.
 
-Tema visual mengikuti konsep **Sentinel HUD** ([`mockup-konsep/konsep-1-sentinel.html`](mockup-konsep/konsep-1-sentinel.html)): palet FRD §10.2 tidak berubah sedikit pun, yang ditambah hanya lapisan kedalaman — grid halus + vignette + scanline (overlay `body::before/::after`), corner bracket di panel, glow tactical green, dan crosshair statis di peta. **Tidak ada radar sweep berputar** — animasi rotasi terus-menerus mengganggu pembacaan sebaran marker. Dua konsep alternatif yang ditolak tetap disimpan di `mockup-konsep/` sebagai catatan keputusan desain.
+Tema visual mengikuti konsep **Sentinel HUD** ([`mockup-konsep/konsep-1-sentinel.html`](mockup-konsep/konsep-1-sentinel.html)): palet FRD §10.2 tidak berubah sedikit pun, yang ditambah hanya lapisan kedalaman — grid halus + vignette + scanline (overlay `body::before/::after`), corner bracket di panel, dan glow tactical green.
+
+**Peta situasi TIDAK diberi overlay dekoratif apa pun.** Konsep aslinya sempat punya radar sweep berputar lalu crosshair statis; keduanya dicoret user karena menimpa lapisan marker tanpa menambah informasi. Jangan menambahkannya kembali. Dua konsep alternatif yang ditolak tetap disimpan di `mockup-konsep/` sebagai catatan keputusan desain.
 
 **Konteks penting:** semua data personel (NIK, kontak, dsb.) pada tahap pengembangan ini adalah **data dummy/seed**, bukan data riil personel TNI/Komcad. Jangan pernah memasukkan data pribadi asli ke seed, commit, atau log.
 
