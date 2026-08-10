@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI KOMCAD — Konsep 1: SENTINEL HUD</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* =====================================================================
+   KONSEP 1 — "SENTINEL HUD"
+   Arah visual: kokpit tempur / heads-up display. Hitam murni dengan
+   kedalaman berlapis (vignette + grid + scanline), sudut kurung
+   (corner brackets) pada tiap panel, glow tactical green, radar sweep.
+   Palet FRD dipertahankan penuh; yang bertambah hanya tekstur & depth.
+   ===================================================================== */
+:root{
+  --base:#000000; --surface:#060809; --elevated:#0e1215; --hover:#171c20;
+  --border:#22282d; --border-soft:#161b1f;
+  --ink:#edf1f4; --ink2:#8b96a0; --ink3:#70787f;
+  --accent:#22c577; --accent-br:#3cf29a; --accent-dim:#0d3a25;
+  --amber:#e0a83e; --red:#e14c45; --cyan:#3fa9c9; --gold:#b08d4f; --pink:#d97fa8;
+  --r:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--base); color:var(--ink);
+  font-family:Inter,system-ui,sans-serif; font-size:13px;
+  overflow:hidden;
+}
+/* --- tekstur global: grid halus + vignette + scanline --- */
+body::before{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:9998;
+  background:
+    linear-gradient(rgba(60,242,154,.028) 1px,transparent 1px) 0 0/100% 44px,
+    linear-gradient(90deg,rgba(60,242,154,.028) 1px,transparent 1px) 0 0/44px 100%,
+    radial-gradient(ellipse 120% 80% at 50% 0%,transparent 40%,rgba(0,0,0,.85) 100%);
+  mix-blend-mode:screen; opacity:.55;
+}
+body::after{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:9999;
+  background:repeating-linear-gradient(180deg,rgba(255,255,255,.018) 0 1px,transparent 1px 3px);
+  opacity:.5;
+}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+button{font-family:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input,select{font-family:inherit;color:inherit}
+::-webkit-scrollbar{width:7px;height:7px}
+::-webkit-scrollbar-thumb{background:#232a30;border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:#2f3841}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ============ CHROME: corner brackets ============ */
+.brk{position:relative}
+.brk::before,.brk::after{
+  content:""; position:absolute; width:11px;height:11px; pointer-events:none;
+  border-color:rgba(60,242,154,.45); opacity:.8;
+}
+.brk::before{top:-1px;left:-1px;border-top:1.5px solid;border-left:1.5px solid;border-top-left-radius:var(--r)}
+.brk::after{bottom:-1px;right:-1px;border-bottom:1.5px solid;border-right:1.5px solid;border-bottom-right-radius:var(--r)}
+
+/* ============ APP SHELL ============ */
+.app{display:flex;height:100vh;position:relative;z-index:1}
+
+/* ---------- SIDEBAR ---------- */
+.sidebar{
+  width:246px;flex-shrink:0;overflow:hidden;
+  background:linear-gradient(180deg,#070a0b 0%,#000 65%);
+  border-right:1px solid var(--border-soft);
+  display:flex;flex-direction:column;
+  transition:width .19s ease,opacity .19s ease;
+  position:relative;
+}
+.sidebar::after{content:"";position:absolute;top:0;right:0;width:1px;height:100%;
+  background:linear-gradient(180deg,transparent,rgba(60,242,154,.35),transparent)}
+.app.collapsed .sidebar{width:0;opacity:0}
+.brand{display:flex;align-items:center;gap:10px;padding:15px 16px 14px;border-bottom:1px solid var(--border-soft)}
+.flag{width:30px;height:23px;border-radius:3px;overflow:hidden;flex-shrink:0;
+  box-shadow:0 0 0 1px rgba(255,255,255,.10),0 2px 10px rgba(225,76,69,.35)}
+.flag i{display:block;height:50%}
+.flag i:first-child{background:#e0322e}.flag i:last-child{background:#f4f6f7}
+.brand h1{font-size:14.5px;font-weight:900;letter-spacing:.13em}
+.brand span{display:block;font-size:8.5px;letter-spacing:.28em;color:var(--accent-br);font-weight:700;margin-top:2px}
+.navwrap{flex:1;overflow-y:auto;padding:12px 10px 8px}
+.navgrp{margin-bottom:15px}
+.navgrp>p{
+  font-size:8.5px;letter-spacing:.26em;color:var(--ink3);font-weight:800;
+  padding:0 8px 7px;display:flex;align-items:center;gap:8px
+}
+.navgrp>p::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+.nav{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border-radius:7px;
+  font-size:12.5px;font-weight:600;color:var(--ink2);position:relative;transition:.14s}
+.nav svg{width:15px;height:15px;flex-shrink:0;opacity:.85}
+.nav:hover{background:var(--hover);color:var(--ink)}
+.nav.on{background:linear-gradient(90deg,rgba(60,242,154,.14),rgba(60,242,154,.02));color:var(--accent-br);font-weight:700}
+.nav.on::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:2.5px;border-radius:2px;
+  background:var(--accent-br);box-shadow:0 0 10px var(--accent-br)}
+.nav .badge{margin-left:auto;font-size:9px;font-weight:800;padding:1px 6px;border-radius:8px;
+  background:rgba(225,76,69,.18);color:var(--red)}
+.sidefoot{padding:11px 16px;border-top:1px solid var(--border-soft);font-size:9.5px;color:var(--ink3);letter-spacing:.06em}
+.sidefoot b{color:var(--accent);font-weight:700}
+
+/* ---------- MAIN ---------- */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+
+/* ---------- TOPBAR ---------- */
+.topbar{height:56px;flex-shrink:0;display:flex;align-items:center;gap:12px;padding:0 16px;
+  background:linear-gradient(180deg,#0a0d0f,#000);position:relative}
+.topbar::after{content:"";position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(60,242,154,.45),rgba(63,169,201,.3),transparent)}
+.icobtn{width:32px;height:32px;display:grid;place-items:center;border-radius:7px;border:1px solid var(--border);
+  background:var(--elevated);color:var(--ink2);transition:.14s}
+.icobtn:hover{color:var(--accent-br);border-color:var(--accent);box-shadow:0 0 14px rgba(60,242,154,.18)}
+.icobtn svg{width:16px;height:16px}
+.ttl h2{font-size:14px;font-weight:800;letter-spacing:.05em;line-height:1.2}
+.ttl p{font-size:9.5px;color:var(--ink3);letter-spacing:.1em;margin-top:2px}
+.live{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;
+  border:1px solid rgba(60,242,154,.3);background:rgba(60,242,154,.06);
+  font-size:9.5px;font-weight:800;letter-spacing:.18em;color:var(--accent-br)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--accent-br);box-shadow:0 0 8px var(--accent-br);
+  animation:pulse 1.8s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.8)}}
+.spacer{flex:1}
+.sel,.srch{background:var(--elevated);border:1px solid var(--border);border-radius:7px;height:32px;
+  padding:0 10px;font-size:11.5px;color:var(--ink2);outline:none;transition:.14s}
+.sel:focus,.srch:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,197,119,.12);color:var(--ink)}
+.srch{width:180px}
+.btn-primary{height:32px;padding:0 14px;border-radius:7px;font-size:11.5px;font-weight:800;letter-spacing:.09em;
+  background:linear-gradient(180deg,var(--accent-br),var(--accent));color:#00170c;
+  box-shadow:0 0 18px rgba(60,242,154,.3),inset 0 1px 0 rgba(255,255,255,.3);transition:.14s}
+.btn-primary:hover{filter:brightness(1.12);box-shadow:0 0 26px rgba(60,242,154,.5)}
+.chip{height:32px;display:flex;align-items:center;gap:7px;padding:0 11px;border-radius:7px;
+  border:1px solid var(--border);background:var(--elevated);font-size:11px;color:var(--ink2)}
+.chip b{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--accent-br);font-weight:700}
+.btn-alert{height:32px;display:flex;align-items:center;gap:8px;padding:0 11px;border-radius:7px;
+  border:1px solid rgba(225,76,69,.45);background:rgba(225,76,69,.08);color:#ff8b85;
+  font-size:10.5px;font-weight:800;letter-spacing:.1em}
+.btn-alert:hover{background:rgba(225,76,69,.16)}
+.btn-alert em{font-style:normal;background:var(--red);color:#fff;border-radius:9px;padding:0 5px;font-size:9.5px}
+.avatar{width:32px;height:32px;border-radius:7px;display:grid;place-items:center;font-size:10px;font-weight:800;
+  background:linear-gradient(135deg,var(--accent-dim),#0a1a12);border:1px solid rgba(60,242,154,.35);color:var(--accent-br)}
+
+/* ---------- VIEWS ---------- */
+.view{flex:1;min-height:0;display:none;flex-direction:column;overflow:hidden}
+.view.on{display:flex}
+
+/* ---------- SITUATION BAR ---------- */
+.sitbar{height:38px;flex-shrink:0;display:flex;align-items:center;gap:14px;padding:0 16px;
+  border-bottom:1px solid var(--border-soft);background:#030405}
+.sitbar h3{font-size:11px;font-weight:900;letter-spacing:.2em}
+.sitbar .clk{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--cyan);letter-spacing:.08em}
+.ghostbtn{padding:5px 11px;border-radius:6px;border:1px solid var(--accent);color:var(--accent-br);
+  font-size:10.5px;font-weight:800;letter-spacing:.06em}
+.ghostbtn:hover{background:rgba(60,242,154,.1)}
+
+/* ---------- MAP ---------- */
+.mapwrap{flex:1;min-height:0;position:relative;background:#000}
+.mapwrap.fs{position:fixed;inset:0;z-index:3000}
+#map{position:absolute;inset:0}
+.leaflet-container{background:#000!important;font-family:Inter,sans-serif}
+.leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.82) contrast(1.12) saturate(.55)}
+.leaflet-control-attribution{background:rgba(0,0,0,.6)!important;color:#4a5258!important;font-size:8.5px!important}
+.leaflet-control-attribution a{color:#5f6970!important}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* reticle */
+.retic{position:absolute;inset:0;pointer-events:none;z-index:402;opacity:.35}
+.retic::before,.retic::after{content:"";position:absolute;background:rgba(60,242,154,.18)}
+.retic::before{left:50%;top:0;bottom:0;width:1px}
+.retic::after{top:50%;left:0;right:0;height:1px}
+
+.ov{position:absolute;z-index:600;background:rgba(4,6,7,.86);backdrop-filter:blur(10px);
+  border:1px solid var(--border);border-radius:var(--r);box-shadow:0 12px 40px rgba(0,0,0,.85)}
+.ov h4{font-size:9.5px;font-weight:900;letter-spacing:.2em;color:var(--ink2);padding:10px 12px 8px;
+  display:flex;align-items:center;gap:7px}
+.ov h4::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+#layers{top:14px;left:14px;width:184px}
+.lyr{display:flex;align-items:center;gap:9px;padding:6px 12px;font-size:11.5px;color:var(--ink2);width:100%;
+  border-radius:6px;transition:.12s}
+.lyr:hover{background:var(--hover);color:var(--ink)}
+.box{width:14px;height:14px;border-radius:3px;border:1.5px solid var(--border);display:grid;place-items:center;flex-shrink:0}
+.lyr.on .box{background:var(--accent);border-color:var(--accent);box-shadow:0 0 10px rgba(34,197,119,.5)}
+.lyr.on .box::after{content:"";width:4px;height:7px;border:solid #000;border-width:0 2px 2px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.swatch{width:8px;height:8px;border-radius:2px;margin-left:auto}
+#training{top:14px;right:58px;width:250px;max-height:236px;display:flex;flex-direction:column}
+.trlist{overflow-y:auto;padding:0 8px 8px}
+.tr{padding:8px 8px;border-radius:7px;border:1px solid transparent;transition:.12s;width:100%;text-align:left}
+.tr:hover{background:var(--hover);border-color:var(--border)}
+.tr b{display:block;font-size:11.5px;font-weight:700;color:var(--ink);margin-bottom:3px}
+.tr small{font-size:10px;color:var(--ink3);display:flex;gap:8px}
+.tr .amt{color:var(--amber);font-weight:700}
+#legend{bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:16px;padding:8px 16px}
+#legend div{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--ink2);font-weight:600}
+#legend i{width:9px;height:9px;border-radius:50%;display:block}
+.fsbtn{position:absolute;top:14px;right:14px;z-index:600;width:34px;height:34px;border-radius:8px;
+  border:1px solid var(--border);background:rgba(4,6,7,.86);backdrop-filter:blur(10px);
+  display:grid;place-items:center;color:var(--ink2)}
+.fsbtn:hover{color:var(--accent-br);border-color:var(--accent)}
+.coord{position:absolute;bottom:14px;left:14px;z-index:600;font-family:"IBM Plex Mono",monospace;
+  font-size:9.5px;color:rgba(60,242,154,.6);letter-spacing:.08em}
+
+/* markers */
+.mk{border-radius:50%;border:1.5px solid rgba(0,0,0,.6)}
+.mk-siap{background:var(--accent-br);box-shadow:0 0 12px var(--accent-br)}
+.mk-siaga{background:var(--amber);box-shadow:0 0 12px var(--amber)}
+.mk-pos{width:0;height:0;border:7px solid transparent;border-bottom-color:var(--gold);position:relative;filter:drop-shadow(0 0 6px rgba(176,141,79,.9))}
+.mk-pos::after{content:"";position:absolute;left:-7px;top:7px;border:7px solid transparent;border-top-color:var(--gold)}
+
+/* ---------- RESTORE CHIPS ---------- */
+.chips{flex-shrink:0;display:flex;gap:8px;padding:6px 14px;border-top:1px solid var(--border-soft);background:#020304}
+.chips:empty{display:none}
+.rchip{display:flex;align-items:center;gap:6px;padding:5px 11px;border-radius:6px;border:1px dashed var(--border);
+  font-size:10.5px;font-weight:700;color:var(--ink2)}
+.rchip:hover{border-color:var(--accent-br);color:var(--accent-br)}
+
+/* ---------- BOTTOM PANELS ---------- */
+.bottom{height:296px;flex-shrink:0;display:flex;gap:9px;padding:9px;border-top:1px solid var(--border);background:#010202}
+.panel{flex:1;min-width:0;display:flex;flex-direction:column;background:linear-gradient(180deg,#080b0c,#040506);
+  border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.phead{height:34px;flex-shrink:0;display:flex;align-items:center;gap:9px;padding:0 12px;
+  border-bottom:1px solid var(--border-soft);background:linear-gradient(180deg,rgba(255,255,255,.035),transparent)}
+.phead h5{font-size:10px;font-weight:900;letter-spacing:.18em;color:var(--ink)}
+.tag{font-size:8.5px;font-weight:900;letter-spacing:.12em;padding:2px 7px;border-radius:10px}
+.tag.cy{background:var(--cyan);color:#00131a}
+.tag.gr{background:var(--accent-br);color:#00170c}
+.tag.rd{font-family:"IBM Plex Mono",monospace;color:var(--red);font-size:11px;letter-spacing:0}
+.hidebtn{margin-left:auto;width:24px;height:24px;border-radius:5px;color:var(--ink3);display:grid;place-items:center;font-size:15px;line-height:1}
+.hidebtn:hover{background:var(--hover);color:var(--ink)}
+.pbody{flex:1;overflow-y:auto;padding:11px 12px}
+
+/* statistik */
+.genderbar{height:9px;border-radius:5px;overflow:hidden;display:flex;margin:6px 0 8px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+.genderbar i{display:block;height:100%}
+.lblrow{display:flex;justify-content:space-between;font-size:10px;color:var(--ink2)}
+.minis{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.mini{border:1px solid var(--border);border-radius:8px;padding:9px 10px;background:rgba(255,255,255,.02);position:relative;overflow:hidden}
+.mini::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--accent)}
+.mini span{font-size:9px;letter-spacing:.14em;color:var(--ink3);font-weight:800}
+.mini b{display:block;font-family:"IBM Plex Mono",monospace;font-size:22px;font-weight:700;margin-top:3px;
+  text-shadow:0 0 18px rgba(60,242,154,.35)}
+.prov{margin-bottom:8px}
+.prov .t{display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink2);margin-bottom:4px}
+.prov .t b{font-family:"IBM Plex Mono",monospace;color:var(--ink)}
+.track{height:5px;background:#12171a;border-radius:3px;overflow:hidden}
+.track i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-br));
+  box-shadow:0 0 10px rgba(60,242,154,.5)}
+.sechead{font-size:9px;letter-spacing:.18em;color:var(--ink3);font-weight:800;margin:2px 0 7px}
+
+/* feed */
+.feed{display:flex;gap:10px;padding:9px;border:1px solid var(--border-soft);border-radius:8px;margin-bottom:7px;
+  background:rgba(255,255,255,.015);transition:.14s;width:100%;text-align:left}
+.feed:hover{border-color:var(--accent);background:rgba(60,242,154,.05)}
+.feed .bar{width:2.5px;border-radius:2px;flex-shrink:0}
+.feed .k{font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--ink3)}
+.feed .n{font-size:12px;font-weight:700;margin:2px 0 4px}
+.feed .m{display:flex;gap:7px;flex-wrap:wrap}
+.pill{font-size:8.5px;font-weight:800;letter-spacing:.08em;padding:2px 7px;border-radius:10px;border:1px solid}
+.p-red{color:var(--red);border-color:rgba(225,76,69,.45);background:rgba(225,76,69,.1)}
+.p-amb{color:var(--amber);border-color:rgba(224,168,62,.45);background:rgba(224,168,62,.1)}
+.p-cy{color:var(--cyan);border-color:rgba(63,169,201,.45);background:rgba(63,169,201,.1)}
+.p-gr{color:var(--accent-br);border-color:rgba(60,242,154,.45);background:rgba(60,242,154,.1)}
+.p-gy{color:var(--ink2);border-color:var(--border)}
+
+/* ai panel */
+.aisum{border:1px solid rgba(63,169,201,.35);background:linear-gradient(135deg,rgba(63,169,201,.1),transparent);
+  border-radius:8px;padding:10px;margin-bottom:11px;font-size:11px;line-height:1.65;color:var(--ink2)}
+.aisum b{color:var(--cyan)}
+.cand{display:flex;align-items:center;gap:10px;padding:8px 9px;border-radius:8px;border:1px solid var(--border-soft);
+  margin-bottom:6px;width:100%;text-align:left;transition:.14s}
+.cand:hover{border-color:var(--cyan);background:rgba(63,169,201,.06)}
+.score{width:38px;height:38px;flex-shrink:0;border-radius:9px;display:grid;place-items:center;
+  font-family:"IBM Plex Mono",monospace;font-size:14px;font-weight:700;
+  background:radial-gradient(circle,rgba(60,242,154,.2),transparent);border:1px solid rgba(60,242,154,.4);color:var(--accent-br)}
+.cand .info b{display:block;font-size:12px;font-weight:700}
+.cand .info small{font-size:10px;color:var(--ink3)}
+.eta{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--amber);text-align:right}
+
+/* ---------- GENERIC PAGE (menu lain) ---------- */
+.page{flex:1;overflow-y:auto;padding:18px}
+.toolbar{display:flex;align-items:center;gap:9px;margin-bottom:14px;flex-wrap:wrap}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:16px}
+.kpi{border:1px solid var(--border);border-radius:var(--r);padding:14px;background:linear-gradient(180deg,#080b0c,#030405);position:relative;overflow:hidden}
+.kpi::after{content:"";position:absolute;right:-30px;top:-30px;width:90px;height:90px;border-radius:50%;
+  background:radial-gradient(circle,rgba(60,242,154,.14),transparent 70%)}
+.kpi span{font-size:9px;letter-spacing:.16em;color:var(--ink3);font-weight:800}
+.kpi b{display:block;font-family:"IBM Plex Mono",monospace;font-size:28px;font-weight:700;margin:5px 0 2px}
+.kpi small{font-size:10px;color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;font-size:9px;letter-spacing:.16em;color:var(--ink3);font-weight:800;padding:9px 12px;
+  border-bottom:1px solid var(--border);background:#050708;position:sticky;top:0}
+td{padding:10px 12px;border-bottom:1px solid var(--border-soft);color:var(--ink2)}
+tbody tr{transition:.12s;cursor:pointer}
+tbody tr:hover{background:var(--hover)}
+td b{color:var(--ink);font-weight:600}
+.tblwrap{border:1px solid var(--border);border-radius:var(--r);overflow:hidden;background:var(--surface)}
+.bar-h{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.bar-h span{width:130px;font-size:11px;color:var(--ink2)}
+.bar-h .track{flex:1}
+.bar-h b{font-family:"IBM Plex Mono",monospace;font-size:12px;width:34px;text-align:right}
+
+/* chat */
+.chatwrap{flex:1;display:flex;flex-direction:column;min-height:0}
+.chatlog{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:14px}
+.msg{display:flex;gap:10px;max-width:70%}
+.msg.me{align-self:flex-end;flex-direction:row-reverse}
+.av{width:28px;height:28px;border-radius:8px;flex-shrink:0;display:grid;place-items:center;font-size:12px}
+.av.ai{background:rgba(60,242,154,.13);border:1px solid rgba(60,242,154,.35);color:var(--accent-br)}
+.av.u{background:var(--elevated);border:1px solid var(--border)}
+.bub{padding:10px 13px;border-radius:11px;font-size:12.5px;line-height:1.65;border:1px solid var(--border-soft);background:var(--surface)}
+.msg.me .bub{background:rgba(60,242,154,.08);border-color:rgba(60,242,154,.28)}
+.chatin{flex-shrink:0;padding:12px 18px;border-top:1px solid var(--border-soft)}
+.qchips{display:flex;gap:7px;margin-bottom:9px;flex-wrap:wrap}
+.qchip{font-size:10.5px;padding:5px 10px;border-radius:14px;border:1px solid var(--border);color:var(--ink2)}
+.qchip:hover{border-color:var(--accent);color:var(--accent-br)}
+
+/* ---------- DRAWER ---------- */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(3px);z-index:4000;display:none}
+.scrim.on{display:block;animation:fade .16s ease-out}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:432px;max-width:92vw;z-index:4001;
+  background:linear-gradient(180deg,#070a0b,#000);border-left:1px solid var(--border);
+  display:none;flex-direction:column;box-shadow:-30px 0 70px rgba(0,0,0,.9)}
+.drawer.on{display:flex;animation:slide .2s ease-out}
+@keyframes slide{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.dhead{flex-shrink:0;display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border)}
+.dhead h4{font-size:13.5px;font-weight:800;letter-spacing:.03em}
+.dbody{flex:1;overflow-y:auto;padding:16px}
+.cvhead{display:flex;gap:13px;margin-bottom:15px}
+.photo{width:74px;height:74px;border-radius:10px;flex-shrink:0;display:grid;place-items:center;
+  background:var(--elevated);border:1px solid var(--border);color:var(--ink3)}
+.cvhead h3{font-size:16px;font-weight:800}
+.cvhead .id{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink3);margin:2px 0 4px}
+.cvhead .un{font-size:11px;color:var(--ink2);margin-bottom:7px}
+.socials{display:flex;gap:7px;margin-bottom:15px}
+.soc{flex:1;height:32px;border-radius:7px;border:1px solid var(--border);background:var(--elevated);
+  display:grid;place-items:center;font-size:10px;font-weight:700;color:var(--ink2)}
+.soc:hover{border-color:var(--accent);color:var(--accent-br)}
+.card{border:1px solid var(--border);border-radius:9px;padding:12px;margin-bottom:11px;background:var(--surface)}
+.card>h6{font-size:9px;letter-spacing:.18em;color:var(--ink3);font-weight:800;margin-bottom:9px}
+.chipset{display:flex;gap:6px;flex-wrap:wrap}
+.kchip{font-size:10.5px;padding:4px 9px;border-radius:13px;border:1px solid rgba(60,242,154,.3);
+  background:rgba(60,242,154,.07);color:var(--accent-br);font-weight:600}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px 12px}
+.grid2 div span{display:block;font-size:9px;letter-spacing:.1em;color:var(--ink3);font-weight:700}
+.grid2 div b{font-size:11.5px;font-weight:600;color:var(--ink)}
+.rowitem{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border-soft);font-size:11.5px}
+.rowitem:last-child{border:none}
+.rowitem .g{flex:1}
+.rowitem small{display:block;font-size:9.5px;color:var(--ink3);font-family:"IBM Plex Mono",monospace}
+.dfoot{flex-shrink:0;display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--border)}
+.btn-ghost{flex:1;height:34px;border-radius:7px;border:1px solid var(--border);background:var(--elevated);
+  font-size:11px;font-weight:700;color:var(--ink2)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent-br)}
+
+/* ---------- MODAL BUAT MISI ---------- */
+.modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;max-width:94vw;
+  max-height:88vh;z-index:4001;background:linear-gradient(180deg,#080b0d,#020304);
+  border:1px solid var(--border);border-radius:14px;display:none;flex-direction:column;
+  box-shadow:0 40px 100px rgba(0,0,0,.92),0 0 60px rgba(60,242,154,.08)}
+.modal.on{display:flex;animation:pop .18s ease-out}
+@keyframes pop{from{opacity:0;transform:translate(-50%,-46%) scale(.97)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+.mhead{display:flex;align-items:center;gap:10px;padding:15px 18px;border-bottom:1px solid var(--border)}
+.mhead h4{font-size:13px;font-weight:900;letter-spacing:.14em}
+.mbody{flex:1;overflow-y:auto;padding:18px}
+.field{margin-bottom:13px}
+.field>label{display:block;font-size:9.5px;letter-spacing:.14em;color:var(--ink3);font-weight:800;margin-bottom:6px}
+.inp{width:100%;height:36px;padding:0 11px;border-radius:7px;border:1px solid var(--border);
+  background:var(--elevated);font-size:12px;color:var(--ink);outline:none;transition:.14s}
+textarea.inp{height:78px;padding:9px 11px;resize:none}
+.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,197,119,.13)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.mfoot{display:flex;gap:9px;padding:13px 18px;border-top:1px solid var(--border)}
+.spin{width:44px;height:44px;border-radius:50%;border:2.5px solid var(--border);border-top-color:var(--accent-br);
+  animation:spin 1s linear infinite;margin:0 auto 16px}
+.center{text-align:center;padding:26px 0}
+.center p{font-size:12.5px;color:var(--ink2);line-height:1.7}
+.okmark{width:60px;height:60px;border-radius:50%;margin:0 auto 15px;display:grid;place-items:center;
+  background:rgba(60,242,154,.12);border:2px solid var(--accent-br);color:var(--accent-br);font-size:30px;
+  box-shadow:0 0 40px rgba(60,242,154,.3)}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ========== SIDEBAR ========== -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="flag"><i></i><i></i></div>
+      <div><h1>AI KOMCAD</h1><span>COMMAND CENTER</span></div>
+    </div>
+    <div class="navwrap" id="navwrap"></div>
+    <div class="sidefoot">STATUS SISTEM <b>● OPERASIONAL</b><br>v1.0 · KEMENHAN RI</div>
+  </aside>
+
+  <!-- ========== MAIN ========== -->
+  <div class="main">
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <button class="icobtn" onclick="document.getElementById('app').classList.toggle('collapsed')" title="Sembunyikan sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <div class="ttl"><h2 id="pgTitle">Overview</h2><p id="pgCrumb">RINGKASAN / PETA SITUASI NASIONAL</p></div>
+      <div class="live"><span class="dot"></span>LIVE</div>
+      <div class="spacer"></div>
+      <select class="sel"><option>Seluruh Indonesia</option><option>Jawa Barat</option><option>Sumatera Utara</option><option>Sulawesi Selatan</option></select>
+      <button class="btn-primary" onclick="openMisi()">+ BUAT MISI</button>
+      <div class="chip">READINESS <b>74</b></div>
+      <button class="btn-alert">MISI AKTIF <em>3</em></button>
+      <input class="srch" placeholder="Cari anggota / Misi..." />
+      <button class="icobtn" onclick="go('pengaturan')" title="Pengaturan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.6 1.6 0 00-1.8-.3 1.6 1.6 0 00-1 1.5V21a2 2 0 11-4 0v-.1A1.6 1.6 0 008 19.4a1.6 1.6 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.6 1.6 0 00.3-1.8 1.6 1.6 0 00-1.5-1H2a2 2 0 110-4h.1A1.6 1.6 0 004.6 8a1.6 1.6 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.6 1.6 0 001.8.3H9a1.6 1.6 0 001-1.5V2a2 2 0 114 0v.1a1.6 1.6 0 001 1.5 1.6 1.6 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.6 1.6 0 00-.3 1.8V9a1.6 1.6 0 001.5 1H22a2 2 0 110 4h-.1a1.6 1.6 0 00-1.5 1z"/></svg>
+      </button>
+      <div class="avatar">AD</div>
+    </header>
+
+    <!-- ============ VIEW: OVERVIEW ============ -->
+    <section class="view on" id="v-overview">
+      <div class="sitbar">
+        <h3>SITUASI KESIAPSIAGAAN NASIONAL</h3>
+        <span class="clk mono" id="clock">--:--:-- WIB</span>
+        <div class="spacer"></div>
+        <button class="ghostbtn" id="toggleAll" onclick="toggleAllPanels()">Sembunyikan Semua Panel ▾</button>
+      </div>
+
+      <div class="mapwrap" id="mapwrap">
+        <div id="map"></div>
+        <div class="retic"></div>
+
+        <div class="ov brk" id="layers">
+          <h4>LAYERS</h4>
+          <div style="padding:0 4px 8px">
+            <button class="lyr on" data-l="anggota"><span class="box"></span>Anggota Siap<i class="swatch" style="background:#3cf29a"></i></button>
+            <button class="lyr on" data-l="siaga"><span class="box"></span>Anggota Siaga<i class="swatch" style="background:#e0a83e"></i></button>
+            <button class="lyr on" data-l="misi"><span class="box"></span>Zona Misi<i class="swatch" style="background:#e14c45"></i></button>
+            <button class="lyr on" data-l="pos"><span class="box"></span>Pos Komando<i class="swatch" style="background:#b08d4f"></i></button>
+            <button class="lyr" data-l="heat"><span class="box"></span>Kepadatan Wilayah<i class="swatch" style="background:#3fa9c9"></i></button>
+          </div>
+        </div>
+
+        <div class="ov brk" id="training">
+          <h4>AKTIVITAS PELATIHAN TERBARU</h4>
+          <div class="trlist" id="trlist"></div>
+        </div>
+
+        <button class="fsbtn" onclick="toggleFs()" title="Layar penuh">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg>
+        </button>
+
+        <div class="ov" id="legend">
+          <div><i style="background:#3cf29a;box-shadow:0 0 8px #3cf29a"></i>Anggota Siap</div>
+          <div><i style="background:#e0a83e;box-shadow:0 0 8px #e0a83e"></i>Anggota Siaga</div>
+          <div><i style="background:#e14c45"></i>Misi Kritis</div>
+          <div><i style="background:#e0a83e"></i>Misi Tinggi</div>
+          <div><i style="background:#3fa9c9"></i>Misi Sedang</div>
+          <div><i style="background:#b08d4f;border-radius:2px;transform:rotate(45deg)"></i>Pos Komando</div>
+        </div>
+
+        <div class="coord mono" id="coord">LAT -2.5000 · LNG 118.0000 · ZOOM 5</div>
+      </div>
+
+      <div class="chips" id="restoreChips"></div>
+
+      <div class="bottom" id="bottom">
+        <!-- PANEL 1 -->
+        <div class="panel" data-p="stats">
+          <div class="phead"><h5>STATISTIK ANGGOTA</h5><span class="tag cy">NASIONAL</span>
+            <button class="hidebtn" onclick="hidePanel('stats')" aria-label="Sembunyikan panel Statistik Anggota">−</button></div>
+          <div class="pbody">
+            <div class="sechead">KOMPOSISI GENDER</div>
+            <div class="genderbar"><i style="width:71%;background:linear-gradient(90deg,#3fa9c9,#5cc3e0)"></i><i style="width:29%;background:linear-gradient(90deg,#d97fa8,#e8a3c2)"></i></div>
+            <div class="lblrow"><span>Laki-laki <b class="mono" style="color:#3fa9c9">71% · 43</b></span><span>Perempuan <b class="mono" style="color:#d97fa8">29% · 17</b></span></div>
+            <div class="minis">
+              <div class="mini"><span>TOTAL TERDAFTAR</span><b>60</b></div>
+              <div class="mini"><span>STATUS AKTIF</span><b style="color:var(--accent-br)">54</b></div>
+            </div>
+            <div class="sechead">PROVINSI TERBANYAK</div>
+            <div id="provList"></div>
+          </div>
+        </div>
+        <!-- PANEL 2 -->
+        <div class="panel" data-p="feed" style="flex:1.25">
+          <div class="phead"><h5>MISI TERBARU</h5><span class="tag rd">● 3</span>
+            <button class="hidebtn" onclick="hidePanel('feed')" aria-label="Sembunyikan panel Misi Terbaru">−</button></div>
+          <div class="pbody" id="feedList"></div>
+        </div>
+        <!-- PANEL 3 -->
+        <div class="panel" data-p="ai">
+          <div class="phead"><h5>AI MOBILIZATION</h5><span class="tag gr">● LIVE</span>
+            <button class="hidebtn" onclick="hidePanel('ai')" aria-label="Sembunyikan panel AI Mobilization">−</button></div>
+          <div class="pbody">
+            <div class="aisum">Analisis <b>Big Data</b> 60 anggota terhadap MIS-2026-0031 (Banjir Bandang, Kritis). <b>7 kandidat</b> memenuhi ambang Readiness ≥ 70 dengan radius ≤ 60 km.</div>
+            <div class="sechead">KANDIDAT TERATAS</div>
+            <div id="candList"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ VIEW: GENERIK ============ -->
+    <section class="view" id="v-generic"><div class="page" id="genericPage"></div></section>
+
+    <!-- ============ VIEW: AI CHAT ============ -->
+    <section class="view" id="v-chat">
+      <div class="chatwrap">
+        <div class="chatlog" id="chatlog">
+          <div class="msg"><div class="av ai">✦</div><div class="bub">Selamat bertugas, Admin. Saya asisten data AI KOMCAD. Tanyakan apa saja soal kesiapsiagaan, anggota, Misi, atau sertifikasi.</div></div>
+          <div class="msg me"><div class="av u">👤</div><div class="bub">Berapa anggota siap di Jawa Barat?</div></div>
+          <div class="msg"><div class="av ai">✦</div><div class="bub">Di <b>Jawa Barat</b> terdapat <b>9 anggota</b> berstatus Siap dari 12 terdaftar (75%). Rata-rata Readiness Score wilayah: <b class="mono" style="color:#3cf29a">78</b>.
+            <div style="margin-top:9px">
+              <div class="bar-h"><span>Siap</span><div class="track"><i style="width:75%"></i></div><b>9</b></div>
+              <div class="bar-h"><span>Siaga</span><div class="track"><i style="width:25%;background:linear-gradient(90deg,#e0a83e,#f0c46a)"></i></div><b>3</b></div>
+            </div></div></div>
+        </div>
+        <div class="chatin">
+          <div class="qchips">
+            <button class="qchip">Sertifikasi kedaluwarsa bulan ini?</button>
+            <button class="qchip">Provinsi dengan Readiness terendah</button>
+            <button class="qchip">Ringkas Misi aktif</button>
+            <button class="qchip">Siapa kandidat terbaik untuk banjir?</button>
+          </div>
+          <div style="display:flex;gap:9px">
+            <input class="inp" placeholder="Tanyakan sesuatu ke AI KOMCAD..." style="flex:1" />
+            <button class="btn-primary" style="height:36px">KIRIM</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ========== SCRIM ========== -->
+<div class="scrim" id="scrim" onclick="closeAll()"></div>
+
+<!-- ========== DRAWER CV ANGGOTA ========== -->
+<aside class="drawer" id="drawer">
+  <div class="dhead">
+    <h4 id="dTitle">Detail Anggota</h4>
+    <div class="spacer" style="flex:1"></div>
+    <button class="icobtn" onclick="closeAll()">✕</button>
+  </div>
+  <div class="dbody" id="dBody"></div>
+  <div class="dfoot">
+    <button class="btn-ghost">Ubah Status Kesiapan</button>
+    <button class="btn-ghost">Edit Data</button>
+    <button class="btn-primary" style="flex:1;height:34px">Tugaskan ke Misi</button>
+  </div>
+</aside>
+
+<!-- ========== MODAL BUAT MISI ========== -->
+<div class="modal" id="modal">
+  <div class="mhead">
+    <h4>BUAT MISI BARU</h4><div style="flex:1"></div>
+    <button class="icobtn" onclick="closeAll()">✕</button>
+  </div>
+  <div class="mbody">
+    <!-- STEP 1: FORM -->
+    <div id="step1">
+      <div class="field"><label>PEMBERI PERINTAH</label>
+        <select class="inp"><option>Panglima TNI</option><option>Menteri Pertahanan</option><option>Pangdam III/Siliwangi</option><option>BNPB</option></select></div>
+      <div class="two">
+        <div class="field"><label>JENIS KEJADIAN</label>
+          <select class="inp"><option>Banjir Bandang</option><option>Gempa Bumi</option><option>Kebakaran Hutan</option><option>Erupsi Gunung</option><option>Pengamanan Objek Vital</option></select></div>
+        <div class="field"><label>URGENSI</label>
+          <select class="inp"><option>Kritis</option><option>Tinggi</option><option>Sedang</option></select></div>
+      </div>
+      <div class="field"><label>LOKASI</label>
+        <div style="display:flex;gap:8px">
+          <input class="inp" placeholder="Ketik alamat / kota, mis. Garut, Jawa Barat" style="flex:1" />
+          <button class="btn-ghost" style="flex:0 0 108px;height:36px">Cari Lokasi</button>
+        </div>
+        <p style="font-size:10px;color:var(--ink3);margin-top:6px" class="mono">📍 -7.2278, 107.9087 · Garut, Jawa Barat</p>
+      </div>
+      <div class="field"><label>DESKRIPSI MISI</label>
+        <textarea class="inp" placeholder="Uraikan situasi, kebutuhan personel, dan sasaran operasi...">Banjir bandang melanda 4 kecamatan. Dibutuhkan personel SAR air, tenaga medis, dan logistik dapur umum.</textarea></div>
+    </div>
+    <!-- STEP 2: LOADING -->
+    <div id="step2" class="hidden center">
+      <div class="spin"></div>
+      <p><b style="color:var(--accent-br)">AI Mobilization</b> sedang menganalisis Big Data anggota...<br>
+      <span class="mono" style="font-size:10.5px;color:var(--ink3)">Memindai 60 profil · kompetensi · jarak · Readiness Score</span></p>
+    </div>
+    <!-- STEP 3: HASIL -->
+    <div id="step3" class="hidden">
+      <div class="aisum" style="margin-bottom:14px">
+        Perintah <b>Panglima TNI</b> — <i>"Banjir bandang melanda 4 kecamatan. Dibutuhkan personel SAR air, tenaga medis, dan logistik dapur umum."</i><br><br>
+        AI menyaring <b>60 anggota</b> dan merekomendasikan <b>5 kandidat</b> dengan kompetensi SAR Air / Medis Lapangan, radius terdekat dari Garut, dan Readiness Score ≥ 78.
+      </div>
+      <div class="sechead">KANDIDAT REKOMENDASI</div>
+      <div id="modalCand"></div>
+    </div>
+    <!-- STEP 4: KONFIRMASI -->
+    <div id="step4" class="hidden center">
+      <div class="okmark">✓</div>
+      <p><b style="color:var(--ink);font-size:15px">Misi Berhasil Dibuat</b><br>
+      ID Misi <b class="mono" style="color:var(--accent-br)">MIS-2026-0032</b><br>
+      <span style="color:var(--ink3)">5 kandidat telah dinotifikasi melalui aplikasi anggota.</span></p>
+    </div>
+  </div>
+  <div class="mfoot" id="mfoot">
+    <button class="btn-ghost" onclick="closeAll()">Batal</button>
+    <button class="btn-primary" style="flex:1;height:34px" id="mBtn" onclick="misiNext()">Jalankan AI Mobilization</button>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+/* =================== DATA (selaras seed 60 anggota / 12 provinsi) =================== */
+const NAV=[
+ ["RINGKASAN",[["overview","Overview","M3 12l9-9 9 9M5 10v10h14V10"]]],
+ ["OPERASI",[["misi","Manajemen Misi","M12 2l9 4v6c0 5-3.8 9.4-9 10-5.2-.6-9-5-9-10V6z"],["aimob","AI Mobilization","M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"]]],
+ ["DATA ANGGOTA",[["anggota","Direktori Anggota","M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8m13 10v-2a4 4 0 00-3-3.9"],["sertifikasi","Kompetensi & Sertifikasi","M12 15a5 5 0 100-10 5 5 0 000 10zM8.2 13.6L7 22l5-3 5 3-1.2-8.4"],["pelatihan","Riwayat Pelatihan","M22 10L12 5 2 10l10 5 10-5zM6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"]]],
+ ["LAPORAN",[["analitik","Analitik Kesiapsiagaan","M3 3v18h18M7 15l3-4 3 3 5-7"],["laporan","Laporan & Ekspor","M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M9 15h6"],["riwayat","Riwayat Mobilisasi","M3 3v5h5M3.05 13A9 9 0 106 5.3L3 8M12 7v5l4 2"]]],
+ ["ASISTEN",[["chat","AI Chat","M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"]]],
+ ["SISTEM",[["pengguna","Pengguna & Role","M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8m11 2l2 2 4-4"],["pengaturan","Pengaturan","M12 15a3 3 0 100-6 3 3 0 000 6z"],["guideline","Guideline","M4 19.5A2.5 2.5 0 016.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"]]]
+];
+const TITLES={overview:["Overview","RINGKASAN / PETA SITUASI NASIONAL"],misi:["Manajemen Misi","OPERASI / DAFTAR MISI"],aimob:["AI Mobilization","OPERASI / REKOMENDASI KANDIDAT"],anggota:["Direktori Anggota","DATA ANGGOTA / DAFTAR ANGGOTA"],sertifikasi:["Kompetensi & Sertifikasi","DATA ANGGOTA / SERTIFIKASI"],pelatihan:["Riwayat Pelatihan","DATA ANGGOTA / PELATIHAN"],analitik:["Analitik Kesiapsiagaan","LAPORAN / ANALITIK"],laporan:["Laporan & Ekspor","LAPORAN / EKSPOR"],riwayat:["Riwayat Mobilisasi","LAPORAN / HISTORIS MISI"],chat:["AI Chat","ASISTEN / TANYA DATA"],pengguna:["Pengguna & Role","SISTEM / MANAJEMEN AKSES"],pengaturan:["Pengaturan","SISTEM / PREFERENSI"],guideline:["Guideline","SISTEM / PANDUAN"]};
+
+const ANGGOTA=[
+ {id:"ANG-00007",n:"Bayu Pratama",lat:-6.9175,lng:107.6191,s:"Siap",r:91,u:"Batalyon Komcad 201 / Jawa Barat",k:["SAR Air","Navigasi Darat","P3K Lapangan"],usia:27,gol:"O",tlp:"0812-3344-1122",prov:"Jawa Barat"},
+ {id:"ANG-00013",n:"Siti Rahmawati",lat:-6.2615,lng:106.781,s:"Siap",r:88,u:"Batalyon Komcad 101 / DKI Jakarta",k:["Medis Lapangan","Komunikasi Radio"],usia:25,gol:"A",tlp:"0813-7788-5566",prov:"DKI Jakarta"},
+ {id:"ANG-00021",n:"Rizky Hidayat",lat:-7.2575,lng:112.7521,s:"Siaga",r:66,u:"Batalyon Komcad 304 / Jawa Timur",k:["Logistik","Dapur Umum"],usia:31,gol:"B",tlp:"0857-1122-9090",prov:"Jawa Timur"},
+ {id:"ANG-00029",n:"Dewi Anggraini",lat:3.5952,lng:98.6722,s:"Siap",r:83,u:"Batalyon Komcad 402 / Sumatera Utara",k:["Medis Lapangan","Evakuasi"],usia:29,gol:"AB",tlp:"0821-4455-1188",prov:"Sumatera Utara"},
+ {id:"ANG-00034",n:"Agus Setiawan",lat:-5.1477,lng:119.4327,s:"Siaga",r:59,u:"Batalyon Komcad 505 / Sulawesi Selatan",k:["Zeni Lapangan"],usia:34,gol:"O",tlp:"0852-9900-3344",prov:"Sulawesi Selatan"},
+ {id:"ANG-00041",n:"Putri Maharani",lat:-6.9932,lng:110.4203,s:"Siap",r:79,u:"Batalyon Komcad 302 / Jawa Tengah",k:["Administrasi Operasi","P3K Lapangan"],usia:26,gol:"A",tlp:"0878-2233-6677",prov:"Jawa Tengah"},
+ {id:"ANG-00046",n:"Hendra Kusuma",lat:-8.65,lng:115.2167,s:"Siap",r:86,u:"Batalyon Komcad 601 / Bali",k:["SAR Air","Selam"],usia:28,gol:"B",tlp:"0819-5566-2211",prov:"Bali"},
+ {id:"ANG-00050",n:"Joko Lestari",lat:-1.2379,lng:116.8529,s:"Siaga",r:52,u:"Batalyon Komcad 701 / Kalimantan Timur",k:["Logistik"],usia:36,gol:"O",tlp:"0813-1177-4488",prov:"Kalimantan Timur"},
+ {id:"ANG-00053",n:"Nurul Fadilah",lat:-2.9761,lng:104.7754,s:"Siap",r:81,u:"Batalyon Komcad 403 / Sumatera Selatan",k:["Medis Lapangan"],usia:24,gol:"A",tlp:"0851-3344-7799",prov:"Sumatera Selatan"},
+ {id:"ANG-00057",n:"Ilham Ramadhan",lat:1.4748,lng:124.8421,s:"Siap",r:77,u:"Batalyon Komcad 801 / Sulawesi Utara",k:["Komunikasi Radio","Navigasi Darat"],usia:30,gol:"B",tlp:"0812-6677-9911",prov:"Sulawesi Utara"},
+ {id:"ANG-00060",n:"Wulandari Sari",lat:-8.5833,lng:116.1167,s:"Siaga",r:63,u:"Batalyon Komcad 602 / Nusa Tenggara Barat",k:["Dapur Umum","Evakuasi"],usia:27,gol:"AB",tlp:"0877-8899-2200",prov:"Nusa Tenggara Barat"},
+ {id:"ANG-00062",n:"Fajar Nugroho",lat:-0.0263,lng:109.3425,s:"Siap",r:74,u:"Batalyon Komcad 702 / Kalimantan Barat",k:["Zeni Lapangan","Logistik"],usia:33,gol:"O",tlp:"0838-1122-5533",prov:"Kalimantan Barat"}
+];
+const MISI=[
+ {id:"MIS-2026-0031",n:"Banjir Bandang Garut",lat:-7.2278,lng:107.9087,u:"Kritis",st:"Berjalan",p:12,t:"14 menit lalu",o:"Panglima TNI"},
+ {id:"MIS-2026-0030",n:"Karhutla Riau Sektor 4",lat:0.5333,lng:101.45,u:"Tinggi",st:"Berjalan",p:8,t:"2 jam lalu",o:"Menteri Pertahanan"},
+ {id:"MIS-2026-0029",n:"Pengamanan Objek Vital Cilegon",lat:-6.0025,lng:106.0116,u:"Sedang",st:"Menunggu Persetujuan",p:6,t:"5 jam lalu",o:"Pangdam Jaya"}
+];
+const POS=[{n:"Pos Komando Nasional",lat:-5.6,lng:108.3},{n:"Pos Komando Regional Jawa",lat:-8.1,lng:109.4},{n:"Pos Komando Regional Sumatera",lat:2.2,lng:100.1},{n:"Pos Komando Regional Sulawesi-Kalimantan",lat:-3.6,lng:121}];
+const PELATIHAN=[
+ {n:"Latihan SAR Air Terpadu",l:"Waduk Jatiluhur, Jawa Barat",d:"12 AGU 2026",p:34},
+ {n:"Pelatihan Medis Lapangan Lanjutan",l:"RS Dustira, Cimahi",d:"09 AGU 2026",p:22},
+ {n:"Simulasi Evakuasi Gempa",l:"Padang, Sumatera Barat",d:"05 AGU 2026",p:41},
+ {n:"Kursus Navigasi Darat",l:"Gunung Sanggabuana",d:"01 AGU 2026",p:18},
+ {n:"Pelatihan Dapur Umum Massal",l:"Semarang, Jawa Tengah",d:"28 JUL 2026",p:27}
+];
+const PROV=[["Jawa Barat",12],["Jawa Timur",9],["DKI Jakarta",8],["Jawa Tengah",7],["Sumatera Utara",6],["Sulawesi Selatan",5]];
+const CAND=[
+ {n:"Bayu Pratama",s:94,a:"SAR Air · 12 km dari lokasi · Readiness 91",e:"ETA 24m"},
+ {n:"Siti Rahmawati",s:89,a:"Medis Lapangan · 31 km · Readiness 88",e:"ETA 41m"},
+ {n:"Putri Maharani",s:85,a:"P3K Lapangan · 48 km · Readiness 79",e:"ETA 58m"},
+ {n:"Hendra Kusuma",s:82,a:"SAR Air / Selam · 64 km · Readiness 86",e:"ETA 1j 10m"},
+ {n:"Fajar Nugroho",s:78,a:"Zeni Lapangan · 71 km · Readiness 74",e:"ETA 1j 22m"}
+];
+
+/* =================== RENDER SIDEBAR =================== */
+document.getElementById('navwrap').innerHTML=NAV.map(([g,items])=>
+ `<div class="navgrp"><p>${g}</p>${items.map(([k,l,d])=>
+  `<button class="nav${k==='overview'?' on':''}" data-k="${k}" onclick="go('${k}')">
+     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>
+     ${l}${k==='misi'?'<span class="badge">3</span>':''}</button>`).join('')}</div>`).join('');
+
+/* =================== PANEL BAWAH =================== */
+document.getElementById('trlist').innerHTML=PELATIHAN.map(p=>
+ `<button class="tr"><b>${p.n}</b><small>📍 ${p.l}</small><small><span class="mono">${p.d}</span> · <span class="amt">${p.p} peserta</span></small></button>`).join('');
+document.getElementById('provList').innerHTML=PROV.map(([n,v])=>
+ `<div class="prov"><div class="t"><span>${n}</span><b>${v}</b></div><div class="track"><i style="width:${v/12*100}%"></i></div></div>`).join('');
+const UC={Kritis:['p-red','#e14c45'],Tinggi:['p-amb','#e0a83e'],Sedang:['p-cy','#3fa9c9']};
+document.getElementById('feedList').innerHTML=MISI.map(m=>
+ `<button class="feed" onclick="openMisiDetail('${m.id}')"><i class="bar" style="background:${UC[m.u][1]}"></i>
+   <div style="flex:1"><div class="k">${m.id} · ${m.t}</div><div class="n">${m.n}</div>
+   <div class="m"><span class="pill ${UC[m.u][0]}">${m.u.toUpperCase()}</span>
+   <span class="pill ${m.st==='Berjalan'?'p-gr':'p-gy'}">${m.st.toUpperCase()}</span>
+   <span class="pill p-gy">${m.p} PERSONEL</span></div></div></button>`).join('');
+const candHtml=CAND.map(c=>`<button class="cand"><div class="score">${c.s}</div>
+  <div class="info"><b>${c.n}</b><small>${c.a}</small></div><span class="eta mono">${c.e}</span></button>`).join('');
+document.getElementById('candList').innerHTML=candHtml;
+document.getElementById('modalCand').innerHTML=candHtml;
+
+/* =================== JAM =================== */
+setInterval(()=>{const d=new Date();
+ document.getElementById('clock').textContent=d.toLocaleTimeString('id-ID',{hour12:false})+' WIB · '+d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();},1000);
+
+/* =================== PETA =================== */
+const map=L.map('map',{zoomControl:false,attributionControl:true,
+  maxBounds:[[-11.5,93.5],[7,141.5]],maxBoundsViscosity:.9}).setView([-2.5,118],5);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);
+L.control.zoom({position:'bottomright'}).addTo(map);
+map.on('move',()=>{const c=map.getCenter();
+ document.getElementById('coord').textContent=`LAT ${c.lat.toFixed(4)} · LNG ${c.lng.toFixed(4)} · ZOOM ${map.getZoom()}`;});
+
+const G={anggota:L.layerGroup().addTo(map),siaga:L.layerGroup().addTo(map),misi:L.layerGroup().addTo(map),pos:L.layerGroup().addTo(map),heat:L.layerGroup()};
+ANGGOTA.forEach(a=>{
+ const siap=a.s==='Siap';
+ L.marker([a.lat,a.lng],{icon:L.divIcon({className:'',html:`<div class="mk ${siap?'mk-siap':'mk-siaga'}" style="width:12px;height:12px"></div>`,iconSize:[12,12],iconAnchor:[6,6]})})
+  .addTo(siap?G.anggota:G.siaga).on('click',()=>openCv(a.id));
+});
+MISI.forEach(m=>{const c=UC[m.u][1];
+ L.circle([m.lat,m.lng],{radius:m.u==='Kritis'?95000:m.u==='Tinggi'?70000:48000,color:c,weight:1.4,fillColor:c,fillOpacity:.13}).addTo(G.misi);
+ L.circleMarker([m.lat,m.lng],{radius:5,color:c,weight:2,fillColor:'#000',fillOpacity:1}).addTo(G.misi).on('click',()=>openMisiDetail(m.id));
+});
+POS.forEach(p=>L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',html:'<div class="mk-pos"></div>',iconSize:[14,14],iconAnchor:[7,7]})}).addTo(G.pos).bindTooltip(p.n));
+[[-6.5,107],[3,99],[-5,119.5],[-7.2,112]].forEach(([la,ln],i)=>
+ L.circle([la,ln],{radius:150000+i*40000,color:'#3fa9c9',weight:0,fillColor:'#3fa9c9',fillOpacity:.13}).addTo(G.heat));
+
+document.querySelectorAll('.lyr').forEach(b=>b.onclick=()=>{
+ b.classList.toggle('on');const g=G[b.dataset.l];
+ b.classList.contains('on')?g.addTo(map):map.removeLayer(g);});
+
+function toggleFs(){document.getElementById('mapwrap').classList.toggle('fs');setTimeout(()=>map.invalidateSize(),220);}
+
+/* =================== PANEL SHOW/HIDE =================== */
+const PN={stats:'Statistik Anggota',feed:'Misi Terbaru',ai:'AI Mobilization'};
+let hidden=new Set();
+function renderChips(){
+ document.getElementById('restoreChips').innerHTML=[...hidden].map(k=>
+  `<button class="rchip" onclick="showPanel('${k}')"><span style="font-size:12px">＋</span>${PN[k]}</button>`).join('');
+ document.getElementById('toggleAll').textContent=hidden.size===3?'Tampilkan Semua Panel ▸':'Sembunyikan Semua Panel ▾';
+ setTimeout(()=>map.invalidateSize(),220);
+}
+function hidePanel(k){hidden.add(k);document.querySelector(`[data-p="${k}"]`).style.display='none';renderChips();}
+function showPanel(k){hidden.delete(k);document.querySelector(`[data-p="${k}"]`).style.display='flex';renderChips();}
+function toggleAllPanels(){hidden.size===3?Object.keys(PN).forEach(showPanel):Object.keys(PN).forEach(hidePanel);}
+
+/* =================== NAVIGASI =================== */
+function go(k){
+ document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('on',n.dataset.k===k));
+ document.getElementById('pgTitle').textContent=TITLES[k][0];
+ document.getElementById('pgCrumb').textContent=TITLES[k][1];
+ document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+ if(k==='overview'){document.getElementById('v-overview').classList.add('on');setTimeout(()=>map.invalidateSize(),120);}
+ else if(k==='chat'){document.getElementById('v-chat').classList.add('on');}
+ else{document.getElementById('v-generic').classList.add('on');document.getElementById('genericPage').innerHTML=PAGES[k]();}
+}
+
+/* =================== HALAMAN GENERIK =================== */
+const badge=(t,c)=>`<span class="pill ${c}">${t}</span>`;
+const PAGES={
+ misi:()=>`<div class="toolbar"><input class="srch" style="width:240px" placeholder="Cari Misi..."/>
+   <select class="sel"><option>Semua Status</option><option>Berjalan</option><option>Selesai</option><option>Menunggu Persetujuan</option></select>
+   <select class="sel"><option>Semua Urgensi</option><option>Kritis</option><option>Tinggi</option><option>Sedang</option></select>
+   <div style="flex:1"></div><button class="btn-primary" onclick="openMisi()">+ BUAT MISI</button></div>
+   <div class="tblwrap"><table><thead><tr><th>ID MISI</th><th>NAMA MISI</th><th>PEMBERI PERINTAH</th><th>URGENSI</th><th>STATUS</th><th>PERSONEL</th><th>DIBUAT</th></tr></thead><tbody>
+   ${MISI.concat(MISI.map(m=>({...m,id:m.id.replace('003','002'),st:'Selesai',t:'kemarin'}))).map(m=>
+    `<tr onclick="openMisiDetail('${m.id}')"><td class="mono">${m.id}</td><td><b>${m.n}</b></td><td>${m.o}</td>
+     <td>${badge(m.u.toUpperCase(),UC[m.u][0])}</td><td>${badge(m.st.toUpperCase(),m.st==='Berjalan'?'p-gr':'p-gy')}</td>
+     <td class="mono">${m.p}</td><td>${m.t}</td></tr>`).join('')}</tbody></table></div>`,
+
+ aimob:()=>`<div class="kpis">
+   <div class="kpi"><span>KANDIDAT DIANALISIS</span><b>60</b><small>seluruh anggota aktif</small></div>
+   <div class="kpi"><span>LOLOS AMBANG</span><b>7</b><small>Readiness ≥ 70</small></div>
+   <div class="kpi"><span>RATA-RATA SKOR</span><b>85.6</b><small>dari 5 teratas</small></div>
+   <div class="kpi"><span>ETA TERCEPAT</span><b>24m</b><small>Bayu Pratama</small></div></div>
+   <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:14px">
+   <div class="tblwrap" style="padding:14px"><h6 class="sechead">KANDIDAT AKTIF — MIS-2026-0031</h6>${candHtml}</div>
+   <div class="tblwrap" style="padding:14px"><h6 class="sechead">PARAMETER MODEL AI <span style="color:var(--amber)">(ASUMSI — PERLU VALIDASI)</span></h6>
+     ${[['Bobot Readiness Score',40],['Bobot Jarak ke Lokasi',35],['Bobot Kecocokan Kompetensi',25]].map(([l,v])=>
+      `<div class="bar-h"><span>${l}</span><div class="track"><i style="width:${v}%"></i></div><b>${v}%</b></div>`).join('')}
+     <div class="aisum" style="margin-top:12px">Bobot masih <b>asumsi internal</b> sesuai FRD §11 — belum divalidasi pemangku kepentingan. Ubah nilai di sini akan menghitung ulang seluruh ranking kandidat.</div></div></div>`,
+
+ anggota:()=>`<div class="toolbar"><input class="srch" style="width:240px" placeholder="Cari nama / NIK / ID..."/>
+   <select class="sel"><option>Semua Status</option><option>Siap</option><option>Siaga</option><option>Nonaktif</option></select>
+   <select class="sel"><option>Semua Provinsi</option>${PROV.map(p=>`<option>${p[0]}</option>`).join('')}</select>
+   <div style="flex:1"></div><button class="btn-primary">+ TAMBAH ANGGOTA</button></div>
+   <div class="tblwrap"><table><thead><tr><th>ID</th><th>NAMA</th><th>UNIT / WILAYAH</th><th>KOMPETENSI</th><th>STATUS</th><th>READINESS</th></tr></thead><tbody>
+   ${ANGGOTA.map(a=>`<tr onclick="openCv('${a.id}')"><td class="mono">${a.id}</td><td><b>${a.n}</b></td><td>${a.u}</td>
+    <td>${a.k.slice(0,2).join(', ')}</td><td>${badge(a.s.toUpperCase(),a.s==='Siap'?'p-gr':'p-amb')}</td>
+    <td><div style="display:flex;align-items:center;gap:8px"><div class="track" style="width:60px"><i style="width:${a.r}%"></i></div><b class="mono">${a.r}</b></div></td></tr>`).join('')}
+   </tbody></table></div>`,
+
+ sertifikasi:()=>`<div class="kpis">
+   <div class="kpi"><span>SERTIFIKASI AKTIF</span><b style="color:var(--accent-br)">128</b><small>berlaku &gt; 90 hari</small></div>
+   <div class="kpi"><span>AKAN KEDALUWARSA</span><b style="color:var(--amber)">14</b><small>≤ 30 hari — reminder terkirim</small></div>
+   <div class="kpi"><span>KEDALUWARSA</span><b style="color:var(--red)">6</b><small>butuh perpanjangan</small></div>
+   <div class="kpi"><span>CAKUPAN ANGGOTA</span><b>92%</b><small>punya ≥1 sertifikasi aktif</small></div></div>
+   <div class="tblwrap"><table><thead><tr><th>ANGGOTA</th><th>JENIS SERTIFIKASI</th><th>PENERBIT</th><th>BERLAKU HINGGA</th><th>STATUS</th></tr></thead><tbody>
+   ${[["Bayu Pratama","SAR Air Tingkat Lanjut","BASARNAS","12 Nov 2026","Aktif","p-gr"],
+      ["Siti Rahmawati","Emergency Medical Technician","Kemenkes RI","02 Sep 2026","Akan Kedaluwarsa","p-amb"],
+      ["Rizky Hidayat","Manajemen Logistik Bencana","BNPB","18 Jul 2026","Kedaluwarsa","p-red"],
+      ["Dewi Anggraini","Trauma Care Lapangan","Kemenkes RI","30 Des 2026","Aktif","p-gr"],
+      ["Hendra Kusuma","Selam Penyelamatan (Rescue Diver)","POSSI","24 Agu 2026","Akan Kedaluwarsa","p-amb"],
+      ["Ilham Ramadhan","Operator Radio Darurat","ORARI","05 Mar 2027","Aktif","p-gr"]].map(r=>
+     `<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td><td class="mono">${r[3]}</td><td>${badge(r[4].toUpperCase(),r[5])}</td></tr>`).join('')}
+   </tbody></table></div>`,
+
+ pelatihan:()=>`<div class="toolbar"><input class="srch" style="width:240px" placeholder="Cari pelatihan..."/>
+   <select class="sel"><option>Semua Status</option><option>Lulus</option><option>Sedang Berjalan</option><option>Tidak Lulus</option></select><div style="flex:1"></div></div>
+   <div class="tblwrap"><table><thead><tr><th>NAMA PELATIHAN</th><th>LOKASI</th><th>TANGGAL</th><th>PESERTA</th><th>STATUS</th></tr></thead><tbody>
+   ${PELATIHAN.map((p,i)=>`<tr><td><b>${p.n}</b></td><td>${p.l}</td><td class="mono">${p.d}</td><td class="mono">${p.p}</td>
+    <td>${badge(i<3?'LULUS':i===3?'SEDANG BERJALAN':'LULUS',i===3?'p-cy':'p-gr')}</td></tr>`).join('')}
+   </tbody></table></div>`,
+
+ analitik:()=>`<div class="kpis">
+   <div class="kpi"><span>READINESS NASIONAL</span><b style="color:var(--accent-br)">74</b><small>▲ 3 poin vs bulan lalu</small></div>
+   <div class="kpi"><span>ANGGOTA SIAP</span><b>38</b><small>63% dari total aktif</small></div>
+   <div class="kpi"><span>MISI SELESAI (YTD)</span><b>27</b><small>rata-rata respons 41 menit</small></div>
+   <div class="kpi"><span>JAM PELATIHAN</span><b>1.842</b><small>akumulasi tahun berjalan</small></div></div>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+   <div class="tblwrap" style="padding:16px"><h6 class="sechead">READINESS SCORE PER WILAYAH</h6>
+    ${[["Jawa Barat",82],["DKI Jakarta",79],["Bali",78],["Jawa Tengah",74],["Sumatera Utara",71],["Jawa Timur",68],["Sulawesi Selatan",61],["Kalimantan Timur",55]].map(([n,v])=>
+      `<div class="bar-h"><span>${n}</span><div class="track"><i style="width:${v}%"></i></div><b>${v}</b></div>`).join('')}</div>
+   <div class="tblwrap" style="padding:16px"><h6 class="sechead">KOMPOSISI STATUS KESIAPAN</h6>
+    ${[["Siap",38,'#3cf29a'],["Siaga",16,'#e0a83e'],["Nonaktif",6,'#e14c45']].map(([n,v,c])=>
+      `<div class="bar-h"><span>${n}</span><div class="track"><i style="width:${v/60*100}%;background:${c};box-shadow:0 0 10px ${c}"></i></div><b>${v}</b></div>`).join('')}
+    <div class="aisum" style="margin-top:16px"><b>Formula Readiness Score</b> = 40% kompetensi/sertifikasi aktif + 30% rekam pelatihan + 30% kehadiran penugasan. Masih berstatus <b style="color:var(--amber)">asumsi</b> (FRD §11), menunggu validasi.</div></div></div>`,
+
+ laporan:()=>`<div class="toolbar"><select class="sel"><option>Periode: Agustus 2026</option><option>Triwulan III 2026</option></select>
+   <select class="sel"><option>Semua Wilayah</option></select><div style="flex:1"></div>
+   <button class="btn-primary">SUSUN LAPORAN BARU</button></div>
+   <div class="tblwrap"><table><thead><tr><th>NAMA LAPORAN</th><th>PERIODE</th><th>DIBUAT OLEH</th><th>TANGGAL</th><th>FORMAT</th><th></th></tr></thead><tbody>
+   ${[["Laporan Kesiapsiagaan Nasional","Agustus 2026","Admin Pusat","10 Agu 2026"],
+      ["Rekapitulasi Mobilisasi Triwulan","TW II 2026","Operator Jabar","01 Jul 2026"],
+      ["Audit Sertifikasi Anggota","Semester I 2026","Admin Pusat","30 Jun 2026"]].map(r=>
+     `<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td><td class="mono">${r[3]}</td>
+      <td>${badge('PDF','p-red')} ${badge('XLSX','p-gr')}</td><td><button class="btn-ghost" style="height:28px;padding:0 12px">Unduh</button></td></tr>`).join('')}
+   </tbody></table></div>`,
+
+ riwayat:()=>`<div class="tblwrap"><table><thead><tr><th>ID MISI</th><th>NAMA MISI</th><th>SELESAI</th><th>DURASI</th><th>PERSONEL</th><th>EVALUASI</th></tr></thead><tbody>
+   ${[["MIS-2026-0028","Gempa Cianjur Susulan","28 Jul 2026","4 hari",22,"Sangat Baik","p-gr"],
+      ["MIS-2026-0027","Banjir Rob Semarang","19 Jul 2026","2 hari",14,"Baik","p-gr"],
+      ["MIS-2026-0026","Karhutla Kalbar","03 Jul 2026","9 hari",31,"Cukup","p-amb"],
+      ["MIS-2026-0025","Evakuasi Erupsi Semeru","21 Jun 2026","6 hari",26,"Sangat Baik","p-gr"]].map(r=>
+     `<tr><td class="mono">${r[0]}</td><td><b>${r[1]}</b></td><td class="mono">${r[2]}</td><td>${r[3]}</td><td class="mono">${r[4]}</td><td>${badge(r[5].toUpperCase(),r[6])}</td></tr>`).join('')}
+   </tbody></table></div>`,
+
+ pengguna:()=>`<div class="toolbar"><input class="srch" style="width:240px" placeholder="Cari pengguna..."/><div style="flex:1"></div>
+   <button class="btn-primary">+ TAMBAH PENGGUNA</button></div>
+   <div class="tblwrap"><table><thead><tr><th>NAMA</th><th>EMAIL</th><th>ROLE</th><th>WILAYAH</th><th>TERAKHIR AKTIF</th><th>STATUS</th></tr></thead><tbody>
+   ${[["Admin Pusat","admin@komcad.mil.id","ADMIN","Nasional","baru saja","Aktif"],
+      ["Operator Jabar","operator.jabar@komcad.mil.id","OPERATOR","Jawa Barat","12 menit lalu","Aktif"],
+      ["Komandan Regional Sumatera","komandan.sumut@komcad.mil.id","KOMANDAN","Sumatera Utara","3 jam lalu","Aktif"],
+      ["Bayu Pratama","bayu.p@komcad.mil.id","ANGGOTA","Jawa Barat","1 hari lalu","Aktif"]].map(r=>
+     `<tr><td><b>${r[0]}</b></td><td class="mono" style="font-size:11px">${r[1]}</td><td>${badge(r[2],r[2]==='ADMIN'?'p-gr':r[2]==='OPERATOR'?'p-cy':r[2]==='KOMANDAN'?'p-amb':'p-gy')}</td>
+      <td>${r[3]}</td><td>${r[4]}</td><td>${badge('AKTIF','p-gr')}</td></tr>`).join('')}
+   </tbody></table></div>`,
+
+ pengaturan:()=>`<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:920px">
+   <div class="tblwrap" style="padding:16px"><h6 class="sechead">PREFERENSI NOTIFIKASI</h6>
+    ${[["Notifikasi Misi baru","Kirim ke seluruh kandidat terpilih",1],["Reminder sertifikasi kedaluwarsa","Otomatis H-30 sebelum tanggal berlaku habis",1],["Fallback SMS","Kirim ulang lewat SMS bila notifikasi in-app gagal",0]].map(([t,d,on])=>
+     `<div class="rowitem"><div class="g"><b style="color:var(--ink)">${t}</b><small style="font-family:Inter;color:var(--ink3)">${d}</small></div>
+      <div style="width:36px;height:20px;border-radius:11px;background:${on?'var(--accent)':'#1a2024'};position:relative;box-shadow:${on?'0 0 12px rgba(34,197,119,.45)':'none'}">
+      <i style="position:absolute;top:2px;${on?'right:2px':'left:2px'};width:16px;height:16px;border-radius:50%;background:${on?'#000':'#4b545b'}"></i></div></div>`).join('')}</div>
+   <div class="tblwrap" style="padding:16px"><h6 class="sechead">PREFERENSI PETA</h6>
+    ${[["Auto-refresh data peta","Perbarui marker tiap 5 detik",1],["Tampilkan kepadatan wilayah otomatis","Layer heat-zone aktif saat memuat Overview",0],["Batasi geser peta ke wilayah Indonesia","maxBounds 93,5°BT–141,5°BT",1]].map(([t,d,on])=>
+     `<div class="rowitem"><div class="g"><b style="color:var(--ink)">${t}</b><small style="font-family:Inter;color:var(--ink3)">${d}</small></div>
+      <div style="width:36px;height:20px;border-radius:11px;background:${on?'var(--accent)':'#1a2024'};position:relative;box-shadow:${on?'0 0 12px rgba(34,197,119,.45)':'none'}">
+      <i style="position:absolute;top:2px;${on?'right:2px':'left:2px'};width:16px;height:16px;border-radius:50%;background:${on?'#000':'#4b545b'}"></i></div></div>`).join('')}</div></div>`,
+
+ guideline:()=>`<div class="toolbar">
+   <button class="ghostbtn" style="background:rgba(60,242,154,.1)">Panduan Pengguna</button>
+   <button class="ghostbtn" style="border-color:var(--border);color:var(--ink2)">Tanya Jawab (FAQ)</button>
+   <button class="ghostbtn" style="border-color:var(--border);color:var(--ink2)">Modul</button></div>
+   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+   ${[["Peta Situasi Nasional","Aktif","Menampilkan sebaran anggota, zona Misi aktif, dan pos komando di atas basemap OpenStreetMap bergaya tactical. Setiap marker dapat diklik untuk membuka detail penuh. Layer dapat dinyalakan/dimatikan individual.",["Real-time 5 detik","Heat-zone","Layar penuh"]],
+      ["AI Mobilization","Beta","Menyaring seluruh anggota berdasarkan Readiness Score, jarak ke lokasi kejadian, dan kecocokan kompetensi. Menghasilkan ranking kandidat beserta alasan dan estimasi waktu tiba. Bobot model dapat disetel Admin.",["Skoring kandidat","ETA","Bobot dapat disetel"]],
+      ["Manajemen Misi","Aktif","Mencatat seluruh siklus Misi dari pembuatan, persetujuan, notifikasi kandidat, konfirmasi kehadiran, hingga penutupan dan evaluasi. Perubahan status memicu perhitungan ulang Readiness Score anggota terkait.",["Alur persetujuan","Notifikasi","Evaluasi"]]].map(m=>
+     `<div class="tblwrap" style="padding:15px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <b style="font-size:13px">${m[0]}</b>${badge(m[1].toUpperCase(),m[1]==='Aktif'?'p-gr':'p-cy')}</div>
+      <p style="font-size:11.5px;line-height:1.7;color:var(--ink2);margin-bottom:10px">${m[2]}</p>
+      <div class="chipset">${m[3].map(f=>`<span class="kchip">${f}</span>`).join('')}</div></div>`).join('')}</div>`
+};
+
+/* =================== DRAWER CV =================== */
+function openCv(id){
+ const a=ANGGOTA.find(x=>x.id===id);if(!a)return;
+ document.getElementById('dTitle').textContent=a.n;
+ document.getElementById('dBody').innerHTML=`
+  <div class="cvhead"><div class="photo"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1"/></svg></div>
+   <div style="flex:1"><h3>${a.n}</h3><div class="id">${a.id}</div><div class="un">${a.u}</div>
+   <div style="display:flex;gap:6px"><span class="pill ${a.s==='Siap'?'p-gr':'p-amb'}">${a.s.toUpperCase()}</span>
+   <span class="pill p-cy">READINESS ${a.r}</span></div></div></div>
+  <p style="font-size:9px;color:var(--ink3);text-align:center;margin:-8px 0 14px">Foto belum tersedia</p>
+  <div class="socials"><a class="soc" href="https://wa.me/62${a.tlp.replace(/[^0-9]/g,'').slice(1)}" target="_blank">WHATSAPP</a>
+   <a class="soc" href="mailto:${a.n.split(' ')[0].toLowerCase()}@komcad.mil.id">EMAIL</a>
+   <a class="soc" href="#">INSTAGRAM</a><a class="soc" href="#">LINKEDIN</a></div>
+  <div class="card"><h6>KOMPETENSI & SPESIALISASI</h6><div class="chipset">${a.k.map(k=>`<span class="kchip">${k}</span>`).join('')}</div></div>
+  <div class="card"><h6>DATA PRIBADI</h6><div class="grid2">
+   <div><span>NIK</span><b class="mono">•••• •••• •••• 4821</b></div>
+   <div><span>USIA</span><b>${a.usia} tahun</b></div>
+   <div><span>GOL. DARAH</span><b>${a.gol}</b></div>
+   <div><span>TELEPON</span><b class="mono">${a.tlp}</b></div>
+   <div><span>PROVINSI</span><b>${a.prov}</b></div>
+   <div><span>KOORDINAT</span><b class="mono">${a.lat.toFixed(3)}, ${a.lng.toFixed(3)}</b></div></div></div>
+  <div class="card"><h6>SERTIFIKASI</h6>
+   <div class="rowitem"><div class="g"><b>SAR Air Tingkat Lanjut</b><small>BASARNAS · berlaku s/d 12 NOV 2026</small></div><span class="pill p-gr">AKTIF</span></div>
+   <div class="rowitem"><div class="g"><b>P3K Lapangan</b><small>PMI · berlaku s/d 02 SEP 2026</small></div><span class="pill p-amb">AKAN KEDALUWARSA</span></div></div>
+  <div class="card"><h6>RIWAYAT PELATIHAN</h6>
+   <div class="rowitem"><div class="g"><b>Latihan SAR Air Terpadu</b><small>12 AGU 2026 · Waduk Jatiluhur</small></div><span class="pill p-gr">LULUS</span></div>
+   <div class="rowitem"><div class="g"><b>Kursus Navigasi Darat</b><small>01 AGU 2026 · Gunung Sanggabuana</small></div><span class="pill p-gr">LULUS</span></div></div>
+  <div class="card" style="margin-bottom:0"><h6>RIWAYAT PENUGASAN TERAKHIR</h6>
+   <div class="rowitem"><div class="g"><b>MIS-2026-0028 · Gempa Cianjur Susulan</b><small>28 JUL 2026 · 4 hari</small></div><span class="pill p-gr">HADIR</span></div>
+   <div class="rowitem"><div class="g"><b>MIS-2026-0026 · Karhutla Kalbar</b><small>03 JUL 2026 · 9 hari</small></div><span class="pill p-gr">SELESAI</span></div></div>`;
+ open('drawer');
+}
+function openMisiDetail(id){
+ const m=MISI.find(x=>x.id===id)||MISI[0];
+ document.getElementById('dTitle').textContent=m.id;
+ document.getElementById('dBody').innerHTML=`
+  <div style="margin-bottom:14px"><h3 style="font-size:17px;font-weight:800">${m.n}</h3>
+   <div style="display:flex;gap:6px;margin-top:8px"><span class="pill ${UC[m.u][0]}">${m.u.toUpperCase()}</span>
+   <span class="pill ${m.st==='Berjalan'?'p-gr':'p-gy'}">${m.st.toUpperCase()}</span></div></div>
+  <div class="card"><h6>INFORMASI MISI</h6><div class="grid2">
+   <div><span>PEMBERI PERINTAH</span><b>${m.o}</b></div><div><span>DIBUAT</span><b>${m.t}</b></div>
+   <div><span>KOORDINAT</span><b class="mono">${m.lat.toFixed(4)}, ${m.lng.toFixed(4)}</b></div>
+   <div><span>PERSONEL</span><b class="mono">${m.p} anggota</b></div></div></div>
+  <div class="card"><h6>DESKRIPSI</h6><p style="font-size:12px;line-height:1.75;color:var(--ink2)">Banjir bandang melanda 4 kecamatan. Dibutuhkan personel SAR air, tenaga medis, dan logistik dapur umum. Posko utama didirikan di lapangan kecamatan.</p></div>
+  <div class="card"><h6>RINGKASAN AI</h6><div class="aisum" style="margin:0">AI menyaring 60 anggota dan memilih ${m.p} kandidat dengan kecocokan kompetensi tertinggi serta jarak terdekat ke titik kejadian.</div></div>
+  <div class="card" style="margin-bottom:0"><h6>PERSONEL DITUGASKAN</h6>
+   ${CAND.slice(0,4).map(c=>`<div class="rowitem"><div class="g"><b>${c.n}</b><small>${c.a}</small></div><span class="pill p-gr">DIKONFIRMASI</span></div>`).join('')}</div>`;
+ open('drawer');
+}
+
+/* =================== MODAL BUAT MISI =================== */
+let step=1;
+function openMisi(){step=1;setStep();open('modal');}
+function setStep(){
+ [1,2,3,4].forEach(i=>document.getElementById('step'+i).classList.toggle('hidden',i!==step));
+ const b=document.getElementById('mBtn');
+ document.getElementById('mfoot').style.display=step===2?'none':'flex';
+ b.textContent=step===1?'Jalankan AI Mobilization':step===3?'Setujui & Kirim Notifikasi':'Selesai';
+}
+function misiNext(){
+ if(step===1){step=2;setStep();setTimeout(()=>{step=3;setStep();},1900);}
+ else if(step===3){step=4;setStep();}
+ else closeAll();
+}
+
+/* =================== OVERLAY HELPERS =================== */
+function open(id){document.getElementById('scrim').classList.add('on');document.getElementById(id).classList.add('on');}
+function closeAll(){document.getElementById('scrim').classList.remove('on');
+ document.getElementById('drawer').classList.remove('on');document.getElementById('modal').classList.remove('on');}
+addEventListener('keydown',e=>{if(e.key==='Escape')closeAll();});
+</script>
+</body>
+</html>

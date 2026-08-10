@@ -169,6 +169,9 @@ export function OverviewView({
           onSelectMisi={(m) => setSelection({ type: "misi", data: m })}
         />
 
+        {/* Crosshair statis penanda titik tengah viewport peta. Dekoratif, pointer-events:none. */}
+        <div className="hud-reticle" />
+
         <LayersPanel layers={layers} onToggle={toggleLayer} />
 
         <button
@@ -205,7 +208,7 @@ export function OverviewView({
         </div>
       )}
 
-      <div className="flex h-[290px] shrink-0 border-t border-border">
+      <div className="flex h-[298px] shrink-0 gap-[9px] border-t border-border bg-[#010202] p-[9px]">
         {!hiddenPanels.has("stats") && (
           <BottomPanelShell
             title="STATISTIK ANGGOTA"

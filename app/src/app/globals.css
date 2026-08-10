@@ -4,6 +4,10 @@
  * Token warna & tipografi — 1:1 dengan FRD §10.2/10.3 dan mockup komcad-dashboard.html.
  * JANGAN diubah tanpa mengecek CLAUDE.md §5 dulu. Full black dark mode, tidak ada mode terang.
  *
+ * Tema visual "Sentinel HUD" (Fase 15) menambah lapisan tekstur & chrome di atas token ini
+ * (lihat blok SENTINEL HUD di bawah), TANPA mengubah satu pun nilai hex di FRD §10.2 —
+ * yang bertambah hanya kedalaman: grid, vignette, scanline, corner bracket, dan glow.
+ *
  * Pemetaan nama token FRD -> nama variabel di sini:
  *   Background Primary  -> --base            Amber (Warning)    -> --amber
  *   Background Surface  -> --surface         Red (Critical)     -> --red
@@ -99,6 +103,23 @@ body {
   background: #000 !important;
 }
 
+/* Kontrol zoom Leaflet diselaraskan dengan chrome HUD (default-nya putih terang). */
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.85) !important;
+}
+.leaflet-control-zoom a {
+  background: rgba(4, 6, 7, 0.86) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--ink-2) !important;
+  backdrop-filter: blur(10px);
+}
+.leaflet-control-zoom a:hover {
+  background: var(--surface-hover) !important;
+  color: var(--accent-bright) !important;
+  border-color: var(--accent) !important;
+}
+
 @keyframes overlay-show {
   from {
     opacity: 0;
@@ -136,4 +157,155 @@ body {
 }
 .animate-drawer-slide-in {
   animation: drawer-slide-in 200ms ease-out;
+}
+
+/* =====================================================================
+ * SENTINEL HUD — lapisan tekstur & chrome (Fase 15)
+ *
+ * Semua di sini murni dekoratif dan ditempel di atas token FRD §10.2 yang
+ * tidak berubah. Aturan penting: setiap overlay WAJIB pointer-events:none,
+ * karena dua di antaranya menutupi seluruh viewport (termasuk modal/drawer
+ * Radix di z-index 2000/2001) dan akan memblokir seluruh interaksi kalau tidak.
+ * ===================================================================== */
+
+/* Tekstur global: grid halus + vignette. mix-blend-mode screen supaya garis grid
+ * hanya "menerangi" hitam murni, tidak menghitamkan elemen terang di atasnya. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  opacity: 0.55;
+  mix-blend-mode: screen;
+  background:
+    linear-gradient(rgba(60, 242, 154, 0.028) 1px, transparent 1px) 0 0 / 100% 44px,
+    linear-gradient(90deg, rgba(60, 242, 154, 0.028) 1px, transparent 1px) 0 0 / 44px 100%,
+    radial-gradient(ellipse 120% 80% at 50% 0%, transparent 40%, rgba(0, 0, 0, 0.85) 100%);
+}
+
+/* Scanline CRT — sangat halus (3px pitch, 1.8% putih). */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.5;
+  background: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 3px);
+}
+
+/* Hormati preferensi sistem: matikan tekstur bergerak/berlapis untuk pengguna
+ * yang meminta pengurangan animasi & efek (NFR-11 aksesibilitas). */
+@media (prefers-reduced-motion: reduce) {
+  body::after {
+    display: none;
+  }
+  body::before {
+    opacity: 0.28;
+  }
+}
+
+/* Corner bracket — sudut kurung ala HUD di kiri-atas & kanan-bawah panel. */
+.hud-brk {
+  position: relative;
+}
+.hud-brk::before,
+.hud-brk::after {
+  content: "";
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  pointer-events: none;
+  border-color: rgba(60, 242, 154, 0.42);
+  opacity: 0.85;
+}
+/* Offset 0 (bukan -1px) supaya bracket tetap utuh pada kontainer ber-overflow:hidden —
+ * dipakai di semua wrapper tabel. */
+.hud-brk::before {
+  top: 0;
+  left: 0;
+  border-top: 1.5px solid;
+  border-left: 1.5px solid;
+  border-top-left-radius: inherit;
+}
+.hud-brk::after {
+  bottom: 0;
+  right: 0;
+  border-bottom: 1.5px solid;
+  border-right: 1.5px solid;
+  border-bottom-right-radius: inherit;
+}
+
+/* Permukaan panel: gradien vertikal tipis supaya kartu tidak terlihat rata mati. */
+.hud-panel {
+  background: linear-gradient(180deg, #080b0c 0%, #040506 100%);
+}
+
+/* Sheen di header panel — kilau 3,5% di baris judul. */
+.hud-head {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent);
+}
+
+/* Garis aksen gradien (dipakai di bawah topbar & kanan sidebar). */
+.hud-rule-x::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(60, 242, 154, 0.45), rgba(63, 169, 201, 0.3), transparent);
+}
+.hud-rule-y::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 1px;
+  height: 100%;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(60, 242, 154, 0.35), transparent);
+}
+
+/* Angka instrumen — glow lembut di belakang digit KPI. */
+.hud-num {
+  text-shadow: 0 0 18px rgba(60, 242, 154, 0.35);
+}
+
+/* Reticle peta: crosshair statis di titik tengah viewport peta.
+ * Sengaja TANPA radar sweep berputar — animasi rotasi terus-menerus mengganggu
+ * pembacaan sebaran marker dan tidak menambah informasi apa pun. */
+.hud-reticle {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 402;
+}
+.hud-reticle::before,
+.hud-reticle::after {
+  content: "";
+  position: absolute;
+  background: rgba(60, 242, 154, 0.22);
+}
+.hud-reticle::before {
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+.hud-reticle::after {
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+/* Label section dengan hairline memudar di kanan. */
+.hud-label::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border), transparent);
 }

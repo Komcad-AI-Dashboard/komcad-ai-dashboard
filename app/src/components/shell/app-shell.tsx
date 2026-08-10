@@ -7,7 +7,7 @@ import { BuatMisiModal } from "@/components/misi/buat-misi-modal";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 
-const STORAGE_KEY = "komcad.sidebarCollapsed";
+const STORAGE_KEY = "siaga.sidebarCollapsed";
 
 export type TopbarKpi = Awaited<ReturnType<typeof getTopbarKpi>>;
 

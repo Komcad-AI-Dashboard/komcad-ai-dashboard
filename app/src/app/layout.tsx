@@ -14,8 +14,9 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI KOMCAD",
-  description: "AI Komcad — Command Center Platform untuk Komponen Cadangan",
+  title: "SIAGA",
+  description:
+    "SIAGA — Sistem Identifikasi, Analitik & Gerak Anggota. Command Center Platform untuk Komponen Cadangan (Komcad).",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -12,23 +12,24 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-base p-6">
-      <div className="w-full max-w-[380px] rounded-[12px] border border-border bg-surface p-6">
+      <div className="hud-brk hud-panel w-full max-w-[380px] rounded-[14px] border border-border p-6 shadow-[0_40px_100px_rgba(0,0,0,0.92),0_0_60px_rgba(60,242,154,0.06)]">
         <div className="mb-6 flex items-center gap-[9px]">
-          <div className="flex h-[22px] w-[28px] shrink-0 flex-col overflow-hidden rounded-[3px] border border-border">
+          <div className="flex h-[22px] w-[28px] shrink-0 flex-col overflow-hidden rounded-[3px] shadow-[0_0_0_1px_rgba(255,255,255,0.1),0_2px_10px_rgba(225,76,69,0.35)]">
             <div className="flex-1 bg-[#D8302A]" />
             <div className="flex-1 bg-[#F2F2F2]" />
           </div>
           <div>
-            <div className="text-[13.5px] font-extrabold tracking-wide">AI KOMCAD</div>
-            <div className="mt-px text-[9.5px] font-semibold tracking-widest text-ink-3">
+            <div className="text-[15px] font-black tracking-[0.13em]">SIAGA</div>
+            <div className="mt-px text-[8.5px] font-bold tracking-[0.28em] text-accent-bright">
               COMMAND CENTER
             </div>
           </div>
         </div>
 
         <h1 className="mb-1 text-[16px] font-extrabold">Masuk</h1>
-        <p className="mb-5 text-[12px] text-ink-2">
-          Masuk ke platform AI Komcad sesuai role Anda.
+        <p className="mb-5 text-[12px] leading-relaxed text-ink-2">
+          <span className="font-semibold text-ink">Sistem Identifikasi, Analitik &amp; Gerak Anggota</span>{" "}
+          — platform Command Center Komponen Cadangan. Masuk sesuai role Anda.
         </p>
 
         <form action={formAction} className="flex flex-col gap-4">

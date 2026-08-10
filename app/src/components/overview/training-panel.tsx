@@ -11,10 +11,10 @@ export function TrainingPanel({
   onSelect: (item: Aktivitas) => void;
 }) {
   return (
-    <div className="absolute right-[14px] top-[56px] z-[500] flex max-h-[calc(100%-80px)] w-[250px] flex-col overflow-hidden rounded-[8px] border border-border bg-black/90 backdrop-blur-sm">
-      <div className="flex items-center gap-[10px] border-b border-border px-[13px] py-[11px]">
-        <span className="text-amber">◆</span>
-        <span className="text-[10.5px] font-extrabold tracking-widest">AKTIVITAS PELATIHAN TERBARU</span>
+    <div className="hud-brk absolute right-[14px] top-[56px] z-[500] flex max-h-[calc(100%-80px)] w-[250px] flex-col overflow-hidden rounded-[10px] border border-border bg-black/[0.88] shadow-[0_12px_40px_rgba(0,0,0,0.85)] backdrop-blur-[10px]">
+      <div className="hud-label flex items-center gap-[10px] border-b border-border-soft px-[13px] py-[11px]">
+        <span className="text-amber drop-shadow-[0_0_6px_rgba(224,168,62,0.8)]">◆</span>
+        <span className="text-[9.5px] font-black tracking-[0.2em] text-ink-2">AKTIVITAS PELATIHAN</span>
       </div>
       <div className="flex-1 overflow-y-auto">
         {items.length === 0 && (

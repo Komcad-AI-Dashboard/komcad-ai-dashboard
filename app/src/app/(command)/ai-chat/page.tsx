@@ -13,7 +13,7 @@ export default async function AiChatPage() {
 
   const introMessages = [
     {
-      text: "Halo, saya AI Komcad Assistant. Anda bisa bertanya seputar data anggota, Misi, Readiness, atau pelatihan dalam bahasa natural. Contoh:",
+      text: "Halo, saya Asisten SIAGA. Anda bisa bertanya seputar data anggota, Misi, Readiness, atau pelatihan dalam bahasa natural. Contoh:",
       tabel: null,
     },
     { text: contohPelatihan.jawaban, tabel: contohPelatihan.tabel },

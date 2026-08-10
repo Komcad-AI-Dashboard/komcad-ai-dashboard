@@ -126,7 +126,7 @@ export function ChatView({ introMessages }: { introMessages: { text: string; tab
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden p-5">
-      <div className="flex flex-1 flex-col overflow-hidden rounded-[8px] border border-border bg-surface">
+      <div className="flex flex-1 flex-col hud-brk hud-panel overflow-hidden rounded-[10px] border border-border">
         <div ref={scrollRef} className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
           {messages.map((m) => (
             <Bubble key={m.id} msg={m} />

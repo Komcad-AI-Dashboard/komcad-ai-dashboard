@@ -2,7 +2,16 @@
 
 import "leaflet/dist/leaflet.css";
 import { Fragment, useEffect } from "react";
-import { MapContainer, TileLayer, CircleMarker, Circle, Marker, Popup, useMap } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  CircleMarker,
+  Circle,
+  Marker,
+  Popup,
+  ZoomControl,
+  useMap,
+} from "react-leaflet";
 import { divIcon, latLngBounds } from "leaflet";
 import type { MapAnggota, MapMisi } from "@/lib/overview-data";
 import type { PosKomando } from "@/lib/pos-komando";
@@ -94,11 +103,13 @@ export function SituationMap({
       maxBounds={INDONESIA_BOUNDS.pad(0.25)}
       minZoom={5}
       maxZoom={12}
-      zoomControl
+      zoomControl={false}
       attributionControl={false}
       className="absolute inset-0 bg-base"
     >
       <ResizeHandler />
+      {/* Kontrol zoom dipindah ke kanan-bawah: posisi bawaan (kiri-atas) tertimbun panel Layers. */}
+      <ZoomControl position="bottomright" />
       <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" className="tactical-tiles" maxZoom={19} />
 
       {layers.heatzone &&

@@ -17,10 +17,10 @@ export function BottomPanelShell({
 }) {
   return (
     <div
-      className="flex flex-col overflow-hidden border-r border-border bg-base last:border-r-0"
+      className="hud-brk hud-panel flex flex-col overflow-hidden rounded-[10px] border border-border"
       style={{ flex: flexGrow ?? 1 }}
     >
-      <div className="flex shrink-0 items-center gap-[10px] border-b border-border px-[14px] py-[9px]">
+      <div className="hud-head flex shrink-0 items-center gap-[10px] border-b border-border-soft px-[14px] py-[9px]">
         <h3 className="text-[11px] font-extrabold tracking-widest">{title}</h3>
         {badge}
         <div className="flex-1" />

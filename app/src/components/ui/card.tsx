@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("rounded-[10px] border border-border bg-surface", className)}
+      className={cn("hud-brk hud-panel rounded-[10px] border border-border", className)}
       {...props}
     />
   );
@@ -12,7 +12,10 @@ export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
 export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("flex items-center gap-[10px] border-b border-border px-[14px] py-[9px]", className)}
+      className={cn(
+        "hud-head flex items-center gap-[10px] border-b border-border-soft px-[14px] py-[9px]",
+        className
+      )}
       {...props}
     />
   );

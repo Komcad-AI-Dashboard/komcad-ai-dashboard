@@ -20,7 +20,7 @@ function pdfToBuffer(build: (doc: PDFKit.PDFDocument) => void): Promise<Buffer> 
 }
 
 function pdfHeader(doc: PDFKit.PDFDocument, title: string, subtitle: string) {
-  doc.fontSize(16).text("AI KOMCAD — Command Center Platform", { align: "left" });
+  doc.fontSize(16).text("SIAGA — Command Center Komponen Cadangan", { align: "left" });
   doc.moveDown(0.2);
   doc.fontSize(20).text(title);
   doc.fontSize(10).fillColor("#666666").text(subtitle);
@@ -75,7 +75,7 @@ export async function generateRekapMobilisasiXlsx(): Promise<Buffer> {
   });
 
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "AI Komcad Command Center";
+  workbook.creator = "SIAGA Command Center";
   workbook.created = new Date();
   const sheet = workbook.addWorksheet("Rekap Mobilisasi");
 

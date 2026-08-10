@@ -26,12 +26,12 @@ export function PelatihanTable({ rows }: { rows: Row[] }) {
         placeholder="Cari nama pelatihan..."
         className="mb-4 max-w-[360px]"
       />
-      <div className="overflow-hidden rounded-[8px] border border-border bg-surface">
+      <div className="hud-brk hud-panel overflow-hidden rounded-[10px] border border-border">
         <table className="w-full border-collapse text-left">
           <thead>
-            <tr className="bg-elevated">
+            <tr className="hud-head">
               {["ANGGOTA", "NAMA PELATIHAN", "TANGGAL", "STATUS KELULUSAN"].map((h) => (
-                <th key={h} className="border-b border-border px-3 py-[10px] text-[10px] font-extrabold tracking-wide text-ink-2">
+                <th key={h} className="border-b border-border px-3 py-[10px] text-[9px] font-extrabold tracking-[0.16em] text-ink-3">
                   {h}
                 </th>
               ))}

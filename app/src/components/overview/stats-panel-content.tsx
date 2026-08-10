@@ -11,7 +11,9 @@ export function StatsPanelContent({ stats }: { stats: Statistik }) {
   return (
     <div className="flex flex-1 flex-col gap-[14px] overflow-y-auto px-[14px] py-3">
       <div>
-        <div className="mb-2 text-[10px] font-extrabold tracking-widest text-ink-2">KOMPOSISI GENDER</div>
+        <div className="hud-label mb-2 flex items-center gap-2 text-[9px] font-extrabold tracking-[0.18em] text-ink-3">
+          KOMPOSISI GENDER
+        </div>
         <div className="flex h-[10px] overflow-hidden rounded-full bg-elevated">
           <div className="h-full bg-cyan" style={{ width: `${lakiPct}%` }} />
           <div className="h-full bg-[#E06BB0]" style={{ width: `${perempuanPct}%` }} />
@@ -27,12 +29,14 @@ export function StatsPanelContent({ stats }: { stats: Statistik }) {
       </div>
 
       <div className="flex gap-[10px]">
-        <div className="flex-1 rounded-[6px] border border-border bg-surface p-[10px]">
-          <div className="font-mono text-[19px] font-extrabold">{stats.total.toLocaleString("id-ID")}</div>
+        <div className="relative flex-1 overflow-hidden rounded-[8px] border border-border bg-white/[0.02] p-[10px] before:absolute before:inset-y-0 before:left-0 before:w-[2px] before:bg-accent">
+          <div className="hud-num font-mono text-[21px] font-extrabold">
+            {stats.total.toLocaleString("id-ID")}
+          </div>
           <div className="mt-[2px] text-[9.5px] text-ink-2">Total anggota terdaftar</div>
         </div>
-        <div className="flex-1 rounded-[6px] border border-border bg-surface p-[10px]">
-          <div className="font-mono text-[19px] font-extrabold text-accent-bright">
+        <div className="relative flex-1 overflow-hidden rounded-[8px] border border-border bg-white/[0.02] p-[10px] before:absolute before:inset-y-0 before:left-0 before:w-[2px] before:bg-accent">
+          <div className="hud-num font-mono text-[21px] font-extrabold text-accent-bright">
             {stats.aktif.toLocaleString("id-ID")}
           </div>
           <div className="mt-[2px] text-[9.5px] text-ink-2">Berstatus aktif</div>
@@ -40,14 +44,16 @@ export function StatsPanelContent({ stats }: { stats: Statistik }) {
       </div>
 
       <div>
-        <div className="mb-2 text-[10px] font-extrabold tracking-widest text-ink-2">PROVINSI TERBANYAK</div>
+        <div className="hud-label mb-2 flex items-center gap-2 text-[9px] font-extrabold tracking-[0.18em] text-ink-3">
+          PROVINSI TERBANYAK
+        </div>
         {stats.provinsi.length === 0 && <div className="text-[11px] text-ink-3">Belum ada data.</div>}
         {stats.provinsi.map((p) => (
           <div key={p.nama} className="mb-[7px] flex items-center gap-2">
             <div className="w-[108px] shrink-0 truncate text-[10.5px] text-ink-2">{p.nama}</div>
-            <div className="h-[7px] flex-1 overflow-hidden rounded-[4px] bg-elevated">
+            <div className="h-[6px] flex-1 overflow-hidden rounded-[3px] bg-[#12171a]">
               <div
-                className="h-full bg-accent-bright"
+                className="h-full bg-gradient-to-r from-accent to-accent-bright shadow-[0_0_10px_rgba(60,242,154,0.5)]"
                 style={{ width: `${(p.jumlah / maxProv) * 100}%` }}
               />
             </div>

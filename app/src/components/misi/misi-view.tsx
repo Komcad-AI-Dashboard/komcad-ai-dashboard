@@ -84,14 +84,14 @@ export function MisiView({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-[8px] border border-border bg-surface">
+      <div className="hud-brk hud-panel overflow-hidden rounded-[10px] border border-border">
         <table className="w-full border-collapse text-left">
           <thead>
-            <tr className="bg-elevated">
+            <tr className="hud-head">
               {["ID MISI", "JENIS KEJADIAN", "LOKASI", "URGENSI", "STATUS", "PERSONEL"].map((h) => (
                 <th
                   key={h}
-                  className="border-b border-border px-3 py-[10px] text-[10px] font-extrabold tracking-wide text-ink-2"
+                  className="border-b border-border px-3 py-[10px] text-[9px] font-extrabold tracking-[0.16em] text-ink-3"
                 >
                   {h}
                 </th>

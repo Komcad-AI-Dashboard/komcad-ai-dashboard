@@ -23,11 +23,11 @@ export function Drawer({
         <Dialog.Overlay className="fixed inset-0 z-[2000] bg-black/70 backdrop-blur-sm animate-overlay-show" />
         <Dialog.Content
           className={cn(
-            "fixed right-0 top-0 z-[2001] h-screen w-full max-w-[440px] overflow-y-auto border-l border-border bg-surface shadow-2xl animate-drawer-slide-in",
+            "fixed right-0 top-0 z-[2001] h-screen w-full max-w-[440px] overflow-y-auto border-l border-border bg-gradient-to-b from-[#070a0b] to-black shadow-[-30px_0_70px_rgba(0,0,0,0.9)] animate-drawer-slide-in",
             className
           )}
         >
-          <div className="sticky top-0 flex items-center gap-3 border-b border-border bg-surface px-5 py-4">
+          <div className="hud-head sticky top-0 z-10 flex items-center gap-3 border-b border-border bg-[#070a0b] px-5 py-4">
             <Dialog.Title className="flex-1 text-[15px] font-extrabold">{title}</Dialog.Title>
             <Dialog.Close asChild>
               <button

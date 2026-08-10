@@ -28,24 +28,24 @@ export function Topbar({
   const group = COMMAND_NAV.find((g) => g.items.includes(current!));
 
   return (
-    <header className="flex h-[52px] shrink-0 items-center gap-[10px] border-b border-border bg-base px-4">
+    <header className="hud-rule-x relative flex h-[52px] shrink-0 items-center gap-[10px] bg-gradient-to-b from-[#0a0d0f] to-black px-4">
       <button
         onClick={onToggleSidebar}
         aria-label="Toggle sidebar"
-        className="flex size-[30px] items-center justify-center rounded-[6px] border border-border bg-elevated text-ink-2 hover:text-ink"
+        className="flex size-[30px] items-center justify-center rounded-[6px] border border-border bg-elevated text-ink-2 transition-colors hover:border-accent hover:text-accent-bright hover:shadow-[0_0_14px_rgba(60,242,154,0.18)]"
       >
         <Menu className="size-4" strokeWidth={1.5} />
       </button>
 
       <div className="flex flex-col gap-px">
-        <h1 className="text-[15px] font-extrabold tracking-wide">{current?.label ?? "AI KOMCAD"}</h1>
+        <h1 className="text-[15px] font-extrabold tracking-wide">{current?.label ?? "SIAGA"}</h1>
         <div className="font-mono text-[10.5px] text-ink-3">
           {group ? `${group.label} / ${current?.label}` : "COMMAND CENTER"}
         </div>
       </div>
 
-      <div className="ml-[10px] flex items-center gap-[5px] font-mono text-[11px] font-bold text-accent-bright">
-        <span className="size-1.5 animate-pulse rounded-full bg-current shadow-[0_0_6px_currentColor]" />
+      <div className="ml-[10px] flex items-center gap-[6px] rounded-full border border-accent-bright/30 bg-accent-bright/[0.06] px-[10px] py-1 font-mono text-[9.5px] font-extrabold tracking-[0.18em] text-accent-bright">
+        <span className="size-1.5 animate-pulse rounded-full bg-current shadow-[0_0_8px_currentColor]" />
         LIVE
       </div>
 
@@ -57,16 +57,16 @@ export function Topbar({
         {(user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.OPERATOR) && (
           <button
             onClick={onBuatMisi}
-            className="flex items-center gap-[6px] rounded-[6px] border border-accent px-3 py-[6px] text-[12px] font-bold tracking-wide text-accent-bright hover:bg-accent-bright/10"
+            className="flex items-center gap-[6px] rounded-[6px] bg-gradient-to-b from-accent-bright to-accent px-3 py-[6px] text-[12px] font-extrabold tracking-wide text-[#00170C] shadow-[0_0_18px_rgba(60,242,154,0.3),inset_0_1px_0_rgba(255,255,255,0.3)] transition-[filter,box-shadow] hover:brightness-110 hover:shadow-[0_0_26px_rgba(60,242,154,0.5)]"
           >
-            <PlusCircle className="size-4" strokeWidth={1.5} />
+            <PlusCircle className="size-4" strokeWidth={2} />
             BUAT MISI
           </button>
         )}
 
         <div className="hidden items-center gap-2 rounded-[6px] border border-border bg-elevated px-[10px] py-[5px] md:flex">
           <span className="text-[9.5px] font-extrabold tracking-widest text-ink-2">READINESS</span>
-          <span className="font-mono text-[15px] font-extrabold text-accent-bright">
+          <span className="hud-num font-mono text-[15px] font-extrabold text-accent-bright">
             {kpi.readinessNasional}%
           </span>
         </div>

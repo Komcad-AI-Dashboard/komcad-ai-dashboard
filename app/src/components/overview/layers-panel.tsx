@@ -19,10 +19,10 @@ export function LayersPanel({
   onToggle: (key: keyof LayerVisibility) => void;
 }) {
   return (
-    <div className="absolute left-[14px] top-[14px] z-[500] w-[250px] rounded-[8px] border border-border bg-black/88 backdrop-blur-sm">
-      <div className="flex items-center gap-[10px] border-b border-border px-[13px] py-[11px]">
-        <div className="size-4 rounded-full border-2 border-accent-bright" />
-        <span className="text-[10.5px] font-extrabold tracking-widest">LAYERS</span>
+    <div className="hud-brk absolute left-[14px] top-[14px] z-[500] w-[250px] rounded-[10px] border border-border bg-black/[0.86] shadow-[0_12px_40px_rgba(0,0,0,0.85)] backdrop-blur-[10px]">
+      <div className="hud-label flex items-center gap-[10px] border-b border-border-soft px-[13px] py-[11px]">
+        <div className="size-4 rounded-full border-2 border-accent-bright shadow-[0_0_10px_rgba(60,242,154,0.45)]" />
+        <span className="text-[9.5px] font-black tracking-[0.2em] text-ink-2">LAYERS</span>
       </div>
       {LAYER_ITEMS.map((item) => {
         const on = layers[item.key];
@@ -35,7 +35,8 @@ export function LayersPanel({
             <span
               className={cn(
                 "flex size-[14px] shrink-0 items-center justify-center rounded-[3px] border border-border text-[9px] font-black",
-                on && "border-accent-bright bg-accent-bright text-[#00170C]"
+                on &&
+                  "border-accent-bright bg-accent-bright text-[#00170C] shadow-[0_0_10px_rgba(34,197,119,0.5)]"
               )}
             >
               {on && "✓"}
@@ -45,8 +46,8 @@ export function LayersPanel({
           </button>
         );
       })}
-      <div className="border-t border-border px-[13px] py-[8px] text-[9.5px] text-ink-3">
-        Data: Komcad Big Data Platform
+      <div className="border-t border-border-soft px-[13px] py-[8px] text-[9.5px] text-ink-3">
+        Data: Big Data Komponen Cadangan
       </div>
     </div>
   );

@@ -1,6 +1,8 @@
-# AI Komcad — Command Center Platform
+# SIAGA — Sistem Identifikasi, Analitik & Gerak Anggota
 
 Dashboard AI untuk Komponen Cadangan (Komcad) di bawah Kemenhan/Mabes TNI. Aplikasi Next.js tunggal dengan dua sisi: **Command Center** (desktop, Super Admin/Operator/Analis) dan **Sisi Anggota** (mobile web, Anggota Komcad).
+
+> **Nama produk = SIAGA. Nama program = Komcad.** Keduanya beda dan tidak saling menggantikan: "Komcad" tetap dipakai untuk entitas domain (Anggota Komcad, Operator Komcad, `@komcad.mil.id`, nama unit). Jangan cari-ganti buta.
 
 > Baca [`../CLAUDE.md`](../CLAUDE.md) dulu untuk konteks arsitektur & keputusan teknis lengkap, lalu [`../PROGRESS.md`](../PROGRESS.md) untuk status pengerjaan terkini. File ini (`README.md`) fokus ke "cara menjalankan & mengembangkan", bukan riwayat keputusan.
 

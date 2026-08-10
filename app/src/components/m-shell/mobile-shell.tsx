@@ -19,8 +19,8 @@ export function MobileShell({ children, unreadCount }: { children: React.ReactNo
             <div className="flex-1 bg-[#F2F2F2]" />
           </div>
           <div>
-            <div className="text-[13px] font-extrabold tracking-wide">AI KOMCAD</div>
-            <div className="text-[8.5px] font-bold tracking-widest text-ink-3">SISI ANGGOTA</div>
+            <div className="text-[14px] font-black tracking-[0.13em]">SIAGA</div>
+            <div className="text-[8px] font-bold tracking-[0.28em] text-accent-bright">SISI ANGGOTA</div>
           </div>
           <div className="flex-1" />
           <Link

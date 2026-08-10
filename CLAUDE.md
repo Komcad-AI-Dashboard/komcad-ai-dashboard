@@ -1,10 +1,10 @@
-# CLAUDE.md — AI Komcad Command Center Platform
+# CLAUDE.md — SIAGA Command Center Platform
 
 Panduan kerja untuk siapa pun (manusia atau AI agent) yang melanjutkan development di repo ini. Baca file ini dulu sebelum mengubah apa pun.
 
 ## 1. Apa ini
 
-**AI Komcad — Command Center Platform** adalah sistem dashboard untuk Komponen Cadangan (Komcad) di bawah Kementerian Pertahanan (Kemenhan) & Mabes TNI, komando & kendali di bawah Panglima TNI. Sistem ini punya dua sisi:
+**SIAGA — Sistem Identifikasi, Analitik & Gerak Anggota** adalah sistem dashboard untuk Komponen Cadangan (Komcad) di bawah Kementerian Pertahanan (Kemenhan) & Mabes TNI, komando & kendali di bawah Panglima TNI. Sistem ini punya dua sisi:
 
 1. **Command Center** (desktop, full dark mode) — dipakai Super Admin / Operator Komcad / Analis-Evaluator untuk mengelola data anggota, membuat & memobilisasi **Misi** (insiden yang butuh mobilisasi personel) dengan bantuan **AI Mobilization**, memantau peta situasi nasional, dan menganalisis kesiapsiagaan.
 2. **Sisi Anggota** (mobile-first web) — dipakai Anggota Komcad untuk melihat profil, riwayat, status kesiapan, dan merespons notifikasi mobilisasi.
@@ -14,6 +14,12 @@ Sumber kebenaran fungsional ada di [`FRD/`](FRD/) (khususnya `FRD_Komcad_Digital
 - `komcad-sisi-anggota-mobile.html` — Sisi Anggota
 
 Mockup ini **bukan** dipakai langsung sebagai kode produksi — tapi jadi referensi 1:1 untuk warna, tipografi, komponen, dan copy (istilah Indonesia: "Misi" bukan "Case", "Pemberi Perintah", dsb). Saat ragu soal detail UI, buka mockup HTML-nya dan cocokkan.
+
+### Nama produk & tema visual (Fase 15)
+
+Nama produk resmi sejak Fase 15 adalah **SIAGA** — akronim dari *Sistem Identifikasi, Analitik & Gerak Anggota*. Sebelumnya "AI KOMCAD". Yang berubah hanya **nama produk**; kata **"Komcad"** tetap dipakai di mana pun ia merujuk pada program/entitas domain (Komponen Cadangan, "Anggota Komcad", "Operator Komcad", domain email `@komcad.mil.id`, nama unit `Komcad Yon Zeni 1`) — jangan diganti.
+
+Tema visual mengikuti konsep **Sentinel HUD** ([`mockup-konsep/konsep-1-sentinel.html`](mockup-konsep/konsep-1-sentinel.html)): palet FRD §10.2 tidak berubah sedikit pun, yang ditambah hanya lapisan kedalaman — grid halus + vignette + scanline (overlay `body::before/::after`), corner bracket di panel, glow tactical green, dan crosshair statis di peta. **Tidak ada radar sweep berputar** — animasi rotasi terus-menerus mengganggu pembacaan sebaran marker. Dua konsep alternatif yang ditolak tetap disimpan di `mockup-konsep/` sebagai catatan keputusan desain.
 
 **Konteks penting:** semua data personel (NIK, kontak, dsb.) pada tahap pengembangan ini adalah **data dummy/seed**, bukan data riil personel TNI/Komcad. Jangan pernah memasukkan data pribadi asli ke seed, commit, atau log.
 

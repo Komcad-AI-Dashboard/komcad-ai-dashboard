@@ -23,7 +23,7 @@ export async function geocodeAlamat(query: string): Promise<{ result: GeocodeRes
     url.searchParams.set("countrycodes", "id");
 
     res = await fetch(url, {
-      headers: { "User-Agent": "AI-Komcad-CommandCenter/1.0 (internal, non-produksi)" },
+      headers: { "User-Agent": "SIAGA-CommandCenter/1.0 (internal, non-produksi)" },
       signal: AbortSignal.timeout(8000),
     });
   } catch {

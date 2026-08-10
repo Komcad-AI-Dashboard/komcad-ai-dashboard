@@ -5,14 +5,14 @@ export default async function RiwayatPage() {
 
   return (
     <div className="flex-1 overflow-y-auto p-5">
-      <div className="overflow-hidden rounded-[8px] border border-border bg-surface">
+      <div className="hud-brk hud-panel overflow-hidden rounded-[10px] border border-border">
         <table className="w-full border-collapse text-left">
           <thead>
-            <tr className="bg-elevated">
+            <tr className="hud-head">
               {["ID MISI", "JENIS", "LOKASI", "TANGGAL SELESAI", "PERSONEL", "EVALUASI"].map((h) => (
                 <th
                   key={h}
-                  className="border-b border-border px-3 py-[10px] text-[10px] font-extrabold tracking-wide text-ink-2"
+                  className="border-b border-border px-3 py-[10px] text-[9px] font-extrabold tracking-[0.16em] text-ink-3"
                 >
                   {h}
                 </th>

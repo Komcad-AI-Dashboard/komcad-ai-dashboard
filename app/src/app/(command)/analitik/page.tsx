@@ -2,10 +2,12 @@ import { getAnalitikKpi, getReadinessPerWilayah } from "@/lib/analitik-data";
 
 function KpiCard({ label, value, sub, valueClassName }: { label: string; value: string; sub?: string; valueClassName?: string }) {
   return (
-    <div className="rounded-[8px] border border-border bg-surface p-3">
-      <div className="text-[10px] font-extrabold tracking-wide text-ink-2">{label}</div>
-      <div className={`mt-1 text-[22px] font-extrabold ${valueClassName ?? ""}`}>{value}</div>
-      {sub && <div className="mt-[2px] text-[10.5px] text-ink-3">{sub}</div>}
+    <div className="hud-brk hud-panel relative overflow-hidden rounded-[10px] border border-border p-[14px] after:absolute after:-right-8 after:-top-8 after:size-[90px] after:rounded-full after:bg-[radial-gradient(circle,rgba(60,242,154,0.14),transparent_70%)]">
+      <div className="text-[9px] font-extrabold tracking-[0.16em] text-ink-3">{label}</div>
+      <div className={`hud-num mt-[5px] font-mono text-[28px] font-extrabold ${valueClassName ?? ""}`}>
+        {value}
+      </div>
+      {sub && <div className="mt-[2px] text-[10px] text-ink-3">{sub}</div>}
     </div>
   );
 }
@@ -36,8 +38,10 @@ export default async function AnalitikPage() {
         />
       </div>
 
-      <div className="rounded-[8px] border border-border bg-surface p-[14px]">
-        <h3 className="mb-3 text-[12px] font-extrabold">Readiness Score per Wilayah</h3>
+      <div className="hud-brk hud-panel rounded-[10px] border border-border p-[16px]">
+        <h3 className="hud-label mb-4 flex items-center gap-2 text-[9px] font-extrabold tracking-[0.18em] text-ink-3">
+          READINESS SCORE PER WILAYAH
+        </h3>
         {readiness.length === 0 && (
           <div className="text-[11.5px] text-ink-3">Belum ada data provinsi anggota.</div>
         )}
@@ -46,8 +50,11 @@ export default async function AnalitikPage() {
             <div key={r.provinsi} className="flex items-center gap-3">
               <div className="w-[160px] shrink-0 text-[12px] font-semibold">{r.provinsi}</div>
               <div className="flex flex-1 items-center gap-[10px]">
-                <div className="h-2 flex-1 overflow-hidden rounded-[4px] bg-elevated">
-                  <div className="h-full bg-accent-bright" style={{ width: `${r.score}%` }} />
+                <div className="h-[6px] flex-1 overflow-hidden rounded-[3px] bg-[#12171a]">
+                  <div
+                    className="h-full bg-gradient-to-r from-accent to-accent-bright shadow-[0_0_10px_rgba(60,242,154,0.5)]"
+                    style={{ width: `${r.score}%` }}
+                  />
                 </div>
                 <div className="w-[34px] shrink-0 text-right font-mono text-[13px] font-bold">{r.score}</div>
               </div>

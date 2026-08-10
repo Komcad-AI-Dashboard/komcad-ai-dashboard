@@ -70,7 +70,7 @@ export function PenggunaView({
           <thead>
             <tr>
               {["NAMA", "EMAIL", "ROLE", "STATUS", ""].map((h) => (
-                <th key={h} className="border-b border-border px-3 py-[10px] text-[10px] font-extrabold tracking-wide text-ink-2">
+                <th key={h} className="border-b border-border px-3 py-[10px] text-[9px] font-extrabold tracking-[0.16em] text-ink-3">
                   {h}
                 </th>
               ))}
