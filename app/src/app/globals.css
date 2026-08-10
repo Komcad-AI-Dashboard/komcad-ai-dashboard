@@ -206,6 +206,22 @@ body::after {
   }
 }
 
+/* ---------------------------------------------------------------------
+ * Kelas chrome HUD WAJIB berada di dalam `@layer components`.
+ *
+ * Tailwind v4 menaruh seluruh utility-nya di `@layer utilities`, dan aturan
+ * CSS TANPA layer selalu menang atas aturan BER-layer — terlepas dari
+ * specificity. Waktu blok ini masih unlayered, `.hud-brk { position: relative }`
+ * membajak setiap elemen yang juga memakai `absolute`/`fixed` dari Tailwind:
+ * panel Aktivitas Pelatihan di Overview terlempar ke aliran normal (muncul di
+ * kiri & terpotong) dan modal Radix kehilangan posisi tengahnya.
+ *
+ * Dengan berada di layer `components`, utility Tailwind di layer `utilities`
+ * menang seperti seharusnya, dan kelas di sini hanya mengisi properti yang
+ * memang tidak diatur utility mana pun.
+ * ------------------------------------------------------------------- */
+@layer components {
+
 /* Corner bracket — sudut kurung ala HUD di kiri-atas & kanan-bawah panel. */
 .hud-brk {
   position: relative;
@@ -309,3 +325,21 @@ body::after {
   height: 1px;
   background: linear-gradient(90deg, var(--border), transparent);
 }
+
+/* Pegangan geser tinggi panel bawah Overview — garis grip di tengah bilah. */
+.hud-grip {
+  cursor: row-resize;
+  touch-action: none;
+}
+.hud-grip:hover .hud-grip-bar,
+.hud-grip:focus-visible .hud-grip-bar {
+  background: var(--accent-bright);
+  box-shadow: 0 0 10px rgba(60, 242, 154, 0.5);
+}
+.hud-grip[data-dragging="true"] .hud-grip-bar {
+  background: var(--accent-bright);
+  box-shadow: 0 0 12px rgba(60, 242, 154, 0.65);
+}
+
+}
+/* ^ tutup @layer components — jangan tambahkan kelas HUD di luar kurung ini. */

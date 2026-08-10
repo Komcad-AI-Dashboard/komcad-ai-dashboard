@@ -167,7 +167,13 @@ export function BuatMisiModal({ open, onOpenChange }: { open: boolean; onOpenCha
                   }
                 }}
               />
-              <Button type="button" variant="outline" onClick={handleCariLokasi} disabled={geocodePending}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCariLokasi}
+                disabled={geocodePending}
+                className="shrink-0 whitespace-nowrap"
+              >
                 <Search className="size-3.5" strokeWidth={1.5} />
                 {geocodePending ? "Mencari..." : "Cari Lokasi"}
               </Button>

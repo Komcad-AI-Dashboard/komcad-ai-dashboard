@@ -11,7 +11,7 @@ export function TrainingPanel({
   onSelect: (item: Aktivitas) => void;
 }) {
   return (
-    <div className="hud-brk absolute right-[14px] top-[56px] z-[500] flex max-h-[calc(100%-80px)] w-[250px] flex-col overflow-hidden rounded-[10px] border border-border bg-black/[0.88] shadow-[0_12px_40px_rgba(0,0,0,0.85)] backdrop-blur-[10px]">
+    <div className="hud-brk absolute right-[58px] top-[14px] z-[500] flex max-h-[min(268px,calc(100%-28px))] w-[250px] flex-col overflow-hidden rounded-[10px] border border-border bg-black/[0.88] shadow-[0_12px_40px_rgba(0,0,0,0.85)] backdrop-blur-[10px]">
       <div className="hud-label flex items-center gap-[10px] border-b border-border-soft px-[13px] py-[11px]">
         <span className="text-amber drop-shadow-[0_0_6px_rgba(224,168,62,0.8)]">◆</span>
         <span className="text-[9.5px] font-black tracking-[0.2em] text-ink-2">AKTIVITAS PELATIHAN</span>

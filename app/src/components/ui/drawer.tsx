@@ -27,7 +27,9 @@ export function Drawer({
             className
           )}
         >
-          <div className="hud-head sticky top-0 z-10 flex items-center gap-3 border-b border-border bg-[#070a0b] px-5 py-4">
+          {/* Header sticky butuh latar opaque, jadi sheen-nya dipakai sebagai gradien bg langsung
+              (bukan kelas .hud-head) supaya tidak saling menimpa dengan utility bg Tailwind. */}
+          <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-border bg-gradient-to-b from-[#0d1114] to-[#070a0b] px-5 py-4">
             <Dialog.Title className="flex-1 text-[15px] font-extrabold">{title}</Dialog.Title>
             <Dialog.Close asChild>
               <button

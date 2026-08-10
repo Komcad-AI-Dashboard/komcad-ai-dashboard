@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Maximize2, X } from "lucide-react";
@@ -46,6 +46,15 @@ const PANEL_TITLES: Record<PanelKey, string> = {
   ai: "AI Mobilization",
 };
 
+/** Tinggi baris panel bawah yang bisa digeser user. Disimpan di localStorage per browser. */
+const BOTTOM_HEIGHT_KEY = "siaga.overviewBottomHeight";
+const BOTTOM_HEIGHT_DEFAULT = 298;
+const BOTTOM_HEIGHT_MIN = 132;
+/** Sisa ruang minimum untuk peta — peta tidak boleh bisa digeser sampai hilang sama sekali. */
+const MAP_HEIGHT_MIN = 220;
+/** Langkah geser lewat papan ketik (panah), §10.8: kontrol geser harus bisa dipakai tanpa mouse. */
+const BOTTOM_HEIGHT_STEP = 24;
+
 type Selection =
   | { type: "anggota"; data: MapAnggota }
   | { type: "misi"; data: MapMisi }
@@ -89,6 +98,45 @@ export function OverviewView({
   const [fullAnggota, setFullAnggota] = useState<AnggotaFull | null>(null);
   const [fullMisi, setFullMisi] = useState<MisiListItem | null>(null);
   const [, startDetailTransition] = useTransition();
+
+  const [bottomHeight, setBottomHeight] = useState(BOTTOM_HEIGHT_DEFAULT);
+  const [maxBottomHeight, setMaxBottomHeight] = useState(BOTTOM_HEIGHT_DEFAULT);
+  const [dragging, setDragging] = useState(false);
+  const shellRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{ startY: number; startHeight: number } | null>(null);
+
+  // Batas atas tinggi panel bergantung pada tinggi shell yang bisa berubah (resize window, zoom
+  // browser), jadi diikuti lewat ResizeObserver dan disimpan sebagai state — bukan dibaca dari ref
+  // saat render, dan bukan konstanta. Preferensi tersimpan dipulihkan di observer pertama supaya
+  // langsung dijepit ke batas yang benar untuk ukuran layar saat ini.
+  useEffect(() => {
+    const el = shellRef.current;
+    if (!el) return;
+
+    // Dibaca DI LUAR updater setState. Sempat ditaruh di dalam updater bersama flag "sudah
+    // dipulihkan" — updater jadi tidak murni, dan React StrictMode yang memanggil updater dua kali
+    // membuang hasil pemulihannya (tinggi selalu balik ke default setelah reload).
+    const saved = Number(window.localStorage.getItem(BOTTOM_HEIGHT_KEY));
+    const tersimpan = Number.isFinite(saved) && saved > 0 ? saved : null;
+    let pertama = true;
+
+    const sync = () => {
+      const max = Math.max(BOTTOM_HEIGHT_MIN, el.clientHeight - MAP_HEIGHT_MIN);
+      const jepit = (v: number) => Math.round(Math.min(Math.max(v, BOTTOM_HEIGHT_MIN), max));
+      setMaxBottomHeight(max);
+      if (pertama) {
+        pertama = false;
+        setBottomHeight(jepit(tersimpan ?? BOTTOM_HEIGHT_DEFAULT));
+      } else {
+        setBottomHeight((prev) => jepit(prev));
+      }
+    };
+
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // Klik marker/zona di peta cuma bawa data ringkas (MapAnggota/MapMisi) — begitu drawer terbuka,
   // ambil detail penuh on-demand (bukan dimuat sekaligus di awal untuk seluruh anggota/Misi) supaya
@@ -141,8 +189,46 @@ export function OverviewView({
     setHiddenPanels(allHidden ? new Set() : new Set(["stats", "feed", "ai"]));
   }
 
+  function clampBottomHeight(value: number) {
+    return Math.round(Math.min(Math.max(value, BOTTOM_HEIGHT_MIN), maxBottomHeight));
+  }
+
+  function persistBottomHeight(value: number) {
+    window.localStorage.setItem(BOTTOM_HEIGHT_KEY, String(value));
+  }
+
+  function handleGripPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragRef.current = { startY: e.clientY, startHeight: bottomHeight };
+    setDragging(true);
+  }
+
+  function handleGripPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current;
+    if (!drag) return;
+    // Tarik ke ATAS (clientY mengecil) = panel makin tinggi, peta makin kecil.
+    setBottomHeight(clampBottomHeight(drag.startHeight + (drag.startY - e.clientY)));
+  }
+
+  function handleGripPointerUp(e: React.PointerEvent<HTMLDivElement>) {
+    if (!dragRef.current) return;
+    dragRef.current = null;
+    setDragging(false);
+    e.currentTarget.releasePointerCapture(e.pointerId);
+    persistBottomHeight(bottomHeight);
+  }
+
+  function handleGripKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    const arah = e.key === "ArrowUp" ? 1 : e.key === "ArrowDown" ? -1 : 0;
+    if (arah === 0) return;
+    e.preventDefault();
+    const next = clampBottomHeight(bottomHeight + arah * BOTTOM_HEIGHT_STEP);
+    setBottomHeight(next);
+    persistBottomHeight(next);
+  }
+
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div ref={shellRef} className="flex flex-1 flex-col overflow-hidden">
       <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border-soft px-[18px] py-[9px]">
         <h2 className="text-[12px] font-extrabold tracking-widest">SITUASI KESIAPSIAGAAN NASIONAL</h2>
         <SituationClock />
@@ -177,10 +263,7 @@ export function OverviewView({
         <button
           onClick={() => setFullscreen((v) => !v)}
           title={fullscreen ? "Keluar layar penuh" : "Tampilan layar penuh"}
-          className={cn(
-            "absolute top-[14px] z-[500] flex size-[30px] items-center justify-center rounded-[6px] border border-border bg-black/88 text-ink-2 backdrop-blur-sm hover:text-ink",
-            fullscreen ? "right-[14px]" : "right-[272px]"
-          )}
+          className="absolute right-[14px] top-[14px] z-[500] flex size-[30px] items-center justify-center rounded-[6px] border border-border bg-black/[0.86] text-ink-2 backdrop-blur-[10px] hover:border-accent hover:text-accent-bright"
         >
           {fullscreen ? <X className="size-4" strokeWidth={1.5} /> : <Maximize2 className="size-4" strokeWidth={1.5} />}
         </button>
@@ -208,7 +291,36 @@ export function OverviewView({
         </div>
       )}
 
-      <div className="flex h-[298px] shrink-0 gap-[9px] border-t border-border bg-[#010202] p-[9px]">
+      {/* Pegangan geser tinggi baris panel bawah. Disembunyikan saat ketiga panel disembunyikan —
+          tidak ada yang bisa diubah ukurannya di situ. */}
+      {!allHidden && (
+        <div
+          role="separator"
+          aria-orientation="horizontal"
+          aria-label="Ubah tinggi panel bawah — gunakan panah atas/bawah"
+          aria-valuenow={bottomHeight}
+          aria-valuemin={BOTTOM_HEIGHT_MIN}
+          aria-valuemax={maxBottomHeight}
+          tabIndex={0}
+          data-dragging={dragging}
+          onPointerDown={handleGripPointerDown}
+          onPointerMove={handleGripPointerMove}
+          onPointerUp={handleGripPointerUp}
+          onPointerCancel={handleGripPointerUp}
+          onKeyDown={handleGripKeyDown}
+          className="hud-grip group flex h-[11px] shrink-0 items-center justify-center border-t border-border bg-base outline-none hover:bg-surface-hover"
+        >
+          <span className="hud-grip-bar h-[2px] w-[48px] rounded-full bg-border transition-colors" />
+        </div>
+      )}
+
+      <div
+        className={cn(
+          "flex shrink-0 gap-[9px] bg-[#010202] p-[9px]",
+          allHidden && "hidden"
+        )}
+        style={{ height: bottomHeight }}
+      >
         {!hiddenPanels.has("stats") && (
           <BottomPanelShell
             title="STATISTIK ANGGOTA"
