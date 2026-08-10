@@ -29,6 +29,7 @@ model User {
   updatedAt     DateTime @updatedAt
 
   auditLogs     AuditLog[]
+  permintaanDiproses PermintaanUbahData[]
 }
 
 // ================= ANGGOTA (Big Data Komcad) =================
@@ -67,6 +68,7 @@ model Anggota {
   readinessHistori   ReadinessScoreHistory[]
   aktivitasPelatihan AktivitasPelatihanPeserta[]
   notifikasi         Notifikasi[]
+  permintaanUbahData PermintaanUbahData[]
 
   @@index([statusSiaga])
   @@index([unitAsal])
@@ -175,7 +177,8 @@ model Misi {
   selesaiAt   DateTime?
   hasilEvaluasi String?
 
-  penugasan Penugasan[]
+  penugasan  Penugasan[]
+  notifikasi Notifikasi[]
 
   @@index([status])
   @@index([urgensi])
@@ -224,6 +227,7 @@ model Notifikasi {
   anggotaId   String
   anggota     Anggota  @relation(fields: [anggotaId], references: [id], onDelete: Cascade)
   misiId      String?
+  misi        Misi?    @relation(fields: [misiId], references: [id], onDelete: Cascade)
   judul       String
   pesan       String
   channel     String   @default("Aplikasi")
@@ -232,6 +236,28 @@ model Notifikasi {
   responsAlasan String?
   createdAt   DateTime @default(now())
   respondedAt DateTime?
+
+  @@index([anggotaId, status])
+}
+
+// ================= SISI ANGGOTA (Akses Mandiri) =================
+
+/// FR-37: perubahan data sensitif (NIK) oleh Anggota lewat Sisi Anggota tidak langsung diterapkan
+/// — dicatat di sini sebagai Menunggu, baru berlaku setelah Admin/Operator menyetujui lewat
+/// drawer CV Anggota di Command Center.
+model PermintaanUbahData {
+  id             String    @id @default(cuid())
+  anggotaId      String
+  anggota        Anggota   @relation(fields: [anggotaId], references: [id], onDelete: Cascade)
+  field          String // "nik" — bisa diperluas ke field sensitif lain di masa depan
+  nilaiLama      String
+  nilaiBaru      String
+  status         String    @default("Menunggu") // Menunggu | Disetujui | Ditolak
+  alasanTolak    String?
+  diprosesOlehId String?
+  diprosesOleh   User?     @relation(fields: [diprosesOlehId], references: [id])
+  createdAt      DateTime  @default(now())
+  diprosesPada   DateTime?
 
   @@index([anggotaId, status])
 }

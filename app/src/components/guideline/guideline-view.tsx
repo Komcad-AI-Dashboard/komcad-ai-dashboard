@@ -93,7 +93,7 @@ const FAQ = [
   },
   {
     q: "Siapa yang bisa mengubah data profil anggota?",
-    a: "Saat ini pembaruan data anggota (profil, status siaga, kompetensi) dilakukan Super Admin/Operator lewat menu Direktori Anggota. Portal Sisi Anggota untuk anggota memperbarui datanya sendiri masih dalam pengembangan.",
+    a: 'Anggota bisa memperbarui profilnya sendiri (kontak, alamat, sosial media, status kesiapan) lewat Sisi Anggota (menu "Profil Saya"). Perubahan NIK khusus perlu persetujuan Admin/Operator dulu lewat Direktori Anggota sebelum benar-benar berlaku. Super Admin/Operator juga bisa mengubah data anggota manapun lewat Direktori Anggota.',
   },
   {
     q: "Apa itu Readiness Score dan bagaimana cara menghitungnya?",
@@ -126,9 +126,9 @@ const MODUL = [
   },
   {
     nama: "Modul 4 — Akses Mandiri Anggota",
-    status: "Beta" as const,
-    desc: "Portal khusus untuk anggota Komcad memantau dan memperbarui datanya sendiri — profil pribadi, riwayat pelatihan, riwayat penugasan, dan status kesiapan — tanpa harus menghubungi Admin. Fungsinya meringankan beban administrasi Operator sekaligus memastikan data anggota selalu diperbarui langsung oleh pemiliknya, termasuk menerima dan merespons notifikasi mobilisasi langsung dari genggaman.",
-    fitur: ["Profil Mandiri", "Update Status Siaga", "Notifikasi Mobilisasi"],
+    status: "Aktif" as const,
+    desc: "Portal khusus untuk anggota Komcad memantau dan memperbarui datanya sendiri — profil pribadi, riwayat pelatihan, riwayat penugasan, dan status kesiapan — tanpa harus menghubungi Admin. Fungsinya meringankan beban administrasi Operator sekaligus memastikan data anggota selalu diperbarui langsung oleh pemiliknya, termasuk menerima dan merespons notifikasi mobilisasi langsung dari genggaman. Perubahan data sensitif (NIK) tetap melalui persetujuan Admin/Operator.",
+    fitur: ["Profil Mandiri", "Update Status Siaga", "Notifikasi Mobilisasi", "Perbarui Lokasi GPS"],
   },
   {
     nama: "Modul 5 — AI Chat Assistant",

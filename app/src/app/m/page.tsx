@@ -1,15 +1,21 @@
-export default function MemberHomePage() {
-  return (
-    <div className="mx-auto flex min-h-screen w-full max-w-[430px] flex-col items-center justify-center gap-3 bg-base p-6 text-center">
-      <div className="flex h-5 w-[26px] shrink-0 flex-col overflow-hidden rounded-[3px] border border-border">
-        <div className="flex-1 bg-[#D8302A]" />
-        <div className="flex-1 bg-[#F2F2F2]" />
-      </div>
-      <h1 className="text-[15px] font-extrabold tracking-wide">AI KOMCAD — Sisi Anggota</h1>
-      <p className="max-w-xs text-[12.5px] leading-relaxed text-ink-2">
-        Portal profil pribadi, riwayat, status kesiapan, dan notifikasi mobilisasi anggota. Belum
-        dikerjakan — lihat TODO.md Fase 11 (FR-37 s.d. FR-40).
-      </p>
-    </div>
-  );
+import { requireSelfAnggotaId, getSelfProfil, getSelfQuickStats, getSelfNotifikasi } from "@/lib/anggota-mobile-data";
+import { BerandaView } from "@/components/m-shell/beranda-view";
+
+export default async function MemberHomePage() {
+  const self = await requireSelfAnggotaId();
+  if ("error" in self) {
+    return <div className="text-[12.5px] text-ink-2">{self.error}</div>;
+  }
+
+  const [profil, stats, notifikasi] = await Promise.all([
+    getSelfProfil(self.anggotaId),
+    getSelfQuickStats(self.anggotaId),
+    getSelfNotifikasi(self.anggotaId),
+  ]);
+
+  if (!profil) {
+    return <div className="text-[12.5px] text-ink-2">Data Anggota tidak ditemukan.</div>;
+  }
+
+  return <BerandaView profil={profil} stats={stats} notifikasiTerbaru={notifikasi.slice(0, 3)} />;
 }

@@ -8,7 +8,51 @@ import { cn } from "@/lib/utils";
 import { STATUS_SIAGA, type Role, ROLES } from "@/lib/constants";
 import { calcUsia, type AnggotaFull } from "@/lib/anggota-data";
 import { updateStatusSiagaAction, deactivateAnggotaAction } from "@/lib/anggota-actions";
+import { approvePermintaanNikAction, rejectPermintaanNikAction } from "@/lib/permintaan-actions";
 import { AvatarPlaceholder } from "./avatar-placeholder";
+
+function PermintaanNikRow({ permintaan }: { permintaan: AnggotaFull["permintaanUbahData"][number] }) {
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  function handleApprove() {
+    setError(null);
+    startTransition(async () => {
+      const res = await approvePermintaanNikAction(permintaan.id);
+      if (res.error) setError(res.error);
+      else setDone(true);
+    });
+  }
+  function handleReject() {
+    setError(null);
+    startTransition(async () => {
+      const res = await rejectPermintaanNikAction(permintaan.id, "Ditolak dari drawer profil anggota.");
+      if (res.error) setError(res.error);
+      else setDone(true);
+    });
+  }
+
+  if (done) return <div className="text-[11.5px] text-ink-2">Permintaan telah diproses.</div>;
+
+  return (
+    <div className="mb-2 rounded-[6px] border border-border bg-elevated p-2 last:mb-0">
+      <div className="text-[11.5px]">
+        Ubah <b>NIK</b>: <span className="font-mono">{permintaan.nilaiLama}</span> →{" "}
+        <span className="font-mono text-amber">{permintaan.nilaiBaru}</span>
+      </div>
+      {error && <p className="mt-1 text-[10.5px] text-[#F5A9A5]">{error}</p>}
+      <div className="mt-2 flex gap-2">
+        <Button variant="solid" size="sm" onClick={handleApprove} disabled={pending} className="flex-1">
+          Setujui
+        </Button>
+        <Button variant="danger" size="sm" onClick={handleReject} disabled={pending} className="flex-1">
+          Tolak
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -145,6 +189,17 @@ export function AnggotaCvDrawerContent({
             </Button>
           </div>
           {actionError && <p className="mt-2 text-[11px] text-[#F5A9A5]">{actionError}</p>}
+        </div>
+      )}
+
+      {canManage && anggota.permintaanUbahData.length > 0 && (
+        <div className="rounded-[8px] border border-amber/40 bg-amber/10 p-3">
+          <div className="mb-2 text-[10px] font-extrabold tracking-wide text-amber">
+            PERMINTAAN PERUBAHAN DATA (FR-37)
+          </div>
+          {anggota.permintaanUbahData.map((p) => (
+            <PermintaanNikRow key={p.id} permintaan={p} />
+          ))}
         </div>
       )}
 

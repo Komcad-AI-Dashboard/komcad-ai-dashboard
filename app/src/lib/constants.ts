@@ -114,11 +114,11 @@ export const COMMAND_NAV: NavGroup[] = [
   },
 ];
 
-/** Sitemap Sisi Anggota (mobile) — referensi komcad-sisi-anggota-mobile.html */
+/** Sitemap Sisi Anggota (mobile) — referensi komcad-sisi-anggota-mobile.html. 4 tab (bukan 5) —
+ * mockup & FR-37 s.d. FR-40 tidak mencakup layar Pengaturan terpisah untuk Anggota. */
 export const MEMBER_NAV: NavItem[] = [
   { label: "Beranda", href: "/m", icon: "Home" },
   { label: "Profil", href: "/m/profil", icon: "User" },
   { label: "Riwayat", href: "/m/riwayat", icon: "History" },
   { label: "Notifikasi", href: "/m/notifikasi", icon: "Bell" },
-  { label: "Pengaturan", href: "/m/pengaturan", icon: "Settings" },
 ];

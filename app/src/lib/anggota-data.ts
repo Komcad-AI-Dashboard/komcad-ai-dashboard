@@ -19,6 +19,7 @@ export async function getAnggotaFullList() {
       sertifikasi: { orderBy: { tanggalBerlaku: "desc" } },
       pelatihan: { orderBy: { tanggal: "desc" } },
       penugasan: { orderBy: { createdAt: "desc" }, include: { misi: true } },
+      permintaanUbahData: { where: { status: "Menunggu" }, orderBy: { createdAt: "desc" } },
     },
   });
 
