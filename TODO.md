@@ -42,14 +42,17 @@ Entitas dari FRD §9.1 + `09-data-dummy.md` (baca dulu isi file itu kalau ada, a
 - [ ] Util `calculateReadinessScore(anggota)` — belum ada, saat ini `readinessScore` di seed cuma angka acak, bukan hasil kalkulasi. Formula placeholder terdokumentasi sebagai asumsi (FRD §11)
 
 ## Fase 4 — Modul Overview & Peta Situasi (FR-17 s.d. FR-25)
-- [ ] Peta Leaflet + OpenStreetMap + filter CSS tactical dark, `maxBounds` Indonesia (§10.5)
-- [ ] Marker anggota (siap=hijau, siaga=amber), zona Misi (radius per urgensi), pos komando (ikon gold)
-- [ ] Panel Layers kiri-atas (checkbox toggle tanpa reload) — FR-18
-- [ ] Mode layar penuh peta (⛶/✕, invalidateSize ≤300ms) — FR-19
-- [ ] Panel Aktivitas Pelatihan Terbaru kanan-atas, scrollable, klik → drawer — FR-20
-- [ ] 3 panel bawah urutan tetap: Statistik Anggota (FR-21), Misi Terbaru (FR-22), AI Mobilization (FR-23)
-- [ ] Show/hide panel individual (tombol "−" → chip "+ Nama") — FR-24
-- [ ] Show/hide semua panel sekaligus (situation bar) — FR-25
+- [x] Peta Leaflet + OpenStreetMap + filter CSS tactical dark, `maxBounds` Indonesia (§10.5) — react-leaflet, dynamic import `ssr:false`
+- [x] Marker anggota (siap=hijau, siaga=amber), zona Misi (radius per urgensi), pos komando (ikon gold)
+- [x] Panel Layers kiri-atas (checkbox toggle tanpa reload) — FR-18
+- [x] Mode layar penuh peta (invalidateSize otomatis via ResizeObserver, bukan cuma trigger manual) — FR-19
+- [x] Panel Aktivitas Pelatihan Terbaru kanan-atas, scrollable, klik → drawer — FR-20
+- [x] 3 panel bawah urutan tetap: Statistik Anggota (FR-21), Misi Terbaru (FR-22), AI Mobilization (FR-23) — data agregat asli dari Prisma, bukan hardcode
+- [x] Show/hide panel individual (tombol "−" → chip "+ Nama") — FR-24
+- [x] Show/hide semua panel sekaligus (situation bar) — FR-25
+- [x] Diverifikasi dengan Playwright (browser headless sungguhan, bukan cuma curl): tiles peta termuat, klik marker membuka drawer, toggle panel individual jalan, nol console error
+- [ ] Klik marker/zona di peta saat ini membuka Drawer ringkas (nama/unit/status/readiness untuk anggota; kode/jenis/lokasi/urgensi untuk Misi) — profil CV lengkap & drawer detail Misi penuh menyusul di Fase 5/6
+- [ ] Ringkasan AI di panel bawah masih placeholder teks kalau `Misi.ringkasanAI` belum diisi (baru terisi nyata setelah AI Mobilization di Fase 6 jalan)
 
 ## Fase 5 — Modul Manajemen Data Anggota (FR-01 s.d. FR-07)
 - [ ] Direktori Anggota: tabel, search, filter status, bar Readiness Score — FR-01, FR-04

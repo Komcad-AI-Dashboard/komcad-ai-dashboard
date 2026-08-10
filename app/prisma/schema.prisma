@@ -35,6 +35,7 @@ model User {
 /// StatusSiaga: Aktif | Siaga | Tidak Tersedia (FR-07)
 model Anggota {
   id                String    @id @default(cuid())
+  kodeAnggota       String    @unique // ID tampilan, format ANG-00001 (beda dari primary key internal)
   nik               String    @unique // 16 digit, tervalidasi di aplikasi (FR-01)
   nama              String
   fotoUrl           String? // null = pakai placeholder siluet SVG di UI (FRD §10.6)

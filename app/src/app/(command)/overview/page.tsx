@@ -1,12 +1,33 @@
-import { PagePlaceholder } from "@/components/shell/page-placeholder";
+import { OverviewView } from "@/components/overview/overview-view";
+import { POS_KOMANDO } from "@/lib/pos-komando";
+import {
+  getMapAnggota,
+  getMapMisi,
+  getAktivitasPelatihanTerbaru,
+  getStatistikAnggota,
+  getMisiTerbaruFeed,
+  getAiMobilizationSummary,
+} from "@/lib/overview-data";
 
-export default function OverviewPage() {
+export default async function OverviewPage() {
+  const [anggota, misi, aktivitasPelatihan, stats, feed, aiSummary] = await Promise.all([
+    getMapAnggota(),
+    getMapMisi(),
+    getAktivitasPelatihanTerbaru(),
+    getStatistikAnggota(),
+    getMisiTerbaruFeed(),
+    getAiMobilizationSummary(),
+  ]);
+
   return (
-    <PagePlaceholder
-      title="Overview — Peta Situasi Nasional"
-      description="Peta situasi (OpenStreetMap + filter tactical dark), panel Layers, panel Aktivitas Pelatihan Terbaru, dan 3 panel bawah: Statistik Anggota, Misi Terbaru, AI Mobilization."
-      frIds="FR-17 s.d. FR-25"
-      fase="FASE 4 — BELUM DIKERJAKAN"
+    <OverviewView
+      anggota={anggota}
+      misi={misi}
+      posKomando={POS_KOMANDO}
+      aktivitasPelatihan={aktivitasPelatihan}
+      stats={stats}
+      feed={feed}
+      aiSummary={aiSummary}
     />
   );
 }

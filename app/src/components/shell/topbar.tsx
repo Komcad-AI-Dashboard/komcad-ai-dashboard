@@ -6,6 +6,7 @@ import { Menu, Search, Settings, PlusCircle, LogOut } from "lucide-react";
 import { COMMAND_NAV } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { signOutAction } from "@/lib/auth-actions";
+import type { TopbarKpi } from "./app-shell";
 
 const ALL_ITEMS = COMMAND_NAV.flatMap((g) => g.items);
 
@@ -13,10 +14,12 @@ export function Topbar({
   onToggleSidebar,
   onBuatMisi,
   user,
+  kpi,
 }: {
   onToggleSidebar: () => void;
   onBuatMisi?: () => void;
   user: Session["user"] | null;
+  kpi: TopbarKpi;
 }) {
   const pathname = usePathname();
   const current = ALL_ITEMS.find(
@@ -61,12 +64,14 @@ export function Topbar({
 
         <div className="hidden items-center gap-2 rounded-[6px] border border-border bg-elevated px-[10px] py-[5px] md:flex">
           <span className="text-[9.5px] font-extrabold tracking-widest text-ink-2">READINESS</span>
-          <span className="font-mono text-[15px] font-extrabold text-accent-bright">—</span>
+          <span className="font-mono text-[15px] font-extrabold text-accent-bright">
+            {kpi.readinessNasional}%
+          </span>
         </div>
 
         <button className="flex items-center gap-[6px] rounded-[6px] border border-red bg-red/15 px-3 py-[6px] text-[12px] font-bold text-[#F5A9A5]">
           MISI AKTIF
-          <span className="rounded-[4px] bg-red px-[5px] font-mono text-white">0</span>
+          <span className="rounded-[4px] bg-red px-[5px] font-mono text-white">{kpi.misiAktifCount}</span>
         </button>
 
         <div

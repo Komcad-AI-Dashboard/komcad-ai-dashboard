@@ -92,6 +92,7 @@ async function main() {
 
     const anggota = await prisma.anggota.create({
       data: {
+        kodeAnggota: `ANG-${String(i + 1).padStart(5, "0")}`,
         nik: nikDummy(i),
         nama,
         unitAsal: pick(UNIT, i),

@@ -6,13 +6,16 @@ import type { Session } from "next-auth";
 import { COMMAND_NAV, ROLE_LABELS } from "@/lib/constants";
 import { NavIcon } from "./nav-icon";
 import { cn } from "@/lib/utils";
+import type { TopbarKpi } from "./app-shell";
 
 export function Sidebar({
   collapsed,
   user,
+  kpi,
 }: {
   collapsed: boolean;
   user: Session["user"] | null;
+  kpi: TopbarKpi;
 }) {
   const pathname = usePathname();
   const initial = user?.name?.[0]?.toUpperCase() ?? "?";
@@ -45,6 +48,7 @@ export function Sidebar({
             </div>
             {group.items.map((item) => {
               const active = pathname === item.href || pathname?.startsWith(item.href + "/");
+              const badgeCount = item.badgeKey === "misiAktif" ? kpi.misiAktifCount : undefined;
               return (
                 <Link
                   key={item.href}
@@ -56,6 +60,11 @@ export function Sidebar({
                 >
                   <NavIcon name={item.icon} className="size-4 shrink-0" />
                   <span className="flex-1">{item.label}</span>
+                  {badgeCount != null && badgeCount > 0 && (
+                    <span className="rounded-full bg-red px-[6px] font-mono text-[10px] font-bold text-white">
+                      {badgeCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}

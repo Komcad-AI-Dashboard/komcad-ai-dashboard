@@ -5,17 +5,17 @@ Status hidup development. Diperbarui setiap kali sebuah tugas di `TODO.md` berpi
 Terakhir diperbarui: **2026-08-10**
 
 ## Ringkasan
-Fase 0 (Setup Proyek) **selesai**. Fase 1 (Design System & App Shell) **selesai** — komponen UI, drawer/modal, shell navigasi, semua jadi. Fase 2 (Auth & RBAC) **selesai** dan diverifikasi end-to-end (login, redirect per role, logout). Fase 3 (Data Layer) **schema selesai, seed starter (20 anggota) sudah ada** — belum diperluas ke skala penuh (50-100). Fase 4–13 belum dimulai.
+Fase 0–2 **selesai**. Fase 3 (Data Layer) **schema selesai, seed starter (20 anggota) sudah ada** — belum diperluas ke skala penuh (50-100). Fase 4 (Overview & Peta Situasi) **selesai** dan diverifikasi dengan browser sungguhan (Playwright, bukan cuma curl) — peta, layers, drawer, show/hide panel semua jalan nyata dengan data dari database. Fase 5–13 belum dimulai.
 
 ## Status per Fase
 
 | Fase | Status | Catatan |
 |---|---|---|
 | 0 — Setup Proyek & Infrastruktur | ✅ **Done** | |
-| 1 — Design System & App Shell | ✅ **Done** | Komponen UI reusable + Drawer/Modal primitive selesai; panel show/hide individual (FR-24) ditunda ke Fase 4 karena itu fitur halaman Overview, bukan shell umum |
+| 1 — Design System & App Shell | ✅ **Done** | Komponen UI reusable + Drawer/Modal primitive selesai |
 | 2 — Auth & RBAC | ✅ **Done** | Login, session, RBAC redirect, sign-out — semua diverifikasi via curl end-to-end (lihat detail di bawah) |
-| 3 — Data Layer (Prisma Schema + Seed) | 🟡 **In Progress** | Schema lengkap. Seed starter: 4 user demo + 20 anggota + 2 Misi contoh. Belum diperluas ke 50-100 anggota; `calculateReadinessScore()` belum ada (nilai seed masih acak, bukan hasil formula) |
-| 4 — Modul Overview & Peta Situasi | ⬜ Todo | Placeholder page saja |
+| 3 — Data Layer (Prisma Schema + Seed) | 🟡 **In Progress** | Schema lengkap (+ `kodeAnggota` ditambahkan di Fase 4, lihat bawah). Seed starter: 4 user demo + 20 anggota + 2 Misi contoh. Belum diperluas ke 50-100 anggota; `calculateReadinessScore()` belum ada (nilai seed masih acak, bukan hasil formula) |
+| 4 — Modul Overview & Peta Situasi | ✅ **Done** | Peta Leaflet nyata (bukan mock), layers, training panel, 3 panel bawah dengan agregasi data asli, show/hide individual & sekaligus. Diverifikasi visual + console-error check pakai Playwright headless |
 | 5 — Modul Manajemen Data Anggota | ⬜ Todo | Placeholder page saja |
 | 6 — Modul Manajemen Misi & AI Mobilization | ⬜ Todo | Placeholder page saja |
 | 7 — Modul Analitik & Laporan | ⬜ Todo | Placeholder page saja |
@@ -44,6 +44,16 @@ Fase 0 (Setup Proyek) **selesai**. Fase 1 (Design System & App Shell) **selesai*
 - `prisma/seed.ts`: 4 akun demo (satu per role, password sama untuk semua: `komcad123`) + 20 anggota dummy tersebar 8 provinsi dengan profil demografi, lokasi, sertifikasi; 2 aktivitas pelatihan; 2 Misi contoh (satu Selesai dengan evaluasi, satu Dimobilisasi dengan Penugasan berstatus "Menunggu Respons")
 - Akun `anggota@komcad.mil.id` ditautkan ke salah satu record Anggota (bukan user tanpa data) supaya Sisi Anggota nanti punya sesuatu untuk ditampilkan
 - Idempotent untuk user (pakai `upsert`), tapi anggota/misi/aktivitas pakai `create` biasa — **menjalankan `npm run db:seed` dua kali akan duplikasi anggota/misi**. Kalau perlu reset: hapus `app/prisma/dev.db` lalu `npm run db:push && npm run db:seed`
+
+**Fase 4 — Overview & Peta Situasi (selesai, diverifikasi dengan browser sungguhan):**
+- `src/lib/overview-data.ts` — semua data panel Overview di-query & diagregasi dari Prisma (bukan hardcode): posisi anggota siap/siaga dari `Lokasi` terbaru, zona Misi aktif, statistik gender/provinsi via `groupBy`, feed Misi terbaru, ringkasan AI Mobilization dari `Misi` berstatus Dimobilisasi + `Penugasan`-nya
+- `src/lib/pos-komando.ts` — daftar lokasi Pos Komando sebagai konstanta statis (bukan entitas Prisma, karena FRD tidak mendefinisikan atribut/CRUD untuk data ini — didokumentasikan sebagai asumsi FRD §11)
+- `src/components/overview/situation-map.tsx` — react-leaflet, dynamic-imported dengan `ssr:false` (Leaflet butuh `window`), dibatasi `maxBounds` Indonesia, filter CSS tactical dark (`.tactical-tiles` di `globals.css`), auto `invalidateSize` via `ResizeObserver` (jadi otomatis benar baik saat mode layar penuh maupun saat sidebar di-collapse, tidak perlu wiring manual ke event toggle manapun)
+- Panel Layers, Legend, Training Panel (klik → Drawer), 3 panel bawah (Statistik/Misi Terbaru/AI Mobilization) dengan show/hide individual + show/hide semua sekaligus — state di-manage di satu client component orchestrator `overview-view.tsx`
+- Klik marker anggota/zona Misi membuka Drawer ringkas (bukan profil CV lengkap — itu Fase 5) — reuse `Drawer` primitive dari Fase 1
+- **Keamanan**: awalnya feed Misi Terbaru dirakit sebagai string HTML lalu di-render dengan `dangerouslySetInnerHTML` (niru pola mockup). Diperbaiki sebelum commit — field `Lokasi` pada Misi adalah teks bebas yang diisi Operator (FR-08), jadi berpotensi stored-XSS kalau di-render sebagai HTML mentah. Sekarang dirender sebagai JSX biasa (auto-escaped), tidak ada `dangerouslySetInnerHTML` di modul ini
+- **Perbaikan skema**: `Anggota` awalnya cuma punya primary key cuid internal, sehingga popup peta menampilkan ID acak (`cmsn0g1oa...`) alih-alih ID yang manusiawi. Ditambahkan field `kodeAnggota` (format `ANG-00001`, unique) — relevan juga untuk Fase 5 (tabel Direktori Anggota di mockup menampilkan kolom ID seperti ini)
+- **Verifikasi**: dites pakai Playwright headless Chromium (bukan sekadar curl, karena peta Leaflet cuma jalan di client) — login berhasil, 15 tile peta termuat, 18 shape interaktif (marker/circle) muncul, klik marker membuka Drawer dengan data benar, klik "−" pada panel menyembunyikannya dan memunculkan chip "+ Nama Panel", nol console error. Playwright ditambahkan sebagai devDependency untuk verifikasi browser di sesi-sesi berikutnya
 
 ## Cara Login untuk Testing Manual
 
@@ -77,7 +87,6 @@ Mesin dev ini **tidak** punya Node.js/npm bawaan dan **tidak** ada akses admin (
 - **RBAC di level proxy (route), bukan cuma UI**: halaman Command Center & Sisi Anggota benar-benar saling terkunci di server (redirect), bukan cuma sembunyi-tampil elemen di client.
 
 ## Langkah Selanjutnya (rekomendasi urutan)
-1. Fase 4 — Modul Overview & Peta Situasi (peta Leaflet + panel bawah) — ini yang paling terlihat & jadi fondasi visual untuk modul lain
-2. Fase 5 — Direktori Anggota + Drawer Profil CV (drawer primitive sudah siap dipakai)
-3. Fase 6 — Manajemen Misi & AI Mobilization (baru sentuh OpenAI API di sini)
-4. Perluas seed data ke skala FRD (50-100 anggota) begitu ada modul yang benar-benar butuh melihat skala itu (Direktori Anggota / Analitik)
+1. Fase 5 — Direktori Anggota + Drawer Profil CV lengkap (drawer primitive & pola query sudah ada dari Fase 4, tinggal diperluas: foto placeholder, sosial media, riwayat pelatihan/penugasan)
+2. Fase 6 — Manajemen Misi & AI Mobilization (baru sentuh OpenAI API di sini; panel AI Mobilization di Overview sudah siap nampilin `ringkasanAI` begitu field itu diisi)
+3. Perluas seed data ke skala FRD (50-100 anggota) begitu ada modul yang benar-benar butuh melihat skala itu (Direktori Anggota / Analitik)

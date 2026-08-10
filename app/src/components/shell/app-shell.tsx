@@ -2,17 +2,22 @@
 
 import { useEffect, useState } from "react";
 import type { Session } from "next-auth";
+import type { getTopbarKpi } from "@/lib/overview-data";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 
 const STORAGE_KEY = "komcad.sidebarCollapsed";
 
+export type TopbarKpi = Awaited<ReturnType<typeof getTopbarKpi>>;
+
 export function AppShell({
   children,
   user,
+  kpi,
 }: {
   children: React.ReactNode;
   user: Session["user"] | null;
+  kpi: TopbarKpi;
 }) {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -36,9 +41,9 @@ export function AppShell({
 
   return (
     <div className="flex h-screen bg-base">
-      <Sidebar collapsed={collapsed} user={user} />
+      <Sidebar collapsed={collapsed} user={user} kpi={kpi} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar onToggleSidebar={toggle} user={user} />
+        <Topbar onToggleSidebar={toggle} user={user} kpi={kpi} />
         <main className="flex min-h-0 flex-1 flex-col overflow-auto">{children}</main>
       </div>
     </div>
