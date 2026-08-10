@@ -94,10 +94,11 @@ Ini modul paling kompleks — AI-nya benar-benar generate, bukan hardcode.
 - [x] Diverifikasi Playwright: login Operator → buka AI Chat → intro pre-filled tampil dengan angka nyata → klik chip "Ada berapa Misi aktif sekarang?" → indikator mengetik muncul → **OpenAI beneran terpanggil** (dikonfirmasi dari log durasi request ~1.4 detik, bukan instan/mock) → jawaban menyebut "Misi aktif" sesuai data → kirim pertanyaan di luar topik ("Siapa presiden Indonesia?") → fallback graceful muncul (bukan blank/error). Nol console error
 
 ## Fase 9 — Modul Guideline (FR-33 s.d. FR-36)
-- [ ] Tab Panduan Pengguna: kartu instruksional bertahap (alur BUAT MISI, alur kelola anggota) — FR-33
-- [ ] Tab FAQ: minimal 5 pertanyaan — FR-34
-- [ ] Tab Modul: kartu per modul (judul, badge Aktif/Beta, deskripsi ≥3 kalimat, chip fitur) — FR-35
-- [ ] Navigasi 3 tab tanpa reload, konten disembunyikan bukan dihapus dari DOM — FR-36
+- [x] Tab Panduan Pengguna: 3 kartu instruksional bertahap (navigasi dashboard, alur BUAT MISI end-to-end, alur kelola anggota) — FR-33. **Istilah disamakan persis ke UI aktual** (bukan disalin mentah dari mockup): tombol "BUAT MISI" (bukan "Buat Misi Baru"), nama menu "Manajemen Misi"/"Direktori Anggota"/"Kompetensi & Sertifikasi" sesuai `COMMAND_NAV`
+- [x] Tab FAQ: 6 pertanyaan (di atas minimum 5) — FR-34. **Jawaban disesuaikan ke kondisi implementasi sungguhan, bukan disalin mentah dari mockup**: FAQ "kandidat menolak notifikasi" tidak lagi mengklaim auto-reassign otomatis (belum diimplementasikan) melainkan menjelaskan kandidat cadangan tetap terlihat di drawer untuk dikoordinasikan manual; FAQ "siapa bisa ubah profil anggota" menyebut jelas Sisi Anggota (self-service) masih dalam pengembangan; ditambah 1 FAQ baru soal notifikasi SMS/WhatsApp yang jujur menyebut ini masih simulasi in-app (channel "Aplikasi"), bukan integrasi produksi sungguhan
+- [x] Tab Modul: 5 kartu modul (judul, badge Aktif/Beta, deskripsi 3+ kalimat "fungsinya untuk apa", chip fitur) — FR-35. **Badge status mengikuti progres pengembangan sungguhan**: Modul 1 (Anggota), 2 (Misi & AI Mobilization), 3 (Analitik & Laporan), 5 (AI Chat Assistant) — semua "Aktif" karena sudah dibangun & diverifikasi (Fase 5–8); Modul 4 (Akses Mandiri Anggota) tetap "Beta" karena Sisi Anggota memang masih placeholder (Fase 11 belum dikerjakan)
+- [x] Navigasi 3 tab tanpa reload (client state, bukan route terpisah), konten tab non-aktif disembunyikan lewat class `hidden` (CSS `display:none`) bukan dihapus dari DOM — FR-36. Diverifikasi lewat Playwright: elemen tab tidak aktif tetap `count() > 0` di DOM saat disembunyikan
+- [x] Diverifikasi dengan Playwright: login → buka Guideline → tab default Panduan tampil → klik FAQ (konten Panduan tetap ada di DOM, cuma disembunyikan) → klik Modul → semua 5 kartu modul tampil dengan badge benar. Nol console error
 
 ## Fase 10 — Modul Sistem
 - [ ] Pengguna & Role: kelola daftar user Command Center + role

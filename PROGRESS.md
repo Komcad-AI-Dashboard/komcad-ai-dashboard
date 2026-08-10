@@ -5,7 +5,7 @@ Status hidup development. Diperbarui setiap kali sebuah tugas di `TODO.md` berpi
 Terakhir diperbarui: **2026-08-10**
 
 ## Ringkasan
-Fase 0–2 **selesai**. Fase 3 (Data Layer) **schema selesai, seed diperkaya** — belum diperluas ke skala penuh (50-100 anggota). Fase 4 (Overview & Peta Situasi) **selesai**. Fase 5 (Manajemen Data Anggota) **selesai** — CRUD lengkap dengan RBAC server-side & audit log, diverifikasi dengan Playwright yang menemukan & memperbaiki 1 bug nyata (lihat detail di bawah). Fase 6 (Manajemen Misi & AI Mobilization) **selesai** — OpenAI benar-benar dipanggil (bukan hardcode), dengan fallback deterministik kalau API gagal; diverifikasi end-to-end lewat Playwright termasuk approval & penutupan Misi sungguhan. Fase 7 (Analitik & Laporan) **selesai** — KPI & bar readiness dari data live, 3 laporan + laporan custom yang benar-benar generate file PDF/XLSX asli saat diunduh (bukan file dummy). Fase 8 (AI Chat Assistant) **selesai** — chat grounded ke data Prisma via OpenAI (dua lapis fallback, tidak pernah blank), diverifikasi dengan panggilan OpenAI sungguhan. Fase 9–13 belum dimulai.
+Fase 0–2 **selesai**. Fase 3 (Data Layer) **schema selesai, seed diperkaya** — belum diperluas ke skala penuh (50-100 anggota). Fase 4 (Overview & Peta Situasi) **selesai**. Fase 5 (Manajemen Data Anggota) **selesai** — CRUD lengkap dengan RBAC server-side & audit log, diverifikasi dengan Playwright yang menemukan & memperbaiki 1 bug nyata (lihat detail di bawah). Fase 6 (Manajemen Misi & AI Mobilization) **selesai** — OpenAI benar-benar dipanggil (bukan hardcode), dengan fallback deterministik kalau API gagal; diverifikasi end-to-end lewat Playwright termasuk approval & penutupan Misi sungguhan. Fase 7 (Analitik & Laporan) **selesai** — KPI & bar readiness dari data live, 3 laporan + laporan custom yang benar-benar generate file PDF/XLSX asli saat diunduh (bukan file dummy). Fase 8 (AI Chat Assistant) **selesai** — chat grounded ke data Prisma via OpenAI (dua lapis fallback, tidak pernah blank), diverifikasi dengan panggilan OpenAI sungguhan. Fase 9 (Guideline) **selesai** — 3 tab konten (Panduan/FAQ/Modul), disesuaikan jujur ke kondisi implementasi sungguhan (bukan salinan mentah mockup). Fase 10–13 belum dimulai.
 
 ## Status per Fase
 
@@ -20,7 +20,7 @@ Fase 0–2 **selesai**. Fase 3 (Data Layer) **schema selesai, seed diperkaya** �
 | 6 — Modul Manajemen Misi & AI Mobilization | ✅ **Done** | Buat Misi (modal global dari topbar) → OpenAI grounded scoring+ringkasan+ETA → approval+notifikasi → Manajemen Misi (tabel+drawer+kehadiran) → Tutup Misi+evaluasi. Fallback deterministik kalau OpenAI gagal. Diverifikasi Playwright dengan OpenAI asli terpanggil |
 | 7 — Modul Analitik & Laporan | ✅ **Done** | KPI + bar Readiness per wilayah dari data live; Laporan & Ekspor generate PDF/XLSX ASLI (pdfkit/exceljs) saat diunduh, bukan file dummy; Riwayat Mobilisasi dari Misi Selesai. Diverifikasi Playwright termasuk unduh file sungguhan |
 | 8 — Modul AI Chat Assistant | ✅ **Done** | Chat grounded ke `ChatContext` (agregasi Prisma nyata) via OpenAI structured output; fallback keyword-matching kalau API gagal; percakapan awal pre-filled dari data nyata. Diverifikasi Playwright dengan OpenAI asli terpanggil |
-| 9 — Modul Guideline | ⬜ Todo | Placeholder page saja |
+| 9 — Modul Guideline | ✅ **Done** | 3 tab (Panduan/FAQ/Modul), konten disembunyikan via CSS bukan dihapus dari DOM. Istilah & status modul disamakan jujur ke UI/progres sungguhan, bukan salinan mentah mockup |
 | 10 — Modul Sistem | ⬜ Todo | Placeholder page saja |
 | 11 — Sisi Anggota (Mobile Web) | ⬜ Todo | Hanya halaman placeholder `/m`, tapi sudah role-protected & tahu siapa yang login |
 | 12 — Non-Functional Requirements | ⬜ Todo | |
@@ -88,6 +88,16 @@ Fase 0–2 **selesai**. Fase 3 (Data Layer) **schema selesai, seed diperkaya** �
 - `ChatView` — bubble kiri (AI, ikon Sparkles)/kanan (user, ikon User), tabel jawaban dirender JSX biasa dari `{headers, rows}` (bukan `dangerouslySetInnerHTML` — pelajaran dari bug Fase 4 diterapkan lagi di sini), indikator mengetik (bouncing dot) tampil selama `useTransition` pending sungguhan, chip pertanyaan cepat klik-langsung-kirim
 - **Verifikasi Playwright dengan OpenAI sungguhan**: login → intro pre-filled tampil dengan angka nyata (bukan "48.210 anggota" fiktif dari mockup) → klik chip Misi aktif → indikator mengetik muncul → jawaban benar (dikonfirmasi durasi request ~1.4 detik di log server, bukan instan sehingga bukan cache/mock) → pertanyaan di luar topik ("Siapa presiden Indonesia?") → fallback graceful, bukan blank. Nol console error
 
+**Fase 9 — Guideline (selesai, konten disesuaikan jujur ke implementasi sungguhan):**
+- `src/components/guideline/guideline-view.tsx` — satu client component, state `tab` lokal, 3 seksi (Panduan/FAQ/Modul) dirender selalu tapi divisibilitas lewat class `hidden` (bukan conditional render `{tab === x && ...}`) — memenuhi FR-36 "disembunyikan bukan dihapus dari DOM" secara harfiah, diverifikasi lewat `count()` Playwright bukan cuma `isVisible()`
+- **Konten sengaja tidak disalin mentah dari mockup**, disesuaikan ke kondisi sungguhan platform ini:
+  - Panduan: istilah tombol/menu disamakan persis ke `COMMAND_NAV` & label UI aktual ("BUAT MISI" bukan "Buat Misi Baru", dst)
+  - FAQ "kandidat menolak notifikasi": mockup mengklaim auto-reassign otomatis ke kandidat berikutnya — fitur itu TIDAK ada di `misi-actions.ts` Fase 6, jadi jawaban ditulis ulang jujur (kandidat cadangan tetap terlihat di drawer, dikoordinasikan manual)
+  - FAQ "siapa bisa ubah profil anggota": ditambahkan catatan eksplisit bahwa Sisi Anggota (self-service) masih dalam pengembangan (Fase 11 belum dikerjakan), bukan mengklaim fitur itu sudah tersedia
+  - FAQ baru soal kanal notifikasi SMS/WhatsApp: jujur menyebut ini simulasi in-app (`channel: "Aplikasi"`), bukan integrasi produksi — transparansi ke gap NFR-07
+  - Badge status modul (Aktif/Beta) di tab Modul mengikuti progres pengembangan sungguhan per fase ini: Modul 1/2/3/5 "Aktif" (sudah dibangun & diverifikasi Fase 5–8), Modul 4 "Beta" (Sisi Anggota memang masih placeholder)
+- **Verifikasi Playwright**: tab default Panduan tampil, klik FAQ → konten Panduan tetap `count()>0` di DOM (cuma disembunyikan CSS, bukan di-unmount React), klik Modul → 5 kartu tampil dengan badge benar. Nol console error
+
 ## Cara Login untuk Testing Manual
 
 Jalankan `npm run dev` dari `app/`, buka `http://127.0.0.1:3000` (lihat catatan `localhost` vs `127.0.0.1` di bawah), lalu masuk dengan salah satu akun (password sama semua): `komcad123`
@@ -127,7 +137,6 @@ Mesin dev ini **tidak** punya Node.js/npm bawaan dan **tidak** ada akses admin (
 - **Route Handler (`app/api/.../route.ts`) untuk unduhan file**: dipakai untuk laporan PDF/XLSX supaya browser bisa native-download via `Content-Disposition: attachment`. Link `<a href>` biasa (bukan `router.push`) atau `window.location.href` di client dipakai untuk memicunya — `router.push` tidak akan memicu dialog unduh karena itu navigasi client-side RSC, bukan request browser penuh.
 
 ## Langkah Selanjutnya (rekomendasi urutan)
-1. Fase 9 — Modul Guideline (Panduan Pengguna, FAQ, Modul) — modul paling ringan, murni konten + 3 tab, cocok jadi jeda sebelum Fase 10/11 yang lebih berat
-2. Fase 10 — Modul Sistem (Pengguna & Role, Pengaturan) — sekalian ini tempat yang tepat untuk bikin parameter model AI Mobilization (radius/bobot, masih statis dari Fase 6) jadi benar-benar editable & tersimpan
-3. Fase 11 — Sisi Anggota (mobile web) — baru sentuh modul mobile pertama kali, butuh perhatian ekstra ke layout phone-width & data isolation (anggota cuma boleh lihat data sendiri)
-4. Perluas seed data ke skala FRD (50-100 anggota) begitu ada modul yang benar-benar butuh melihat skala itu (Analitik & Laporan sudah lumayan butuh — 8 provinsi masih kelihatan tipis)
+1. Fase 10 — Modul Sistem (Pengguna & Role, Pengaturan) — sekalian ini tempat yang tepat untuk bikin parameter model AI Mobilization (radius/bobot, masih statis dari Fase 6) jadi benar-benar editable & tersimpan
+2. Fase 11 — Sisi Anggota (mobile web) — baru sentuh modul mobile pertama kali, butuh perhatian ekstra ke layout phone-width & data isolation (anggota cuma boleh lihat data sendiri). Begitu ini selesai, Guideline FAQ (Fase 9) yang menyebut "masih dalam pengembangan" perlu diperbarui jadi deskripsi fitur sungguhan, dan badge Modul 4 di tab Modul naik dari "Beta" ke "Aktif"
+3. Perluas seed data ke skala FRD (50-100 anggota) begitu ada modul yang benar-benar butuh melihat skala itu (Analitik & Laporan sudah lumayan butuh — 8 provinsi masih kelihatan tipis)
