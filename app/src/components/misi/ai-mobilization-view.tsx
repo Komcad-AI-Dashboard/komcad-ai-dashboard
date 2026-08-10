@@ -3,16 +3,11 @@
 import { useState, useTransition } from "react";
 import { Badge, urgensiColor } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { ROLES, type Role } from "@/lib/constants";
 import type { MisiMenunggu } from "@/lib/misi-data";
+import type { PengaturanSistem } from "@/lib/pengaturan-data";
 import { approveMisiAction } from "@/lib/misi-actions";
-
-const PARAMETER_MODEL = [
-  { label: "Radius pencarian default", sub: "Jarak maksimum kandidat dari lokasi Misi", value: "25 km" },
-  { label: "Bobot Readiness Score", sub: "Kontribusi skor kesiapan pada ranking kandidat", value: "40%" },
-  { label: "Bobot jarak/ETA", sub: "Kontribusi estimasi waktu tempuh", value: "35%" },
-  { label: "Bobot kompetensi/sertifikasi", sub: "Kecocokan kebutuhan Misi dengan sertifikasi anggota", value: "25%" },
-];
 
 function MisiCard({ misi, canManage }: { misi: MisiMenunggu; canManage: boolean }) {
   const [pending, startTransition] = useTransition();
@@ -79,8 +74,22 @@ function MisiCard({ misi, canManage }: { misi: MisiMenunggu; canManage: boolean 
   );
 }
 
-export function AiMobilizationView({ misiMenunggu, role }: { misiMenunggu: MisiMenunggu[]; role: Role | undefined }) {
+export function AiMobilizationView({
+  misiMenunggu,
+  role,
+  pengaturan,
+}: {
+  misiMenunggu: MisiMenunggu[];
+  role: Role | undefined;
+  pengaturan: PengaturanSistem;
+}) {
   const canManage = role === ROLES.SUPER_ADMIN || role === ROLES.OPERATOR;
+  const PARAMETER_MODEL = [
+    { label: "Radius pencarian default", sub: "Jarak maksimum kandidat dari lokasi Misi", value: `${pengaturan.aiRadiusKm} km` },
+    { label: "Bobot Readiness Score", sub: "Kontribusi skor kesiapan pada ranking kandidat", value: `${pengaturan.aiBobotReadiness}%` },
+    { label: "Bobot jarak/ETA", sub: "Kontribusi estimasi waktu tempuh", value: `${pengaturan.aiBobotJarak}%` },
+    { label: "Bobot kompetensi/sertifikasi", sub: "Kecocokan kebutuhan Misi dengan sertifikasi anggota", value: `${pengaturan.aiBobotKompetensi}%` },
+  ];
 
   return (
     <div className="flex-1 overflow-y-auto p-5">
@@ -97,8 +106,18 @@ export function AiMobilizationView({ misiMenunggu, role }: { misiMenunggu: MisiM
         <div className="rounded-[8px] border border-border bg-surface p-[14px]">
           <h3 className="mb-2 text-[12px] font-extrabold">Parameter Model AI Mobilization</h3>
           <p className="mb-3 text-[11px] text-ink-3">
-            Nilai referensi yang dipakai mesin rekomendasi saat ini. Panel pengaturan untuk mengubah bobot ini
-            langsung dari UI belum tersedia (menyusul di modul Pengaturan) — sementara diubah lewat kode.
+            Nilai yang sedang dipakai mesin rekomendasi saat ini — benar-benar berpengaruh ke skoring & radius
+            pencarian kandidat Misi berikutnya, bukan sekadar tampilan.
+            {role === ROLES.SUPER_ADMIN && (
+              <>
+                {" "}
+                Ubah lewat menu{" "}
+                <Link href="/pengaturan" className="text-accent-bright hover:underline">
+                  Pengaturan
+                </Link>
+                .
+              </>
+            )}
           </p>
           {PARAMETER_MODEL.map((p) => (
             <div key={p.label} className="flex items-center justify-between border-b border-border-soft py-2 last:border-b-0">

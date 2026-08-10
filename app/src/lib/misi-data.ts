@@ -154,11 +154,16 @@ export type KandidatPool = {
 };
 
 /** Kandidat calon personel untuk sebuah Misi baru: anggota Aktif/Siaga terdekat dari lokasi Misi,
- * diurutkan jarak lalu diambil pool teratas untuk diserahkan ke AI Mobilization (FR-09, FR-10). */
+ * diurutkan jarak lalu diambil pool teratas untuk diserahkan ke AI Mobilization (FR-09, FR-10).
+ * `radiusKm` (dari Pengaturan → Parameter Model, FR-11) diterapkan sebagai filter jarak kalau
+ * diisi — tapi kalau hasilnya kosong (radius terlalu ketat/anggota jauh semua, lumrah untuk seed
+ * data yang tersebar antar-provinsi), fallback ke `poolSize` kandidat terdekat apa adanya supaya
+ * Operator tetap dapat rekomendasi, bukan layar kosong. */
 export async function getKandidatPool(
   misiLat: number,
   misiLng: number,
-  poolSize = 15
+  poolSize = 15,
+  radiusKm?: number
 ): Promise<KandidatPool[]> {
   const anggota = await prisma.anggota.findMany({
     where: {
@@ -174,7 +179,7 @@ export async function getKandidatPool(
 
   const now = Date.now();
 
-  return anggota
+  const semua = anggota
     .filter((a) => a.lokasiHistori.length > 0)
     .map((a) => {
       const lokasi = a.lokasiHistori[0];
@@ -194,6 +199,11 @@ export async function getKandidatPool(
           : null,
       };
     })
-    .sort((a, b) => a.jarakKm - b.jarakKm)
-    .slice(0, poolSize);
+    .sort((a, b) => a.jarakKm - b.jarakKm);
+
+  if (radiusKm) {
+    const dalamRadius = semua.filter((a) => a.jarakKm <= radiusKm);
+    if (dalamRadius.length > 0) return dalamRadius.slice(0, poolSize);
+  }
+  return semua.slice(0, poolSize);
 }

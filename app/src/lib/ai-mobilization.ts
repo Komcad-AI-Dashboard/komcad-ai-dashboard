@@ -29,13 +29,25 @@ function buildAlasanFallback(k: KandidatPool): string[] {
   return alasan;
 }
 
-function skorFallback(k: KandidatPool): number {
+export type BobotModel = { readiness: number; jarak: number; kompetensi: number };
+const BOBOT_DEFAULT: BobotModel = { readiness: 40, jarak: 35, kompetensi: 25 };
+
+/** Recency (jeda penugasan terakhir) sengaja tidak dibuat parameter Admin terpisah di Pengaturan —
+ * selalu diberi porsi kecil tetap di luar 3 bobot utama (yang totalnya 100%) supaya faktor
+ * "jangan terus-terusan tugaskan orang yang sama" tetap ada tanpa menambah kompleksitas UI. */
+const BOBOT_RECENCY_TETAP = 10;
+
+function skorFallback(k: KandidatPool, bobot: BobotModel): number {
   const jarakScore = Math.max(0, 100 - k.jarakKm * 2);
   const kompetensiScore = k.kompetensi.length > 0 ? 80 : 40;
   const recencyScore =
     k.hariSejakPenugasanTerakhir === null ? 100 : Math.min(100, k.hariSejakPenugasanTerakhir / 2);
+  const sisaUtama = 100 - BOBOT_RECENCY_TETAP;
   return clampSkor(
-    k.readinessScore * 0.4 + jarakScore * 0.3 + kompetensiScore * 0.2 + recencyScore * 0.1
+    k.readinessScore * ((bobot.readiness / 100) * (sisaUtama / 100)) +
+      jarakScore * ((bobot.jarak / 100) * (sisaUtama / 100)) +
+      kompetensiScore * ((bobot.kompetensi / 100) * (sisaUtama / 100)) +
+      recencyScore * (BOBOT_RECENCY_TETAP / 100)
   );
 }
 
@@ -43,9 +55,10 @@ function fallbackRecommendation(params: {
   pemberiPerintah: string;
   deskripsiMisi: string;
   kandidatPool: KandidatPool[];
+  bobot: BobotModel;
 }): AiRecommendation {
   const ranked = [...params.kandidatPool]
-    .map((k) => ({ k, skor: skorFallback(k) }))
+    .map((k) => ({ k, skor: skorFallback(k, params.bobot) }))
     .sort((a, b) => b.skor - a.skor)
     .slice(0, Math.min(8, params.kandidatPool.length));
 
@@ -67,8 +80,10 @@ export async function generateAiMobilizationRecommendation(params: {
   lokasi: string;
   deskripsiMisi: string;
   kandidatPool: KandidatPool[];
+  bobot?: BobotModel;
 }): Promise<AiRecommendation> {
   const { kandidatPool } = params;
+  const bobot = params.bobot ?? BOBOT_DEFAULT;
   if (kandidatPool.length === 0) {
     return {
       sumber: "fallback",
@@ -78,7 +93,7 @@ export async function generateAiMobilizationRecommendation(params: {
   }
 
   if (!process.env.OPENAI_API_KEY) {
-    return fallbackRecommendation(params);
+    return fallbackRecommendation({ ...params, bobot });
   }
 
   try {
@@ -128,7 +143,8 @@ export async function generateAiMobilizationRecommendation(params: {
           content:
             "Anda adalah AI Mobilization Komcad — sistem pendukung keputusan Operator Komando untuk memobilisasi personel cadangan (Komcad) saat bencana/kedaruratan. " +
             "Anda HANYA boleh merekomendasikan personel dari daftar kandidat yang diberikan (identitas via anggotaId) — jangan pernah mengarang atau menyebut personel di luar daftar itu. " +
-            "Untuk tiap kandidat, beri skor kecocokan 0-100 dan alasan berupa 3-5 poin singkat yang mengutip angka nyata dari data (jarak km, Readiness Score, kompetensi/sertifikasi, jeda penugasan terakhir) — jangan mengarang angka baru.",
+            "Untuk tiap kandidat, beri skor kecocokan 0-100 dan alasan berupa 3-5 poin singkat yang mengutip angka nyata dari data (jarak km, Readiness Score, kompetensi/sertifikasi, jeda penugasan terakhir) — jangan mengarang angka baru. " +
+            `Bobot prioritas yang diatur Admin (total 100%, gunakan sebagai panduan urutan skor, bukan aturan matematis ketat): Readiness Score ${bobot.readiness}%, jarak/ETA ${bobot.jarak}%, kompetensi/sertifikasi ${bobot.kompetensi}%.`,
         },
         {
           role: "user",
@@ -166,6 +182,6 @@ export async function generateAiMobilizationRecommendation(params: {
     return { sumber: "openai", ringkasanAI: parsed.ringkasanAI, kandidat };
   } catch (err) {
     console.error("[ai-mobilization] OpenAI gagal, pakai fallback deterministik:", err);
-    return fallbackRecommendation(params);
+    return fallbackRecommendation({ ...params, bobot });
   }
 }

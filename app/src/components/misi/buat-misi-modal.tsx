@@ -25,6 +25,7 @@ export function BuatMisiModal({ open, onOpenChange }: { open: boolean; onOpenCha
   const [form, setForm] = useState(initialForm);
   const [result, setResult] = useState<Extract<GenerateMisiResult, { error: null }> | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [jumlahDinotifikasi, setJumlahDinotifikasi] = useState(0);
   const [pending, startTransition] = useTransition();
 
   function reset() {
@@ -65,6 +66,7 @@ export function BuatMisiModal({ open, onOpenChange }: { open: boolean; onOpenCha
         setErrorMsg(res.error);
         return;
       }
+      setJumlahDinotifikasi(res.jumlahDinotifikasi);
       setStep("done");
     });
   }
@@ -253,7 +255,9 @@ export function BuatMisiModal({ open, onOpenChange }: { open: boolean; onOpenCha
           <p className="text-[13px]">
             <b>{result.kodeMisi} berhasil dibuat.</b>
             <br />
-            Notifikasi mobilisasi telah dikirim ke {result.kandidat.length} kandidat terpilih.
+            {jumlahDinotifikasi > 0
+              ? `Notifikasi mobilisasi telah dikirim ke ${jumlahDinotifikasi} kandidat terpilih.`
+              : "Notifikasi Misi baru sedang dinonaktifkan di menu Pengaturan — tidak ada notifikasi terkirim."}
           </p>
           <Button type="button" variant="outline" onClick={() => handleClose(false)}>
             Selesai

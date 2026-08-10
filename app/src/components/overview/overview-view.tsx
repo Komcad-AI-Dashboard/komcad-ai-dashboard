@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Maximize2, X } from "lucide-react";
 import { Badge, statusSiagaColor, statusMisiColor, urgensiColor } from "@/components/ui/badge";
@@ -54,6 +55,7 @@ export function OverviewView({
   stats,
   feed,
   aiSummary,
+  autoRefresh,
 }: {
   anggota: MapAnggota[];
   misi: MapMisi[];
@@ -62,7 +64,9 @@ export function OverviewView({
   stats: Statistik;
   feed: FeedItem[];
   aiSummary: AiSummary;
+  autoRefresh: boolean;
 }) {
+  const router = useRouter();
   const [layers, setLayers] = useState<LayerVisibility>({
     anggota: true,
     siaga: true,
@@ -72,6 +76,15 @@ export function OverviewView({
   const [fullscreen, setFullscreen] = useState(false);
   const [hiddenPanels, setHiddenPanels] = useState<Set<PanelKey>>(new Set());
   const [selection, setSelection] = useState<Selection>(null);
+
+  // Preferensi "Auto-refresh data peta" (menu Pengaturan) — polling revalidate data server tiap 15
+  // detik. Ini bukan push real-time sungguhan (masih request-based), tapi menutup sebagian gap
+  // FR-07/FR-24 yang sebelumnya cuma refresh-on-navigate.
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const interval = setInterval(() => router.refresh(), 15000);
+    return () => clearInterval(interval);
+  }, [autoRefresh, router]);
 
   function toggleLayer(key: keyof LayerVisibility) {
     setLayers((prev) => ({ ...prev, [key]: !prev[key] }));

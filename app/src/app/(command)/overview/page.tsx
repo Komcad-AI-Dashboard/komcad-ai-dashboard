@@ -8,15 +8,17 @@ import {
   getMisiTerbaruFeed,
   getAiMobilizationSummary,
 } from "@/lib/overview-data";
+import { getPengaturanSistem } from "@/lib/pengaturan-data";
 
 export default async function OverviewPage() {
-  const [anggota, misi, aktivitasPelatihan, stats, feed, aiSummary] = await Promise.all([
+  const [anggota, misi, aktivitasPelatihan, stats, feed, aiSummary, pengaturan] = await Promise.all([
     getMapAnggota(),
     getMapMisi(),
     getAktivitasPelatihanTerbaru(),
     getStatistikAnggota(),
     getMisiTerbaruFeed(),
     getAiMobilizationSummary(),
+    getPengaturanSistem(),
   ]);
 
   return (
@@ -28,6 +30,7 @@ export default async function OverviewPage() {
       stats={stats}
       feed={feed}
       aiSummary={aiSummary}
+      autoRefresh={pengaturan.petaAutoRefresh}
     />
   );
 }

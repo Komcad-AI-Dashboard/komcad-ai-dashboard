@@ -15,12 +15,14 @@ datasource db {
 // ================= AUTH & USERS =================
 
 /// Role: SUPER_ADMIN | OPERATOR | ANALIS | ANGGOTA (FRD §4)
+/// Status: Aktif | Nonaktif (login ditolak kalau Nonaktif — Modul Sistem/Pengguna & Role)
 model User {
   id            String   @id @default(cuid())
   email         String   @unique
   passwordHash  String
   name          String
   role          String
+  status        String   @default("Aktif")
   anggotaId     String?  @unique
   anggota       Anggota? @relation(fields: [anggotaId], references: [id])
   createdAt     DateTime @default(now())
@@ -232,6 +234,27 @@ model Notifikasi {
   respondedAt DateTime?
 
   @@index([anggotaId, status])
+}
+
+// ================= PENGATURAN SISTEM (Modul Sistem) =================
+
+/// Singleton (selalu id="default") — preferensi notifikasi/peta + parameter model AI Mobilization
+/// yang dapat diatur Super Admin lewat menu Pengaturan. Dibaca ulang tiap kali dibutuhkan (bukan
+/// cache in-memory) supaya perubahan langsung berlaku.
+model PengaturanSistem {
+  id                  String   @id @default("default")
+  notifMisiBaru       Boolean  @default(true) // kalau false, approveMisiAction tidak membuat Notifikasi
+  reminderSertifikasi Boolean  @default(true) // preferensi tampilan — belum ada mesin reminder terpisah
+  fallbackSms         Boolean  @default(false) // preferensi — belum ada integrasi SMS produksi (NFR-07)
+  petaHeatzone        Boolean  @default(false) // preferensi — layer heat-zone peta belum diimplementasi
+  petaAutoRefresh     Boolean  @default(true) // kalau true, Overview polling refresh tiap 15 detik
+
+  aiRadiusKm          Int      @default(25) // FR-11: radius pencarian kandidat AI Mobilization
+  aiBobotReadiness    Int      @default(40) // 3 bobot ini harus berjumlah 100 (divalidasi di server action)
+  aiBobotJarak        Int      @default(35)
+  aiBobotKompetensi   Int      @default(25)
+
+  updatedAt DateTime @updatedAt
 }
 
 // ================= AUDIT LOG =================
