@@ -4,6 +4,7 @@
 
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { computeSertifikasiStatus } from "../src/lib/sertifikasi";
 
 const prisma = new PrismaClient();
 
@@ -32,6 +33,8 @@ const NAMA_BELAKANG = [
 ];
 const UNIT = ["Komcad Yon Zeni 1", "Komcad Yon Kav 2", "Komcad Yon Arhanud 3", "Komcad Batalyon Infanteri 5"];
 const KOMPETENSI = ["Medis Lapangan", "Komunikasi Radio", "SAR & Evakuasi", "Logistik", "Teknik Bangunan", "Navigasi Darat"];
+const PEKERJAAN_SIPIL = ["Wiraswasta", "Guru", "Perawat", "Teknisi", "Kontraktor", "PNS Non-TNI", "Karyawan Swasta"];
+const NAMA_KONTAK_DARURAT = ["Istri", "Suami", "Ayah", "Ibu", "Kakak"];
 
 function pick<T>(arr: T[], seed: number): T {
   return arr[seed % arr.length];
@@ -102,10 +105,15 @@ async function main() {
         telepon: `08${(1000000000 + i).toString().slice(0, 10)}`,
         email: `${nama.toLowerCase().replace(/\s+/g, ".")}@komcad-demo.id`,
         whatsapp: `62${(8100000000 + i).toString()}`,
+        instagram: `@${nama.toLowerCase().replace(/\s+/g, ".")}`,
+        linkedin: nama.toLowerCase().replace(/\s+/g, "-"),
+        kontakDarurat: `${pick(NAMA_KONTAK_DARURAT, i)} · 08${(1200000000 + i).toString().slice(0, 10)}`,
         profilDemografi: {
           create: {
+            tanggalLahir: new Date(1985 + (i % 20), i % 12, 5 + (i % 20)),
             jenisKelamin: i % 4 === 0 ? "Perempuan" : "Laki-laki",
             pendidikan: pick(["SMA/SMK", "D3", "S1", "S2"], i),
+            pekerjaanSipil: pick(PEKERJAAN_SIPIL, i),
             golonganDarah: pick(["A", "B", "AB", "O"], i),
             provinsi: prov.nama,
             kabupatenKota: prov.kab,
@@ -121,14 +129,24 @@ async function main() {
           },
         },
         sertifikasi: {
-          create: [
-            {
-              jenisSertifikasi: pick(KOMPETENSI, i),
-              tanggalTerbit: new Date(2024, i % 12, 1),
-              tanggalBerlaku: new Date(2026, (i + 6) % 12, 1),
-              status: i % 6 === 0 ? "Kedaluwarsa" : i % 4 === 0 ? "Akan Kedaluwarsa" : "Aktif",
-            },
-          ],
+          create: (() => {
+            const berlaku1 = new Date(2026, (i + 6) % 12, 1);
+            const berlaku2 = new Date(2027, (i + 2) % 12, 1);
+            return [
+              {
+                jenisSertifikasi: pick(KOMPETENSI, i),
+                tanggalTerbit: new Date(2024, i % 12, 1),
+                tanggalBerlaku: berlaku1,
+                status: computeSertifikasiStatus(berlaku1),
+              },
+              {
+                jenisSertifikasi: pick(KOMPETENSI, i + 2),
+                tanggalTerbit: new Date(2025, (i + 3) % 12, 1),
+                tanggalBerlaku: berlaku2,
+                status: computeSertifikasiStatus(berlaku2),
+              },
+            ];
+          })(),
         },
       },
     });
@@ -153,11 +171,14 @@ async function main() {
   console.log(`Anggota demo login: ${anggotaUser.email} -> ${anggotaDemo.nama}`);
 
   console.log("Seeding aktivitas pelatihan...");
+  const pelatihan1 = { nama: "Pelatihan Dasar SAR & Evakuasi Bencana", lokasi: "Pusdiklat Komcad Bandung", tanggal: new Date(2026, 6, 15) };
+  const pelatihan2 = { nama: "Pelatihan Komunikasi Radio Lapangan", lokasi: "Pusdiklat Komcad Surabaya", tanggal: new Date(2026, 7, 1) };
+
   await prisma.aktivitasPelatihan.create({
     data: {
-      namaPelatihan: "Pelatihan Dasar SAR & Evakuasi Bencana",
-      lokasi: "Pusdiklat Komcad Bandung",
-      tanggal: new Date(2026, 6, 15),
+      namaPelatihan: pelatihan1.nama,
+      lokasi: pelatihan1.lokasi,
+      tanggal: pelatihan1.tanggal,
       jumlahPeserta: 5,
       peserta: {
         create: anggotaList.slice(0, 5).map((a) => ({ anggotaId: a.id })),
@@ -166,13 +187,45 @@ async function main() {
   });
   await prisma.aktivitasPelatihan.create({
     data: {
-      namaPelatihan: "Pelatihan Komunikasi Radio Lapangan",
-      lokasi: "Pusdiklat Komcad Surabaya",
-      tanggal: new Date(2026, 7, 1),
+      namaPelatihan: pelatihan2.nama,
+      lokasi: pelatihan2.lokasi,
+      tanggal: pelatihan2.tanggal,
       jumlahPeserta: 4,
       peserta: {
         create: anggotaList.slice(5, 9).map((a) => ({ anggotaId: a.id })),
       },
+    },
+  });
+
+  // Riwayat Pelatihan personal (FR-06 menu Riwayat Pelatihan) — tercatat untuk peserta di atas
+  console.log("Seeding riwayat pelatihan personal...");
+  for (const a of anggotaList.slice(0, 5)) {
+    await prisma.pelatihan.create({
+      data: {
+        anggotaId: a.id,
+        namaPelatihan: pelatihan1.nama,
+        tanggal: pelatihan1.tanggal,
+        statusKelulusan: "Lulus",
+      },
+    });
+  }
+  for (const a of anggotaList.slice(5, 9)) {
+    await prisma.pelatihan.create({
+      data: {
+        anggotaId: a.id,
+        namaPelatihan: pelatihan2.nama,
+        tanggal: pelatihan2.tanggal,
+        statusKelulusan: "Lulus",
+      },
+    });
+  }
+  // satu contoh belum lulus, untuk variasi tampilan status
+  await prisma.pelatihan.create({
+    data: {
+      anggotaId: anggotaList[9].id,
+      namaPelatihan: "Refreshment Evakuasi Vertikal",
+      tanggal: new Date(2026, 8, 20),
+      statusKelulusan: "Sedang Berjalan",
     },
   });
 

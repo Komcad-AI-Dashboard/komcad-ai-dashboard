@@ -1,12 +1,11 @@
-import { PagePlaceholder } from "@/components/shell/page-placeholder";
+import { getAllSertifikasi } from "@/lib/anggota-data";
+import { SertifikasiTable } from "@/components/sertifikasi/sertifikasi-table";
 
-export default function SertifikasiPage() {
+export default async function SertifikasiPage() {
+  const rows = await getAllSertifikasi();
   return (
-    <PagePlaceholder
-      title="Kompetensi & Sertifikasi"
-      description="Tabel status sertifikasi seluruh anggota (Aktif / Akan Kedaluwarsa / Kedaluwarsa) dengan reminder otomatis H-30 sebelum kedaluwarsa."
-      frIds="FR-06"
-      fase="FASE 5 — BELUM DIKERJAKAN"
-    />
+    <div className="flex flex-1 flex-col overflow-hidden">
+      <SertifikasiTable rows={rows} />
+    </div>
   );
 }

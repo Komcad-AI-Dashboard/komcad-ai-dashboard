@@ -51,16 +51,18 @@ Entitas dari FRD §9.1 + `09-data-dummy.md` (baca dulu isi file itu kalau ada, a
 - [x] Show/hide panel individual (tombol "−" → chip "+ Nama") — FR-24
 - [x] Show/hide semua panel sekaligus (situation bar) — FR-25
 - [x] Diverifikasi dengan Playwright (browser headless sungguhan, bukan cuma curl): tiles peta termuat, klik marker membuka drawer, toggle panel individual jalan, nol console error
-- [ ] Klik marker/zona di peta saat ini membuka Drawer ringkas (nama/unit/status/readiness untuk anggota; kode/jenis/lokasi/urgensi untuk Misi) — profil CV lengkap & drawer detail Misi penuh menyusul di Fase 5/6
+- [x] Klik marker anggota di peta membuka Drawer ringkas; profil CV lengkap sekarang ada tapi cuma dari menu Direktori Anggota (Fase 5) — drawer dari peta belum diarahkan ke CV lengkap, masih versi ringkas (nice-to-have, bukan blocker)
 - [ ] Ringkasan AI di panel bawah masih placeholder teks kalau `Misi.ringkasanAI` belum diisi (baru terisi nyata setelah AI Mobilization di Fase 6 jalan)
+- [ ] Klik zona Misi di peta masih membuka Drawer ringkas — drawer detail Misi penuh (dengan rekomendasi AI) menyusul di Fase 6
 
 ## Fase 5 — Modul Manajemen Data Anggota (FR-01 s.d. FR-07)
-- [ ] Direktori Anggota: tabel, search, filter status, bar Readiness Score — FR-01, FR-04
-- [ ] Drawer Profil CV Anggota: foto (placeholder siluet SVG), data pribadi, tautan WA/Email/IG/LinkedIn, kompetensi (chip), sertifikasi, riwayat pelatihan, riwayat penugasan — FR-02, dibuka ≤300ms
-- [ ] Peta Overview terhubung ke perubahan status siaga (FR-03, FR-07) — update marker ≤5 detik
-- [ ] Menu Kompetensi & Sertifikasi: tabel status (Aktif/Akan Kedaluwarsa/Kedaluwarsa), reminder H-30 — FR-06
-- [ ] Menu Riwayat Pelatihan: tabel riwayat + status kelulusan
-- [ ] CRUD Anggota (Admin/Operator) dengan audit log (timestamp + user pelaku), validasi NIK 16 digit — FR-01
+- [x] Direktori Anggota: tabel, search, filter status, bar Readiness Score — FR-01, FR-04
+- [x] Drawer Profil CV Anggota: foto (placeholder siluet SVG), data pribadi, tautan WA/Email/IG/LinkedIn (LinkedIn/Instagram pakai ikon generik — lucide-react versi terpasang tidak lagi menyertakan ikon brand), kompetensi (chip, diturunkan dari daftar jenis Sertifikasi karena skema tidak punya field kompetensi terpisah), sertifikasi, riwayat pelatihan, riwayat penugasan — FR-02
+- [x] Peta Overview terhubung ke perubahan status siaga (FR-03, FR-07) — kontrol ubah status ada di drawer CV (Admin/Operator), `revalidatePath` bikin Overview ikut ter-update di load berikutnya. **Catatan jujur**: ini refresh-on-navigate, BUKAN push real-time ≤5 detik seperti diminta acceptance criteria FR-07 — perlu polling/websocket kalau mau benar-benar real-time, ditunda ke Fase 12 (NFR)
+- [x] Menu Kompetensi & Sertifikasi: tabel status (Aktif/Akan Kedaluwarsa/Kedaluwarsa), status dihitung otomatis dari `tanggalBerlaku` tiap kali di-query (bukan dipercaya dari kolom tersimpan) — FR-06. Reminder H-30 terwakili lewat status "Akan Kedaluwarsa" otomatis; belum ada notifikasi terpisah (belum ada sistem notifikasi in-app sampai Fase 6/8)
+- [x] Menu Riwayat Pelatihan: tabel riwayat + status kelulusan
+- [x] CRUD Anggota (Admin/Operator) dengan audit log (timestamp + user pelaku otomatis lewat `AuditLog`), validasi NIK 16 digit (Zod regex) — FR-01. RBAC ditegakkan DI SERVER ACTION (bukan cuma sembunyi tombol di UI) — Analis dapat pesan error kalau nekat manggil action-nya langsung
+- [x] Diverifikasi dengan Playwright: search/filter, buka drawer, ubah status siaga, edit, **create anggota baru** — nemu & benerin 1 bug nyata (lihat catatan bug di PROGRESS.md)
 
 ## Fase 6 — Modul Manajemen Misi & AI Mobilization (FR-08 s.d. FR-16)
 Ini modul paling kompleks — AI-nya benar-benar generate, bukan hardcode.

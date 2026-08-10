@@ -5,7 +5,7 @@ Status hidup development. Diperbarui setiap kali sebuah tugas di `TODO.md` berpi
 Terakhir diperbarui: **2026-08-10**
 
 ## Ringkasan
-Fase 0–2 **selesai**. Fase 3 (Data Layer) **schema selesai, seed starter (20 anggota) sudah ada** — belum diperluas ke skala penuh (50-100). Fase 4 (Overview & Peta Situasi) **selesai** dan diverifikasi dengan browser sungguhan (Playwright, bukan cuma curl) — peta, layers, drawer, show/hide panel semua jalan nyata dengan data dari database. Fase 5–13 belum dimulai.
+Fase 0–2 **selesai**. Fase 3 (Data Layer) **schema selesai, seed diperkaya** — belum diperluas ke skala penuh (50-100 anggota). Fase 4 (Overview & Peta Situasi) **selesai**. Fase 5 (Manajemen Data Anggota) **selesai** — CRUD lengkap dengan RBAC server-side & audit log, diverifikasi dengan Playwright yang menemukan & memperbaiki 1 bug nyata (lihat detail di bawah). Fase 6–13 belum dimulai.
 
 ## Status per Fase
 
@@ -14,9 +14,9 @@ Fase 0–2 **selesai**. Fase 3 (Data Layer) **schema selesai, seed starter (20 a
 | 0 — Setup Proyek & Infrastruktur | ✅ **Done** | |
 | 1 — Design System & App Shell | ✅ **Done** | Komponen UI reusable + Drawer/Modal primitive selesai |
 | 2 — Auth & RBAC | ✅ **Done** | Login, session, RBAC redirect, sign-out — semua diverifikasi via curl end-to-end (lihat detail di bawah) |
-| 3 — Data Layer (Prisma Schema + Seed) | 🟡 **In Progress** | Schema lengkap (+ `kodeAnggota` ditambahkan di Fase 4, lihat bawah). Seed starter: 4 user demo + 20 anggota + 2 Misi contoh. Belum diperluas ke 50-100 anggota; `calculateReadinessScore()` belum ada (nilai seed masih acak, bukan hasil formula) |
+| 3 — Data Layer (Prisma Schema + Seed) | 🟡 **In Progress** | Schema lengkap (`kodeAnggota` ditambahkan Fase 4). Seed diperkaya di Fase 5: tanggal lahir, pekerjaan sipil, kontak darurat, 2 sertifikasi/anggota, riwayat Pelatihan personal. Masih 20 anggota (belum 50-100); `calculateReadinessScore()` belum ada (nilai seed masih acak, bukan hasil formula) |
 | 4 — Modul Overview & Peta Situasi | ✅ **Done** | Peta Leaflet nyata (bukan mock), layers, training panel, 3 panel bawah dengan agregasi data asli, show/hide individual & sekaligus. Diverifikasi visual + console-error check pakai Playwright headless |
-| 5 — Modul Manajemen Data Anggota | ⬜ Todo | Placeholder page saja |
+| 5 — Modul Manajemen Data Anggota | ✅ **Done** | Direktori + Drawer CV lengkap + Kompetensi&Sertifikasi + Riwayat Pelatihan + CRUD (create/edit/nonaktifkan/ubah status siaga) dengan RBAC di server action + audit log. Diverifikasi Playwright — nemu 1 bug nyata (stale action binding), sudah diperbaiki & diverifikasi ulang |
 | 6 — Modul Manajemen Misi & AI Mobilization | ⬜ Todo | Placeholder page saja |
 | 7 — Modul Analitik & Laporan | ⬜ Todo | Placeholder page saja |
 | 8 — Modul AI Chat Assistant | ⬜ Todo | Placeholder page saja |
@@ -55,6 +55,14 @@ Fase 0–2 **selesai**. Fase 3 (Data Layer) **schema selesai, seed starter (20 a
 - **Perbaikan skema**: `Anggota` awalnya cuma punya primary key cuid internal, sehingga popup peta menampilkan ID acak (`cmsn0g1oa...`) alih-alih ID yang manusiawi. Ditambahkan field `kodeAnggota` (format `ANG-00001`, unique) — relevan juga untuk Fase 5 (tabel Direktori Anggota di mockup menampilkan kolom ID seperti ini)
 - **Verifikasi**: dites pakai Playwright headless Chromium (bukan sekadar curl, karena peta Leaflet cuma jalan di client) — login berhasil, 15 tile peta termuat, 18 shape interaktif (marker/circle) muncul, klik marker membuka Drawer dengan data benar, klik "−" pada panel menyembunyikannya dan memunculkan chip "+ Nama Panel", nol console error. Playwright ditambahkan sebagai devDependency untuk verifikasi browser di sesi-sesi berikutnya
 
+**Fase 5 — Manajemen Data Anggota (selesai, RBAC server-side + CRUD teruji end-to-end):**
+- `src/lib/anggota-data.ts` — `getAnggotaFullList()` memuat seluruh detail (profil, lokasi, sertifikasi, pelatihan, penugasan) sekaligus untuk 20 anggota (didokumentasikan eksplisit di kode: kalau data mendekati skala NFR-02/500rb, ini WAJIB diganti pencarian & drawer server-side per-baris, bukan kirim semua ke client)
+- `src/lib/sertifikasi.ts` — `computeSertifikasiStatus()` menghitung status (Aktif/Akan Kedaluwarsa/Kedaluwarsa) dari `tanggalBerlaku` setiap kali di-query, BUKAN dipercaya dari kolom `status` tersimpan — ini yang bikin FR-06 ("badge berubah warna otomatis") benar-benar valid, bukan cuma snapshot statis. Dipakai konsisten di Direktori Anggota, drawer CV, dan menu Kompetensi & Sertifikasi
+- `src/lib/anggota-actions.ts` — Server Actions `createAnggotaAction`/`updateAnggotaAction`/`deactivateAnggotaAction`/`updateStatusSiagaAction`, semua: (1) cek role via `auth()` di dalam action itu sendiri (RBAC di server, bukan cuma sembunyi tombol di client — Analis yang coba manggil action tetap ditolak), (2) validasi Zod (NIK regex 16 digit), (3) tulis `AuditLog` via helper baru `src/lib/audit-log.ts`, (4) `revalidatePath` supaya UI ter-update otomatis tanpa reload manual
+- Drawer CV: foto placeholder siluet, data pribadi (usia dihitung dari tanggal lahir), kompetensi (diturunkan dari daftar jenis Sertifikasi — skema tidak punya field kompetensi terpisah dari sertifikasi formal, disederhanakan secara sadar), sertifikasi, riwayat pelatihan, riwayat penugasan (join ke Misi), tombol ubah status siaga + edit + nonaktifkan (khusus Super Admin/Operator)
+- **Bug nyata ditemukan & diperbaiki lewat testing Playwright** (bukan cuma "kelihatan jalan"): alur Edit → Escape → Tambah Anggota → Simpan ternyata memanggil `updateAnggotaAction` dengan id anggota LAMA, bukan `createAnggotaAction` — root cause: `AnggotaFormModal` dipakai berulang untuk create & edit dengan `action` yang berbeda tiap kali (`updateAnggotaAction.bind(null, id)` vs `createAnggotaAction`), dan komponennya tidak pernah unmount sehingga `useActionState` di dalamnya bisa membawa binding lama. Diperbaiki dengan `key={formTarget ? `edit-${id}` : "create"}` supaya React memaksa remount komponen (dan hook di dalamnya) tiap kali target berpindah. Reproduksi & fix dikonfirmasi lewat pengecekan log server (`createAnggotaAction` vs `updateAnggotaAction` yang benar-benar terpanggil), bukan cuma asumsi dari UI yang terlihat benar
+- **Verifikasi lengkap**: search/filter tabel, buka drawer, ubah status siaga (server action beneran ke-invoke, dicek dari log), buka modal edit dengan data ter-isi benar, create anggota baru (row baru muncul otomatis lewat `revalidatePath`, tanpa reload), halaman Sertifikasi & Pelatihan — semua lewat browser Playwright sungguhan, nol console error di sepanjang alur
+
 ## Cara Login untuk Testing Manual
 
 Jalankan `npm run dev` dari `app/`, buka `http://127.0.0.1:3000` (lihat catatan `localhost` vs `127.0.0.1` di bawah), lalu masuk dengan salah satu akun (password sama semua): `komcad123`
@@ -84,9 +92,11 @@ Mesin dev ini **tidak** punya Node.js/npm bawaan dan **tidak** ada akses admin (
 - **Tailwind v4**: dipakai apa adanya dari default `create-next-app` — theming lewat `@theme` block di CSS, bukan `tailwind.config.js`.
 - **Next.js 16 "proxy" bukan "middleware"**: file route-protection ada di `src/proxy.ts`, bukan `src/middleware.ts` (nama lama dideprecate mulai Next 16.0.0).
 - **Login pakai Server Action, bukan client `signIn()`**: `src/app/login/actions.ts` memanggil `signIn` dari `@/lib/auth` (server-side), ditangkap lewat `useActionState`. Ini menghindari perlu `"use client"` untuk seluruh logic auth dan `AuthError` ditangani rapi tanpa expose detail error ke user.
-- **RBAC di level proxy (route), bukan cuma UI**: halaman Command Center & Sisi Anggota benar-benar saling terkunci di server (redirect), bukan cuma sembunyi-tampil elemen di client.
+- **RBAC di level proxy (route), bukan cuma UI**: halaman Command Center & Sisi Anggota benar-benar saling terkunci di server (redirect), bukan cuma sembunyi-tampil elemen di client. Pola yang sama dilanjutkan di level Server Action untuk operasi CRUD (Fase 5) — jangan pernah cuma andalkan sembunyi tombol di UI untuk otorisasi.
+- **lucide-react tidak lagi punya ikon brand** (Instagram, LinkedIn, dll — versi 1.31.0 yang terpasang). Kalau butuh ikon sosial media lagi di modul lain, pakai ikon generik (`AtSign`, `Link2`, dll) seperti di CV drawer, bukan asumsi nama ikon brand tersedia.
+- **`key` prop untuk memaksa remount komponen form yang dipakai ulang untuk create/edit**: kalau ada component dengan `useActionState` yang di-reuse untuk beberapa "target" berbeda (create vs edit-anggota-X vs edit-anggota-Y) tanpa pernah unmount, action binding bisa nyangkut ke target lama. Pola ini kemungkinan akan terulang di Fase 6 (form Misi) — ingat kasus ini kalau nemu gejala serupa (state/action nyasar ke record lain).
 
 ## Langkah Selanjutnya (rekomendasi urutan)
-1. Fase 5 — Direktori Anggota + Drawer Profil CV lengkap (drawer primitive & pola query sudah ada dari Fase 4, tinggal diperluas: foto placeholder, sosial media, riwayat pelatihan/penugasan)
-2. Fase 6 — Manajemen Misi & AI Mobilization (baru sentuh OpenAI API di sini; panel AI Mobilization di Overview sudah siap nampilin `ringkasanAI` begitu field itu diisi)
-3. Perluas seed data ke skala FRD (50-100 anggota) begitu ada modul yang benar-benar butuh melihat skala itu (Direktori Anggota / Analitik)
+1. Fase 6 — Manajemen Misi & AI Mobilization (baru sentuh OpenAI API di sini; panel AI Mobilization di Overview sudah siap nampilin `ringkasanAI` begitu field itu diisi; hati-hati pola `key`-untuk-remount di atas kalau bikin form Misi yang dipakai ulang)
+2. Fase 7 — Analitik & Laporan (regionReadiness, KPI nasional — sebagian data source-nya udah ada dari Fase 4/5)
+3. Perluas seed data ke skala FRD (50-100 anggota) begitu ada modul yang benar-benar butuh melihat skala itu (Analitik terutama)

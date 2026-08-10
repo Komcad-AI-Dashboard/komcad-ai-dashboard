@@ -1,12 +1,11 @@
-import { PagePlaceholder } from "@/components/shell/page-placeholder";
+import { getAllPelatihan } from "@/lib/anggota-data";
+import { PelatihanTable } from "@/components/pelatihan/pelatihan-table";
 
-export default function PelatihanPage() {
+export default async function PelatihanPage() {
+  const rows = await getAllPelatihan();
   return (
-    <PagePlaceholder
-      title="Riwayat Pelatihan"
-      description="Tabel riwayat pelatihan seluruh anggota beserta status kelulusan."
-      frIds="FR-06"
-      fase="FASE 5 — BELUM DIKERJAKAN"
-    />
+    <div className="flex flex-1 flex-col overflow-hidden">
+      <PelatihanTable rows={rows} />
+    </div>
   );
 }
