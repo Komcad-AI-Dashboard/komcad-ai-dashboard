@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>AI KOMCAD — Sisi Anggota</title>
+<style>
+  :root{
+    --bg-primary:#000000;
+    --bg-surface:#060809;
+    --bg-elevated:#0E1215;
+    --bg-hover:#171C20;
+    --border:#22282D;
+    --border-soft:#181D21;
+    --text-primary:#EDF1F4;
+    --text-secondary:#8B96A0;
+    --text-dim:#565F67;
+    --accent:#22C577;
+    --accent-bright:#3CF29A;
+    --accent-dim:#124B30;
+    --amber:#E0A83E;
+    --red:#E14C45;
+    --cyan:#3FA9C9;
+    --gold:#B08D4F;
+    --mono:'IBM Plex Mono','JetBrains Mono',ui-monospace,monospace;
+    --sans:'Inter','IBM Plex Sans',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  html,body{background:#000; color:var(--text-primary); font-family:var(--sans); font-size:14px;}
+  button{font-family:inherit; cursor:pointer;}
+  a{color:inherit; text-decoration:none;}
+  input,select,textarea{font-family:inherit; background:var(--bg-elevated); color:var(--text-primary); border:1px solid var(--border); border-radius:8px; padding:10px 12px; font-size:13px;}
+  input::placeholder, textarea::placeholder{color:var(--text-dim);}
+  input:focus, select:focus, textarea:focus{outline:none; border-color:var(--accent-bright);}
+  ::-webkit-scrollbar{width:0px;}
+
+  /* Desktop preview frame: center a phone-width column on a black canvas */
+  .canvas{min-height:100vh; display:flex; justify-content:center; background:#000; padding:0;}
+  .phone{width:100%; max-width:430px; min-height:100vh; background:#000; position:relative; display:flex; flex-direction:column;}
+
+  /* ===== TOP HEADER ===== */
+  .app-header{
+    display:flex; align-items:center; gap:10px; padding:14px 16px 12px;
+    background:#000; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:50;
+  }
+  .logo-mark{width:26px; height:20px; border-radius:3px; flex-shrink:0; overflow:hidden; border:1px solid var(--border); display:flex; flex-direction:column;}
+  .logo-mark .half{flex:1;} .logo-mark .red{background:#D8302A;} .logo-mark .white{background:#F2F2F2;}
+  .brand-txt{font-weight:800; font-size:13px; letter-spacing:0.03em;}
+  .brand-txt small{display:block; font-size:8.5px; color:var(--text-dim); font-weight:600; letter-spacing:0.08em;}
+  .header-spacer{flex:1;}
+  .header-icon{width:32px; height:32px; border-radius:8px; border:1px solid var(--border); background:var(--bg-elevated); display:flex; align-items:center; justify-content:center; color:var(--text-secondary); font-size:14px; position:relative;}
+  .header-icon .dot-badge{position:absolute; top:-3px; right:-3px; width:9px; height:9px; border-radius:50%; background:var(--red); border:2px solid #000;}
+
+  /* ===== SCREEN CONTAINER ===== */
+  .screen{display:none; flex-direction:column; padding:14px 16px 90px; gap:14px; flex:1;}
+  .screen.active{display:flex;}
+
+  /* ===== GREETING ===== */
+  .greet-row{display:flex; align-items:center; gap:12px;}
+  .greet-avatar{width:48px; height:48px; border-radius:12px; background:var(--bg-elevated); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .greet-txt .hi{font-size:11px; color:var(--text-secondary);}
+  .greet-txt .name{font-size:16px; font-weight:800;}
+  .live-pill{display:flex; align-items:center; gap:5px; font-family:var(--mono); font-size:10px; color:var(--accent-bright); font-weight:700; margin-left:auto;}
+  .dot{width:6px; height:6px; border-radius:50%; background:currentColor; box-shadow:0 0 6px currentColor; animation:pulse 1.8s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:0.3;}}
+
+  /* ===== CARD ===== */
+  .card{background:var(--bg-surface); border:1px solid var(--border); border-radius:12px; padding:16px;}
+  .card h3{font-size:12px; font-weight:800; letter-spacing:0.05em; margin-bottom:12px; text-transform:uppercase; color:var(--text-secondary);}
+
+  /* ===== STATUS KESIAPAN CARD ===== */
+  .status-card{background:linear-gradient(145deg, rgba(60,242,154,0.08), rgba(6,8,9,1)); border:1px solid rgba(60,242,154,0.25); border-radius:14px; padding:18px;}
+  .status-card .top-row{display:flex; align-items:center; justify-content:between; gap:10px;}
+  .status-card .label{font-size:10px; font-weight:800; letter-spacing:0.08em; color:var(--text-secondary);}
+  .status-badge-big{display:inline-flex; align-items:center; gap:8px; font-size:18px; font-weight:800; color:var(--accent-bright); margin-top:6px;}
+  .status-badge-big .dot-big{width:10px; height:10px; border-radius:50%; background:var(--accent-bright); box-shadow:0 0 10px var(--accent-bright);}
+  .status-options{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:14px;}
+  .status-opt{padding:9px 4px; text-align:center; border-radius:8px; border:1px solid var(--border); background:var(--bg-elevated); font-size:11px; font-weight:700; color:var(--text-secondary);}
+  .status-opt.sel-aktif{border-color:var(--accent-bright); color:var(--accent-bright); background:rgba(60,242,154,0.12);}
+  .status-opt.sel-siaga{border-color:var(--amber); color:var(--amber); background:rgba(224,168,62,0.12);}
+  .status-opt.sel-tidak{border-color:var(--red); color:#F5A9A5; background:rgba(225,76,69,0.12);}
+
+  /* ===== READINESS RING ===== */
+  .readiness-row{display:flex; align-items:center; gap:16px;}
+  .ring-wrap{position:relative; width:76px; height:76px; flex-shrink:0;}
+  .ring-wrap svg{transform:rotate(-90deg);}
+  .ring-val{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column;}
+  .ring-val .num{font-family:var(--mono); font-size:18px; font-weight:800; color:var(--accent-bright); line-height:1;}
+  .ring-val .cap{font-size:7.5px; color:var(--text-dim); letter-spacing:0.05em; margin-top:2px;}
+  .readiness-info .t{font-size:12px; font-weight:700; margin-bottom:4px;}
+  .readiness-info .d{font-size:10.5px; color:var(--text-secondary); line-height:1.5;}
+
+  /* ===== QUICK STATS ===== */
+  .quick-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .quick-card{background:var(--bg-surface); border:1px solid var(--border); border-radius:10px; padding:12px;}
+  .quick-card .qi{font-size:16px; margin-bottom:6px;}
+  .quick-card .qv{font-family:var(--mono); font-size:17px; font-weight:800;}
+  .quick-card .ql{font-size:9.5px; color:var(--text-secondary); margin-top:2px;}
+
+  /* ===== NOTIFICATION CARD ===== */
+  .notif-card{background:var(--bg-surface); border:1px solid var(--border); border-left:3px solid var(--red); border-radius:10px; padding:13px;}
+  .notif-card.info{border-left-color:var(--cyan);}
+  .notif-card.ok{border-left-color:var(--accent-bright);}
+  .notif-top{display:flex; align-items:center; gap:8px; margin-bottom:6px;}
+  .notif-tag{font-size:9px; font-weight:800; letter-spacing:0.05em; padding:2px 8px; border-radius:10px; background:rgba(225,76,69,0.15); color:#F5A9A5;}
+  .notif-tag.info{background:rgba(63,169,201,0.15); color:var(--cyan);}
+  .notif-tag.ok{background:rgba(60,242,154,0.15); color:var(--accent-bright);}
+  .notif-time{font-size:9.5px; color:var(--text-dim); margin-left:auto; font-family:var(--mono);}
+  .notif-title{font-size:12.5px; font-weight:700; margin-bottom:4px;}
+  .notif-desc{font-size:11px; color:var(--text-secondary); line-height:1.5; margin-bottom:10px;}
+  .notif-actions{display:flex; gap:8px;}
+  .notif-actions button{flex:1; padding:8px; border-radius:7px; font-size:11px; font-weight:700; border:1px solid var(--border);}
+  .btn-confirm{background:var(--accent-bright); color:#00170C; border:none !important;}
+  .btn-reject{background:transparent; color:var(--text-secondary);}
+  .notif-responded{font-size:11px; font-weight:700; padding:8px; text-align:center; border-radius:7px; background:var(--bg-elevated); color:var(--accent-bright);}
+
+  /* ===== FORM ELEMENTS ===== */
+  .form-field{margin-bottom:14px;}
+  .form-field label{display:block; font-size:10px; font-weight:800; letter-spacing:0.04em; color:var(--text-secondary); margin-bottom:6px; text-transform:uppercase;}
+  .form-field input, .form-field select, .form-field textarea{
+    width:100%; background:var(--bg-elevated); border:1px solid var(--border); border-radius:8px;
+    padding:11px 12px; color:var(--text-primary); font-size:13px;
+  }
+  .form-field input:focus, .form-field select:focus, .form-field textarea:focus{outline:none; border-color:var(--accent-bright);}
+  .form-field textarea{min-height:70px; resize:vertical;}
+  .form-row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .field-hint{font-size:9.5px; color:var(--text-dim); margin-top:4px;}
+
+  /* ===== PHOTO UPLOAD ===== */
+  .photo-upload{display:flex; align-items:center; gap:14px; margin-bottom:16px;}
+  .photo-box{width:76px; height:76px; border-radius:14px; border:1.5px dashed var(--border); background:var(--bg-elevated); display:flex; flex-direction:column; align-items:center; justify-content:center; flex-shrink:0; gap:3px;}
+  .photo-box svg{opacity:0.6;}
+  .photo-box .hint{font-size:6.5px; color:var(--text-dim); text-align:center; line-height:1.2;}
+  .photo-actions{display:flex; flex-direction:column; gap:6px;}
+  .photo-actions button{font-size:11px; font-weight:700; padding:8px 14px; border-radius:7px; border:1px solid var(--border); background:var(--bg-elevated); color:var(--text-primary);}
+  .photo-actions button.primary{background:transparent; border-color:var(--accent); color:var(--accent-bright);}
+
+  /* ===== CHIPS (kompetensi) ===== */
+  .chip-input-row{display:flex; gap:8px; margin-bottom:10px;}
+  .chip-input-row input{flex:1;}
+  .chip-add-btn{width:42px; border-radius:8px; border:1px solid var(--accent); background:rgba(60,242,154,0.1); color:var(--accent-bright); font-size:18px; font-weight:700;}
+  .chip-list{display:flex; flex-wrap:wrap; gap:6px;}
+  .chip-tag{display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; padding:5px 8px 5px 11px; border-radius:20px; background:rgba(60,242,154,0.1); color:var(--accent-bright); border:1px solid rgba(60,242,154,0.3);}
+  .chip-tag .x{cursor:pointer; opacity:0.7; font-size:13px;}
+
+  /* ===== SOCIAL MEDIA ROW ===== */
+  .social-input-row{display:flex; align-items:center; gap:8px; margin-bottom:10px;}
+  .social-icon{width:34px; height:34px; border-radius:8px; background:var(--bg-elevated); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;}
+  .social-input-row input{flex:1;}
+
+  /* ===== SAVE BAR ===== */
+  .save-bar{position:sticky; bottom:66px; display:flex; gap:10px; padding-top:4px;}
+  .btn-save{flex:1; background:var(--accent-bright); color:#00170C; border:none; border-radius:10px; padding:13px; font-weight:800; font-size:13px;}
+  .btn-cancel{padding:13px 18px; border-radius:10px; border:1px solid var(--border); background:var(--bg-elevated); color:var(--text-secondary); font-weight:700; font-size:13px;}
+
+  /* ===== TOAST ===== */
+  .toast{position:fixed; left:50%; bottom:100px; transform:translateX(-50%) translateY(20px); opacity:0; pointer-events:none;
+    background:var(--bg-elevated); border:1px solid var(--accent-bright); color:var(--accent-bright); font-size:12.5px; font-weight:700;
+    padding:10px 18px; border-radius:20px; transition:all .25s ease; z-index:200; white-space:nowrap;}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  /* ===== RIWAYAT TABS ===== */
+  .seg-tabs{display:flex; gap:6px; background:var(--bg-elevated); border:1px solid var(--border); border-radius:10px; padding:4px;}
+  .seg-tab{flex:1; text-align:center; padding:8px 4px; border-radius:7px; font-size:11.5px; font-weight:700; color:var(--text-secondary);}
+  .seg-tab.active{background:var(--accent-bright); color:#00170C;}
+  .riwayat-item{background:var(--bg-surface); border:1px solid var(--border); border-radius:10px; padding:12px 14px;}
+  .riwayat-item .rt{font-size:12px; font-weight:700; margin-bottom:4px;}
+  .riwayat-item .rd{font-size:10.5px; color:var(--text-secondary); display:flex; justify-content:space-between;}
+  .pill{display:inline-flex; align-items:center; font-size:10px; font-weight:700; padding:3px 9px; border-radius:20px;}
+  .pill.green{background:rgba(60,242,154,0.14); color:var(--accent-bright);}
+  .pill.amber{background:rgba(224,168,62,0.14); color:var(--amber);}
+  .pill.red{background:rgba(225,76,69,0.14); color:#F5A9A5;}
+
+  /* ===== BOTTOM NAV ===== */
+  .bottom-nav{
+    position:fixed; left:50%; transform:translateX(-50%); bottom:0; width:100%; max-width:430px;
+    display:flex; background:#000; border-top:1px solid var(--border); padding:8px 6px 10px; z-index:100;
+  }
+  .nav-item{flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 2px; border-radius:10px; color:var(--text-dim);}
+  .nav-item .ni{font-size:19px;}
+  .nav-item .nl{font-size:9.5px; font-weight:700;}
+  .nav-item.active{color:var(--accent-bright);}
+
+  /* section divider label */
+  .section-label{font-size:10px; font-weight:800; letter-spacing:0.08em; color:var(--text-dim); margin:4px 0 2px; text-transform:uppercase;}
+</style>
+</head>
+<body>
+<div class="canvas">
+<div class="phone">
+
+  <!-- HEADER -->
+  <div class="app-header">
+    <div class="logo-mark"><div class="half red"></div><div class="half white"></div></div>
+    <div class="brand-txt">AI KOMCAD<small>SISI ANGGOTA</small></div>
+    <div class="header-spacer"></div>
+    <div class="header-icon" id="nav-to-notif">🔔<span class="dot-badge"></span></div>
+  </div>
+
+  <!-- ========== SCREEN: BERANDA ========== -->
+  <div class="screen active" id="screen-beranda">
+    <div class="greet-row">
+      <div class="greet-avatar">
+        <svg viewBox="0 0 64 64" width="30" height="30"><circle cx="32" cy="32" r="32" fill="#171C20"/><circle cx="32" cy="24" r="11" fill="#3A4550"/><path d="M10 56c0-13 9.8-20 22-20s22 7 22 20" fill="#3A4550"/></svg>
+      </div>
+      <div class="greet-txt">
+        <div class="hi">Selamat datang,</div>
+        <div class="name">Rian Pratama</div>
+      </div>
+      <div class="live-pill"><span class="dot"></span>LIVE</div>
+    </div>
+
+    <div class="status-card">
+      <div class="label">STATUS KESIAPAN SAYA</div>
+      <div class="status-badge-big" id="status-label"><span class="dot-big" id="status-dot"></span>Aktif</div>
+      <div class="status-options" id="status-options">
+        <div class="status-opt sel-aktif" data-status="aktif">Aktif</div>
+        <div class="status-opt" data-status="siaga">Siaga</div>
+        <div class="status-opt" data-status="tidak">Tidak Tersedia</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Readiness Score Saya</h3>
+      <div class="readiness-row">
+        <div class="ring-wrap">
+          <svg width="76" height="76" viewBox="0 0 76 76">
+            <circle cx="38" cy="38" r="32" fill="none" stroke="#171C20" stroke-width="8"/>
+            <circle cx="38" cy="38" r="32" fill="none" stroke="#3CF29A" stroke-width="8" stroke-linecap="round" stroke-dasharray="201" stroke-dashoffset="35"/>
+          </svg>
+          <div class="ring-val"><div class="num">92</div><div class="cap">SKOR</div></div>
+        </div>
+        <div class="readiness-info">
+          <div class="t">Kesiapan Anda Sangat Baik</div>
+          <div class="d">Ditentukan dari kompetensi, sertifikasi aktif, riwayat pelatihan, dan jeda penugasan terakhir Anda.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="quick-grid">
+      <div class="quick-card"><div class="qi">🏅</div><div class="qv">2</div><div class="ql">Sertifikasi Aktif</div></div>
+      <div class="quick-card"><div class="qi">📚</div><div class="qv">3</div><div class="ql">Pelatihan Diikuti</div></div>
+      <div class="quick-card"><div class="qi">🎖️</div><div class="qv">2</div><div class="ql">Riwayat Penugasan</div></div>
+      <div class="quick-card"><div class="qi">📅</div><div class="qv">45</div><div class="ql">Hari Sejak Tugas Terakhir</div></div>
+    </div>
+
+    <div class="section-label">Notifikasi Terbaru</div>
+    <div class="notif-card">
+      <div class="notif-top"><span class="notif-tag">MOBILISASI</span><span class="notif-time">08:31</span></div>
+      <div class="notif-title">MISI-2026-0142 — Mobilisasi Banjir, Kab. Garut</div>
+      <div class="notif-desc">Anda direkomendasikan AI Mobilization untuk Misi ini. Mohon konfirmasi kesediaan Anda.</div>
+      <div class="notif-actions">
+        <button class="btn-confirm" onclick="respondNotif(this)">✓ Konfirmasi</button>
+        <button class="btn-reject" onclick="respondNotif(this)">Tolak</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SCREEN: PROFIL SAYA ========== -->
+  <div class="screen" id="screen-profil">
+    <div class="greet-row">
+      <div class="greet-txt"><div class="name" style="font-size:15px;">Profil Saya</div><div class="hi">Lengkapi & perbarui data Anda</div></div>
+    </div>
+
+    <div class="photo-upload">
+      <div class="photo-box">
+        <svg viewBox="0 0 64 64" width="30" height="30"><circle cx="32" cy="24" r="11" fill="#3A4550"/><path d="M10 56c0-13 9.8-20 22-20s22 7 22 20" fill="#3A4550"/></svg>
+        <div class="hint">Foto belum tersedia</div>
+      </div>
+      <div class="photo-actions">
+        <button class="primary" onclick="showToast('Fitur unggah foto — pilih dari galeri')">📷 Unggah Foto</button>
+        <button onclick="showToast('Kamera dibuka (simulasi)')">Ambil Foto Baru</button>
+      </div>
+    </div>
+
+    <div class="section-label">Data Pribadi</div>
+    <div class="form-field"><label>Nama Lengkap</label><input value="Rian Pratama"></div>
+    <div class="form-row2">
+      <div class="form-field"><label>NIK</label><input value="3204170302990091"></div>
+      <div class="form-field"><label>Golongan Darah</label>
+        <select><option>O</option><option>A</option><option>B</option><option>AB</option></select>
+      </div>
+    </div>
+    <div class="form-row2">
+      <div class="form-field"><label>Jenis Kelamin</label>
+        <select><option>Laki-laki</option><option>Perempuan</option></select>
+      </div>
+      <div class="form-field"><label>Usia</label><input value="29" type="number"></div>
+    </div>
+    <div class="form-field"><label>Pendidikan Terakhir</label><input value="S1 Teknik Sipil"></div>
+    <div class="form-field"><label>Pekerjaan Sipil</label><input value="Kontraktor Bangunan"></div>
+    <div class="form-field"><label>Unit / Satuan Asal</label><input value="Kodim 0611/Garut" disabled style="opacity:0.6;"></div>
+
+    <div class="section-label">Alamat & Lokasi</div>
+    <div class="form-field"><label>Alamat Domisili</label><textarea>Kec. Tarogong Kidul, Kab. Garut, Jawa Barat</textarea></div>
+    <div class="form-field">
+      <label>Titik Lokasi Terkini</label>
+      <input value="-7.2247, 107.8951" disabled style="opacity:0.6;">
+      <div class="field-hint">📍 Diperbarui otomatis dari GPS perangkat Anda</div>
+    </div>
+
+    <div class="section-label">Kontak & Sosial Media</div>
+    <div class="social-input-row"><div class="social-icon">📞</div><input placeholder="Nomor Telepon" value="+62 812-3456-7891"></div>
+    <div class="social-input-row"><div class="social-icon">✉️</div><input placeholder="Email" value="rian.pratama@komcad.go.id"></div>
+    <div class="social-input-row"><div class="social-icon">💬</div><input placeholder="Nomor WhatsApp" value="+62 812-3456-7891"></div>
+    <div class="social-input-row"><div class="social-icon">📷</div><input placeholder="Username Instagram" value="@rian.pratama"></div>
+    <div class="social-input-row"><div class="social-icon">🔗</div><input placeholder="Profil LinkedIn" value="rian-pratama-sar"></div>
+    <div class="form-field"><label>Kontak Darurat</label><input placeholder="Nama (Hubungan) · Nomor Telepon" value="Fitri Pratama (Istri) · +62 813-1122-3344"></div>
+
+    <div class="section-label">Kompetensi & Spesialisasi</div>
+    <div class="chip-input-row">
+      <input id="chip-new-input" placeholder="Tambah kompetensi baru...">
+      <button class="chip-add-btn" onclick="addChip()">+</button>
+    </div>
+    <div class="chip-list" id="chip-list">
+      <span class="chip-tag">SAR <span class="x" onclick="this.parentElement.remove()">✕</span></span>
+      <span class="chip-tag">Water Rescue <span class="x" onclick="this.parentElement.remove()">✕</span></span>
+    </div>
+
+    <div class="save-bar">
+      <button class="btn-cancel" onclick="showToast('Perubahan dibatalkan')">Batal</button>
+      <button class="btn-save" onclick="showToast('✓ Profil berhasil disimpan')">Simpan Perubahan</button>
+    </div>
+  </div>
+
+  <!-- ========== SCREEN: RIWAYAT ========== -->
+  <div class="screen" id="screen-riwayat">
+    <div class="greet-row">
+      <div class="greet-txt"><div class="name" style="font-size:15px;">Riwayat Saya</div><div class="hi">Pelatihan & penugasan yang pernah diikuti</div></div>
+    </div>
+
+    <div class="seg-tabs">
+      <div class="seg-tab active" data-riw="pelatihan" onclick="switchRiwayat(this)">Pelatihan</div>
+      <div class="seg-tab" data-riw="penugasan" onclick="switchRiwayat(this)">Penugasan</div>
+      <div class="seg-tab" data-riw="sertifikasi" onclick="switchRiwayat(this)">Sertifikasi</div>
+    </div>
+
+    <div id="riwayat-pelatihan" class="riwayat-group">
+      <div class="riwayat-item"><div class="rt">Pelatihan Dasar Kebencanaan</div><div class="rd"><span>10–14 Feb 2024</span><span class="pill green">Lulus</span></div></div>
+      <div class="riwayat-item"><div class="rt">Refreshment Water Rescue</div><div class="rd"><span>03 Mar 2025</span><span class="pill green">Lulus</span></div></div>
+      <div class="riwayat-item"><div class="rt">Pelatihan Navigasi Darat Lanjutan</div><div class="rd"><span>Belum dijadwalkan</span><span class="pill amber">Direkomendasikan</span></div></div>
+    </div>
+    <div id="riwayat-penugasan" class="riwayat-group" style="display:none;">
+      <div class="riwayat-item"><div class="rt">MISI-2026-0140 · Gempa Bumi, Kab. Nganjuk</div><div class="rd"><span>22 Jul 2026</span><span class="pill green">Evaluasi: Baik</span></div></div>
+      <div class="riwayat-item"><div class="rt">MISI-2025-0988 · Banjir, Kab. Cilacap</div><div class="rd"><span>14 Jun 2026</span><span class="pill green">Evaluasi: Sangat Baik</span></div></div>
+    </div>
+    <div id="riwayat-sertifikasi" class="riwayat-group" style="display:none;">
+      <div class="riwayat-item"><div class="rt">SAR Basic</div><div class="rd"><span>Berlaku s.d. 12 Jan 2027</span><span class="pill green">Aktif</span></div></div>
+      <div class="riwayat-item"><div class="rt">Water Rescue</div><div class="rd"><span>Berlaku s.d. 03 Mar 2027</span><span class="pill green">Aktif</span></div></div>
+    </div>
+  </div>
+
+  <!-- ========== SCREEN: NOTIFIKASI ========== -->
+  <div class="screen" id="screen-notif">
+    <div class="greet-row">
+      <div class="greet-txt"><div class="name" style="font-size:15px;">Notifikasi</div><div class="hi">Riwayat notifikasi mobilisasi & sistem</div></div>
+    </div>
+
+    <div class="notif-card">
+      <div class="notif-top"><span class="notif-tag">MOBILISASI</span><span class="notif-time">Hari ini, 08:31</span></div>
+      <div class="notif-title">MISI-2026-0142 — Mobilisasi Banjir, Kab. Garut</div>
+      <div class="notif-desc">Anda direkomendasikan AI Mobilization untuk Misi ini (skor kecocokan 96). Estimasi waktu kedatangan: 18 menit. Mohon konfirmasi kesediaan Anda.</div>
+      <div class="notif-actions">
+        <button class="btn-confirm" onclick="respondNotif(this)">✓ Konfirmasi</button>
+        <button class="btn-reject" onclick="respondNotif(this)">Tolak</button>
+      </div>
+    </div>
+
+    <div class="notif-card info">
+      <div class="notif-top"><span class="notif-tag info">PENGINGAT</span><span class="notif-time">Kemarin, 09:00</span></div>
+      <div class="notif-title">Sertifikasi Water Rescue akan diperbarui</div>
+      <div class="notif-desc">Masa berlaku sertifikasi Anda akan berakhir dalam 30 hari. Segera jadwalkan refreshment melalui unit Anda.</div>
+    </div>
+
+    <div class="notif-card ok">
+      <div class="notif-top"><span class="notif-tag ok">SELESAI</span><span class="notif-time">22 Jul 2026</span></div>
+      <div class="notif-title">MISI-2026-0140 telah ditutup</div>
+      <div class="notif-desc">Terima kasih atas partisipasi Anda pada Misi Gempa Bumi Kab. Nganjuk. Evaluasi kinerja: Baik. Riwayat penugasan telah diperbarui.</div>
+    </div>
+
+    <div class="notif-card">
+      <div class="notif-top"><span class="notif-tag" style="background:rgba(224,168,62,0.15); color:var(--amber);">INFO</span><span class="notif-time">18 Jul 2026</span></div>
+      <div class="notif-title">Pelatihan baru tersedia di wilayah Anda</div>
+      <div class="notif-desc">Pelatihan Navigasi Darat Lanjutan dibuka untuk unit Kodim 0611/Garut. Daftar melalui koordinator pelatihan setempat.</div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <div class="nav-item active" data-screen="beranda"><span class="ni">🏠</span><span class="nl">Beranda</span></div>
+    <div class="nav-item" data-screen="profil"><span class="ni">👤</span><span class="nl">Profil</span></div>
+    <div class="nav-item" data-screen="riwayat"><span class="ni">📋</span><span class="nl">Riwayat</span></div>
+    <div class="nav-item" data-screen="notif"><span class="ni">🔔</span><span class="nl">Notifikasi</span></div>
+  </div>
+
+</div>
+</div>
+
+<script>
+  // Bottom nav switching
+  const navItems = document.querySelectorAll('.nav-item');
+  function goToScreen(name){
+    navItems.forEach(n => n.classList.toggle('active', n.dataset.screen === name));
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + name).classList.add('active');
+    window.scrollTo(0,0);
+  }
+  navItems.forEach(item => item.addEventListener('click', () => goToScreen(item.dataset.screen)));
+  document.getElementById('nav-to-notif').addEventListener('click', () => goToScreen('notif'));
+
+  // Status kesiapan toggle
+  document.querySelectorAll('.status-opt').forEach(opt=>{
+    opt.addEventListener('click', ()=>{
+      document.querySelectorAll('.status-opt').forEach(o=>o.className='status-opt');
+      const s = opt.dataset.status;
+      opt.classList.add('sel-' + s);
+      const label = document.getElementById('status-label');
+      const dot = document.getElementById('status-dot');
+      if(s==='aktif'){ label.innerHTML = '<span class="dot-big" id="status-dot"></span>Aktif'; label.style.color='var(--accent-bright)'; document.getElementById('status-dot').style.background='var(--accent-bright)'; }
+      if(s==='siaga'){ label.innerHTML = '<span class="dot-big" id="status-dot"></span>Siaga'; label.style.color='var(--amber)'; document.getElementById('status-dot').style.background='var(--amber)'; }
+      if(s==='tidak'){ label.innerHTML = '<span class="dot-big" id="status-dot"></span>Tidak Tersedia'; label.style.color='#F5A9A5'; document.getElementById('status-dot').style.background='var(--red)'; }
+      showToast('Status kesiapan diperbarui: ' + opt.textContent.trim());
+    });
+  });
+
+  // Toast helper
+  let toastTimer;
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=> t.classList.remove('show'), 2200);
+  }
+
+  // Notification respond
+  function respondNotif(btn){
+    const card = btn.closest('.notif-card');
+    const isConfirm = btn.classList.contains('btn-confirm');
+    const actions = card.querySelector('.notif-actions');
+    actions.outerHTML = `<div class="notif-responded">${isConfirm ? '✓ Anda telah mengonfirmasi kesediaan' : 'Anda menolak notifikasi ini'}</div>`;
+    showToast(isConfirm ? 'Konfirmasi terkirim ke Operator' : 'Penolakan tercatat, kandidat cadangan diusulkan');
+  }
+
+  // Chip add (kompetensi)
+  function addChip(){
+    const input = document.getElementById('chip-new-input');
+    const val = input.value.trim();
+    if(!val) return;
+    const list = document.getElementById('chip-list');
+    const chip = document.createElement('span');
+    chip.className = 'chip-tag';
+    chip.innerHTML = `${val} <span class="x" onclick="this.parentElement.remove()">✕</span>`;
+    list.appendChild(chip);
+    input.value = '';
+  }
+  document.getElementById('chip-new-input').addEventListener('keydown', e=>{ if(e.key==='Enter') addChip(); });
+
+  // Riwayat tab switching
+  function switchRiwayat(el){
+    document.querySelectorAll('.seg-tab').forEach(t=>t.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('.riwayat-group').forEach(g=>g.style.display='none');
+    document.getElementById('riwayat-' + el.dataset.riw).style.display='flex';
+    document.getElementById('riwayat-' + el.dataset.riw).style.flexDirection='column';
+    document.getElementById('riwayat-' + el.dataset.riw).style.gap='10px';
+  }
+</script>
+</body>
+</html>

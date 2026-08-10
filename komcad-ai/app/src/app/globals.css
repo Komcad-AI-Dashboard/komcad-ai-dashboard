@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+/*
+ * Token warna & tipografi — 1:1 dengan FRD §10.2/10.3 dan mockup komcad-dashboard.html.
+ * JANGAN diubah tanpa mengecek CLAUDE.md §5 dulu. Full black dark mode, tidak ada mode terang.
+ *
+ * Pemetaan nama token FRD -> nama variabel di sini:
+ *   Background Primary  -> --base            Amber (Warning)    -> --amber
+ *   Background Surface  -> --surface         Red (Critical)     -> --red
+ *   Background Elevated -> --elevated        Cyan (AI/Data)     -> --cyan
+ *   Background Hover    -> --surface-hover   Gold (Pos Komando) -> --gold
+ *   Border / Hairline   -> --border
+ *   Text Primary/Secondary/Dim -> --ink / --ink-2 / --ink-3
+ *   Accent / Accent Bright     -> --accent / --accent-bright
+ */
+:root {
+  --base: #000000;
+  --surface: #060809;
+  --elevated: #0e1215;
+  --surface-hover: #171c20;
+  --border: #22282d;
+  --border-soft: #181d21;
+
+  --ink: #edf1f4;
+  --ink-2: #8b96a0;
+  --ink-3: #565f67;
+
+  --accent: #22c577;
+  --accent-bright: #3cf29a;
+  --accent-dim: #124b30;
+  --amber: #e0a83e;
+  --red: #e14c45;
+  --cyan: #3fa9c9;
+  --gold: #b08d4f;
+}
+
+@theme inline {
+  --color-base: var(--base);
+  --color-surface: var(--surface);
+  --color-elevated: var(--elevated);
+  --color-surface-hover: var(--surface-hover);
+  --color-border: var(--border);
+  --color-border-soft: var(--border-soft);
+
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+
+  --color-accent: var(--accent);
+  --color-accent-bright: var(--accent-bright);
+  --color-accent-dim: var(--accent-dim);
+  --color-amber: var(--amber);
+  --color-red: var(--red);
+  --color-cyan: var(--cyan);
+  --color-gold: var(--gold);
+
+  --font-sans: var(--font-inter), "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), "JetBrains Mono", ui-monospace, monospace;
+}
+
+html,
+body {
+  background: var(--base);
+  color: var(--ink);
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: var(--accent-bright);
+  color: #000;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #000;
+}
+
+.tactical-tiles {
+  filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(1.05) saturate(0.7);
+}
+
+.leaflet-container {
+  background: #000 !important;
+}

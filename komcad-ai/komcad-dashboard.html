@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>AI KOMCAD</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<style>
+  :root{
+    --bg-primary:#000000;
+    --bg-surface:#060809;
+    --bg-elevated:#0E1215;
+    --bg-hover:#171C20;
+    --border:#22282D;
+    --border-soft:#181D21;
+    --text-primary:#EDF1F4;
+    --text-secondary:#8B96A0;
+    --text-dim:#565F67;
+    --accent:#22C577;
+    --accent-bright:#3CF29A;
+    --accent-dim:#124B30;
+    --amber:#E0A83E;
+    --red:#E14C45;
+    --cyan:#3FA9C9;
+    --gold:#B08D4F;
+    --mono:'IBM Plex Mono','JetBrains Mono',ui-monospace,monospace;
+    --sans:'Inter','IBM Plex Sans',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{background:#000; color:var(--text-primary); font-family:var(--sans); font-size:13px; height:100%; overflow:hidden;}
+  ::selection{background:var(--accent-bright); color:#000;}
+  ::-webkit-scrollbar{width:8px; height:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--border); border-radius:4px;}
+  ::-webkit-scrollbar-track{background:#000;}
+  button{font-family:inherit; cursor:pointer;}
+  a{color:inherit; text-decoration:none;}
+
+  .app{display:flex; height:100vh; background:#000;}
+
+  /* ================= SIDEBAR ================= */
+  .sidebar{width:236px; flex-shrink:0; background:#000; border-right:1px solid var(--border); display:flex; flex-direction:column; height:100vh; transition:width .18s ease, opacity .18s ease; overflow:hidden;}
+  .app.sidebar-collapsed .sidebar{width:0; opacity:0; border-right:none;}
+  .sb-brand{display:flex; align-items:center; gap:9px; padding:16px; border-bottom:1px solid var(--border);}
+  .sb-mark{width:28px; height:22px; border-radius:3px; flex-shrink:0; overflow:hidden; border:1px solid var(--border); display:flex; flex-direction:column;}
+  .sb-mark .half{flex:1; width:100%;}
+  .sb-mark .half.red{background:#D8302A;}
+  .sb-mark .half.white{background:#F2F2F2;}
+  .sb-name{font-weight:800; font-size:13.5px; letter-spacing:0.03em;}
+  .sb-name small{display:block; font-size:9.5px; color:var(--text-dim); font-weight:600; letter-spacing:0.08em; margin-top:1px;}
+  .sb-scroll{flex:1; overflow-y:auto; padding:14px 10px;}
+  .sb-group{margin-bottom:18px;}
+  .sb-group-label{font-size:10px; font-weight:800; letter-spacing:0.1em; color:var(--text-dim); padding:0 10px 6px;}
+  .sb-item{display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:6px; margin-bottom:2px; color:var(--text-secondary); font-size:12.5px; font-weight:600; cursor:pointer; border:1px solid transparent;}
+  .sb-item .ic{width:16px; text-align:center; font-size:13px; flex-shrink:0;}
+  .sb-item .lb{flex:1;}
+  .sb-item .ct{font-family:var(--mono); font-size:10px; color:var(--text-dim); background:var(--bg-elevated); padding:1px 6px; border-radius:8px;}
+  .sb-item:hover{background:var(--bg-hover); color:var(--text-primary);}
+  .sb-item.active{background:rgba(60,242,154,0.10); border-color:rgba(60,242,154,0.4); color:var(--accent-bright);}
+  .sb-item.active .ct{background:var(--accent-dim); color:var(--accent-bright);}
+  .sb-item.alert .ct{background:var(--red); color:#fff;}
+  .sb-foot{padding:12px 16px; border-top:1px solid var(--border); display:flex; align-items:center; gap:10px;}
+  .sb-avatar{width:30px; height:30px; border-radius:50%; background:var(--bg-elevated); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0;}
+  .sb-foot .who div:first-child{font-size:11.5px; font-weight:700;}
+  .sb-foot .who div:last-child{font-size:10px; color:var(--text-dim);}
+
+  /* ================= MAIN COLUMN ================= */
+  .col{flex:1; display:flex; flex-direction:column; height:100vh; overflow:hidden; min-width:0; background:#000;}
+
+  .topbar{display:flex; align-items:center; gap:10px; padding:0 16px; height:52px; flex-shrink:0; background:#000; border-bottom:1px solid var(--border);}
+  .page-title{display:flex; flex-direction:column; gap:1px;}
+  .page-title h1{font-size:15px; font-weight:800; letter-spacing:0.02em;}
+  .page-title .crumb{font-size:10.5px; color:var(--text-dim); font-family:var(--mono);}
+  .live-pill{display:flex; align-items:center; gap:5px; font-family:var(--mono); font-size:11px; color:var(--accent-bright); font-weight:700; margin-left:10px;}
+  .dot{width:6px; height:6px; border-radius:50%; background:currentColor; box-shadow:0 0 6px currentColor; animation:pulse 1.8s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:0.3;}}
+
+  .top-actions{display:flex; align-items:center; gap:8px; margin-left:auto;}
+  .select-chip{display:flex; align-items:center; gap:8px; background:var(--bg-elevated); border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:12px; cursor:pointer;}
+  .btn{display:flex; align-items:center; gap:6px; border-radius:6px; padding:6px 12px; font-size:12px; font-weight:700; border:1px solid var(--border); background:var(--bg-elevated); color:var(--text-primary); letter-spacing:0.02em;}
+  .btn.outline{border-color:var(--accent); color:var(--accent-bright); background:transparent;}
+  .btn.solid-red{background:rgba(225,76,69,0.14); border-color:var(--red); color:#F5A9A5;}
+  .btn.solid-red .count{background:var(--red); color:#fff; border-radius:4px; padding:0 5px; font-family:var(--mono);}
+  .readiness-chip{display:flex; align-items:center; gap:8px; border:1px solid var(--border); border-radius:6px; padding:5px 10px; background:var(--bg-elevated);}
+  .readiness-chip .label{font-size:9.5px; letter-spacing:0.08em; color:var(--text-secondary); font-weight:800;}
+  .readiness-chip .value{font-family:var(--mono); font-size:15px; font-weight:800; color:var(--accent-bright);}
+  .icon-btn{width:30px; height:30px; display:flex; align-items:center; justify-content:center; border-radius:6px; border:1px solid var(--border); background:var(--bg-elevated); color:var(--text-secondary);}
+  .search-chip{display:flex; align-items:center; gap:8px; border:1px solid var(--border); border-radius:6px; padding:6px 12px; background:var(--bg-elevated); color:var(--text-secondary); font-size:12px;}
+  .search-chip kbd{font-family:var(--mono); font-size:10px; background:#000; border:1px solid var(--border); border-radius:3px; padding:1px 5px;}
+  .signin{background:var(--accent-bright); color:#00170C; border:none; font-weight:800;}
+
+  .view{display:none; flex:1; overflow:hidden; flex-direction:column; background:#000;}
+  .view.active{display:flex;}
+
+  /* ============ DASHBOARD VIEW ============ */
+  .situation-bar{display:flex; align-items:center; justify-content:space-between; padding:9px 18px; border-bottom:1px solid var(--border-soft); flex-shrink:0;}
+  .situation-bar h2{font-size:12px; font-weight:800; letter-spacing:0.1em;}
+  .situation-bar .timestamp{font-family:var(--mono); font-size:11.5px; color:var(--text-secondary);}
+  .seg{display:flex; border:1px solid var(--border); border-radius:6px; overflow:hidden;}
+  .seg span{padding:5px 12px; font-size:11px; font-weight:700; color:var(--text-secondary); font-family:var(--mono); cursor:pointer;}
+  .seg span.active{background:var(--accent-bright); color:#00170C;}
+
+  .map-wrap{position:relative; flex:1; overflow:hidden; background:#000; min-height:0;}
+  .map-wrap.fullscreen-mode{position:fixed; inset:0; z-index:3000;}
+  .map-fullscreen-btn{position:absolute; top:14px; right:272px; z-index:500; background:rgba(0,0,0,0.88); backdrop-filter:blur(6px);}
+  .map-wrap.fullscreen-mode .map-fullscreen-btn{right:14px; top:14px;}
+  #leafmap{position:absolute; inset:0; background:#000;}
+  .leaflet-container{background:#000 !important;}
+  .tactical-tiles{ filter:invert(1) hue-rotate(180deg) brightness(0.85) contrast(1.05) saturate(0.7); }
+  .leaflet-control-zoom a{background:var(--bg-elevated) !important; color:var(--text-secondary) !important; border-color:var(--border) !important;}
+  .leaflet-popup-content-wrapper, .leaflet-popup-tip{background:#0E1215 !important; color:var(--text-primary) !important; border:1px solid var(--border);}
+  .leaflet-popup-content{font-family:var(--sans); font-size:12px;}
+
+  .layers-panel{position:absolute; top:14px; left:14px; width:250px; background:rgba(0,0,0,0.88); border:1px solid var(--border); border-radius:8px; z-index:500; backdrop-filter:blur(6px);}
+  .layers-head{display:flex; align-items:center; gap:10px; padding:11px 13px; border-bottom:1px solid var(--border);}
+  .layers-head .ring{width:16px; height:16px; border-radius:50%; border:2px solid var(--accent-bright);}
+  .layers-head span{font-size:10.5px; font-weight:800; letter-spacing:0.1em; flex:1;}
+  .layer-item{display:flex; align-items:center; gap:9px; padding:7px 13px; font-size:11.5px; cursor:pointer;}
+  .layer-item:hover{background:var(--bg-hover);}
+  .layer-item .chk{width:14px; height:14px; border-radius:3px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:9px; flex-shrink:0;}
+  .layer-item.on .chk{background:var(--accent-bright); border-color:var(--accent-bright); color:#00170C; font-weight:900;}
+  .layer-item span.lbl{flex:1; letter-spacing:0.02em;}
+  .layer-item .swatch{width:8px; height:8px; border-radius:50%; flex-shrink:0;}
+  .layers-footer{padding:8px 13px; border-top:1px solid var(--border); font-size:9.5px; color:var(--text-dim);}
+
+  .legend{position:absolute; bottom:14px; left:50%; transform:translateX(-50%); display:flex; gap:16px; background:rgba(0,0,0,0.88); border:1px solid var(--border); border-radius:8px; padding:8px 16px; font-size:10.5px; color:var(--text-secondary); z-index:500; backdrop-filter:blur(6px);}
+  .legend .li{display:flex; align-items:center; gap:6px;}
+  .legend .sw{width:9px; height:9px; border-radius:50%;}
+  .map-search{position:absolute; top:14px; right:14px; width:250px; z-index:500; background:rgba(0,0,0,0.88); border:1px solid var(--border); border-radius:6px; padding:7px 10px; font-size:11.5px; color:var(--text-secondary); backdrop-filter:blur(6px);}
+  .training-panel{position:absolute; top:56px; right:14px; width:250px; max-height:calc(100% - 80px); background:rgba(0,0,0,0.9); border:1px solid var(--border); border-radius:8px; z-index:500; backdrop-filter:blur(6px); display:flex; flex-direction:column; overflow:hidden;}
+  .training-list{flex:1; overflow-y:auto;}
+  .training-item{padding:9px 13px; border-bottom:1px solid var(--border-soft); cursor:pointer;}
+  .training-item:hover{background:var(--bg-hover);}
+  .training-item:last-child{border-bottom:none;}
+  .training-item .tname{font-size:11.5px; font-weight:700; margin-bottom:3px;}
+  .training-item .tmeta{font-size:10px; color:var(--text-secondary); display:flex; justify-content:space-between;}
+  .training-item .tmeta .tloc{color:var(--text-secondary);}
+  .training-item .tmeta .tdate{font-family:var(--mono); color:var(--text-dim);}
+  .training-item .tpart{font-size:9.5px; color:var(--amber); margin-top:3px; font-weight:700;}
+
+  /* ============ BOTTOM PANELS ============ */
+  .bottom{display:flex; height:290px; border-top:1px solid var(--border); flex-shrink:0;}
+  .panel{display:flex; flex-direction:column; border-right:1px solid var(--border); background:#000; overflow:hidden;}
+  .panel:last-child{border-right:none;}
+  .panel.feed{flex:1.3;}
+  .panel.stats{flex:1.1;}
+  .panel.ai{flex:1.1;}
+  .panel-head{display:flex; align-items:center; gap:10px; padding:9px 14px; border-bottom:1px solid var(--border); flex-shrink:0;}
+  .panel-head h3{font-size:11px; font-weight:800; letter-spacing:0.08em;}
+  .panel-head .badge-count{display:flex; align-items:center; gap:5px; font-family:var(--mono); font-size:11px; color:var(--red);}
+  .panel-head .spacer{flex:1;}
+  .panel-head .panel-toggle{width:20px; height:20px; border-radius:4px; border:1px solid var(--border); background:var(--bg-elevated); color:var(--text-secondary); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; cursor:pointer; flex-shrink:0;}
+  .panel-head .panel-toggle:hover{color:var(--accent-bright); border-color:var(--accent);}
+  .panel.hidden-panel{display:none;}
+  .hidden-tray{display:flex; gap:8px; padding:6px 14px; background:#000; border-top:1px solid var(--border-soft); flex-shrink:0; min-height:0;}
+  .hidden-tray:empty{display:none;}
+  .tray-chip{display:flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700; padding:5px 10px; border:1px dashed var(--border); border-radius:6px; color:var(--text-secondary); cursor:pointer;}
+  .tray-chip:hover{border-color:var(--accent-bright); color:var(--accent-bright);}
+  .tray-chip .plus{font-size:12px;}
+  .panel-head .live-tag{font-size:9px; font-weight:800; letter-spacing:0.05em; color:#00170C; background:var(--accent-bright); padding:2px 8px; border-radius:10px;}
+
+  .region-tabs{display:flex; gap:6px; padding:7px 14px; border-bottom:1px solid var(--border-soft); flex-wrap:wrap;}
+  .region-tabs .rt{font-size:10px; font-weight:700; padding:4px 10px; border-radius:4px; border:1px solid var(--border); color:var(--text-secondary); cursor:pointer;}
+  .region-tabs .rt.active{background:var(--red); border-color:var(--red); color:#fff;}
+
+  .feed-body{flex:1; overflow-y:auto;}
+  .feed-row{display:flex; gap:10px; padding:9px 14px; border-bottom:1px solid var(--border-soft); align-items:flex-start; cursor:pointer;}
+  .feed-row:hover{background:var(--bg-hover);}
+  .feed-row .fdot{width:7px; height:7px; border-radius:50%; margin-top:5px; flex-shrink:0; box-shadow:0 0 6px currentColor;}
+  .feed-row .fdot.red{background:var(--red); color:var(--red);}
+  .feed-row .fdot.amber{background:var(--amber); color:var(--amber);}
+  .feed-row .fdot.green{background:var(--accent-bright); color:var(--accent-bright);}
+  .feed-row .ftxt{flex:1; font-size:11.5px; line-height:1.5;}
+  .feed-row .ftime{font-family:var(--mono); font-size:10px; color:var(--text-dim); white-space:nowrap; margin-top:2px;}
+
+  .stats-body{flex:1; overflow-y:auto; padding:12px 14px; display:flex; flex-direction:column; gap:14px;}
+  .gender-split{display:flex; align-items:center; gap:10px;}
+  .gender-bar{flex:1; height:10px; border-radius:6px; overflow:hidden; display:flex; background:var(--bg-elevated);}
+  .gender-bar .seg-l{background:var(--cyan); height:100%;}
+  .gender-bar .seg-p{background:#E06BB0; height:100%;}
+  .gender-legend{display:flex; justify-content:space-between; font-size:10.5px; color:var(--text-secondary); margin-top:6px;}
+  .gender-legend b{color:var(--text-primary);}
+  .stat-mini-row{display:flex; gap:10px;}
+  .stat-mini{flex:1; background:var(--bg-surface); border:1px solid var(--border); border-radius:6px; padding:10px;}
+  .stat-mini .num{font-family:var(--mono); font-size:19px; font-weight:800;}
+  .stat-mini .cap{font-size:9.5px; color:var(--text-secondary); margin-top:2px;}
+  .prov-row{display:flex; align-items:center; gap:8px; margin-bottom:7px;}
+  .prov-row .pname{font-size:10.5px; width:108px; flex-shrink:0; color:var(--text-secondary);}
+  .prov-row .pbar-wrap{flex:1; height:7px; background:var(--bg-elevated); border-radius:4px; overflow:hidden;}
+  .prov-row .pbar-fill{height:100%; background:var(--accent-bright);}
+  .prov-row .pnum{font-family:var(--mono); font-size:10px; width:44px; text-align:right; color:var(--text-primary);}
+  .stats-section-title{font-size:10px; font-weight:800; letter-spacing:0.08em; color:var(--text-secondary); margin-bottom:8px;}
+
+  .ai-body{flex:1; overflow-y:auto; padding:12px 14px; display:flex; flex-direction:column; gap:12px;}
+  .ai-brief{background:rgba(63,169,201,0.07); border:1px solid rgba(63,169,201,0.3); border-radius:8px; padding:11px;}
+  .ai-brief .tag{display:flex; align-items:center; gap:6px; font-size:10px; font-weight:800; letter-spacing:0.06em; color:var(--cyan); margin-bottom:7px;}
+  .ai-brief p{font-size:11.5px; line-height:1.6;}
+  .cand-row{display:flex; align-items:center; gap:8px; background:var(--bg-surface); border:1px solid var(--border); border-radius:6px; padding:8px 10px; cursor:pointer;}
+  .cand-row:hover{border-color:var(--accent);}
+  .cand-row .score{font-family:var(--mono); font-weight:800; font-size:13px; color:var(--accent-bright); width:28px; text-align:center;}
+  .cand-row .info{flex:1;}
+  .cand-row .info .name{font-size:11px; font-weight:700;}
+  .cand-row .info .reason{font-size:9.5px; color:var(--text-secondary);}
+  .cand-row .eta{font-family:var(--mono); font-size:10px; color:var(--amber); white-space:nowrap;}
+  .timeline-box{border-top:1px solid var(--border); padding-top:10px;}
+  .timeline-box .th{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
+  .timeline-box .th h4{font-size:10px; font-weight:800; letter-spacing:0.06em; flex:1;}
+  .timeline-box .th .tag{font-size:9px; font-weight:700; background:rgba(60,242,154,0.15); color:var(--accent-bright); padding:2px 7px; border-radius:8px;}
+  .tl-stats{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;}
+  .tl-stats .num{font-family:var(--mono); font-size:19px; font-weight:800;}
+  .tl-stats .cap{font-size:9px; color:var(--text-secondary); line-height:1.3;}
+
+  /* ============ GENERIC LIST/TABLE VIEWS ============ */
+  .view-body{flex:1; overflow-y:auto; padding:16px 20px; background:#000;}
+  .kpi-row{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px;}
+  .kpi-card{background:var(--bg-surface); border:1px solid var(--border); border-radius:8px; padding:14px;}
+  .kpi-card .lbl{font-size:10px; font-weight:800; letter-spacing:0.06em; color:var(--text-secondary); margin-bottom:8px;}
+  .kpi-card .val{font-family:var(--mono); font-size:26px; font-weight:800;}
+  .kpi-card .delta{font-size:10.5px; margin-top:4px;}
+  .kpi-card .delta.up{color:var(--accent-bright);}
+  .kpi-card .delta.down{color:var(--red);}
+
+  .toolbar{display:flex; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap;}
+  .toolbar input{flex:1; max-width:320px; background:var(--bg-elevated); border:1px solid var(--border); border-radius:6px; padding:8px 12px; color:var(--text-primary); font-size:12px;}
+  .toolbar .filter-chip{border:1px solid var(--border); background:var(--bg-elevated); border-radius:6px; padding:7px 12px; font-size:11.5px; color:var(--text-secondary); font-weight:600; cursor:pointer;}
+  .toolbar .filter-chip.active{border-color:var(--accent); color:var(--accent-bright); background:rgba(60,242,154,0.08);}
+
+  table.data-table{width:100%; border-collapse:collapse; background:var(--bg-surface); border:1px solid var(--border); border-radius:8px; overflow:hidden;}
+  table.data-table th{text-align:left; font-size:10px; letter-spacing:0.06em; font-weight:800; color:var(--text-secondary); background:var(--bg-elevated); padding:10px 12px; border-bottom:1px solid var(--border);}
+  table.data-table td{padding:10px 12px; font-size:12px; border-bottom:1px solid var(--border-soft);}
+  table.data-table tbody tr{cursor:pointer;}
+  table.data-table tbody tr:hover{background:var(--bg-hover);}
+  .pill{display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:20px;}
+  .pill.green{background:rgba(60,242,154,0.14); color:var(--accent-bright);}
+  .pill.amber{background:rgba(224,168,62,0.14); color:var(--amber);}
+  .pill.red{background:rgba(225,76,69,0.14); color:#F5A9A5;}
+  .pill.gray{background:rgba(139,152,166,0.14); color:var(--text-secondary);}
+  .bar-wrap{width:70px; height:6px; background:var(--bg-elevated); border-radius:3px; overflow:hidden; display:inline-block; vertical-align:middle; margin-right:6px;}
+  .bar-fill{height:100%; background:var(--accent-bright);}
+
+  .card-simple{background:var(--bg-surface); border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:14px;}
+  .card-simple h3{font-size:12px; font-weight:800; letter-spacing:0.04em; margin-bottom:10px;}
+  .settings-row{display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border-soft); gap:14px;}
+  .settings-row:last-child{border-bottom:none;}
+  .settings-row .st{font-size:12px; font-weight:600;}
+  .settings-row .sd{font-size:10.5px; color:var(--text-secondary);}
+  .toggle{width:34px; height:18px; border-radius:10px; background:var(--bg-elevated); border:1px solid var(--border); position:relative; cursor:pointer; flex-shrink:0;}
+  .toggle.on{background:var(--accent-dim); border-color:var(--accent);}
+  .toggle::after{content:''; position:absolute; width:14px; height:14px; border-radius:50%; background:var(--text-secondary); top:1px; left:1px; transition:left .15s;}
+  .toggle.on::after{background:var(--accent-bright); left:17px;}
+
+  /* ============ DETAIL DRAWER ============ */
+  .drawer-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:900; display:none;}
+  .drawer-overlay.show{display:block;}
+  .drawer{position:fixed; top:0; right:0; width:440px; height:100vh; background:#050708; border-left:1px solid var(--border); z-index:901; transform:translateX(100%); transition:transform .22s ease; display:flex; flex-direction:column;}
+  .drawer.show{transform:translateX(0);}
+  .drawer-head{display:flex; align-items:center; gap:10px; padding:16px; border-bottom:1px solid var(--border);}
+  .drawer-head h3{font-size:14px; font-weight:800; flex:1;}
+  .drawer-close{width:26px; height:26px; border-radius:6px; border:1px solid var(--border); background:var(--bg-elevated); color:var(--text-secondary); display:flex; align-items:center; justify-content:center;}
+  .drawer-body{flex:1; overflow-y:auto; padding:16px;}
+  .dr-field{margin-bottom:12px;}
+  .dr-field .k{font-size:10px; font-weight:800; letter-spacing:0.05em; color:var(--text-secondary); margin-bottom:3px;}
+  .dr-field .v{font-size:13px; font-weight:600;}
+  .dr-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;}
+
+  .footer{display:flex; align-items:center; padding:8px 18px; border-top:1px solid var(--border); background:#000; flex-shrink:0; gap:20px; height:36px;}
+  .footer .ftxt{font-size:10px; color:var(--text-dim); font-family:var(--mono);}
+
+  /* ============ AI CHAT ============ */
+  .chat-wrap{flex:1; display:flex; flex-direction:column; overflow:hidden; max-width:820px; margin:0 auto; width:100%; padding:16px 20px;}
+  .chat-messages{flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:14px; padding-bottom:10px;}
+  .msg{display:flex; gap:10px; max-width:80%;}
+  .msg.user{align-self:flex-end; flex-direction:row-reverse;}
+  .msg .avatar-sm{width:28px; height:28px; border-radius:6px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:13px; border:1px solid var(--border);}
+  .msg.ai .avatar-sm{background:rgba(60,242,154,0.12); color:var(--accent-bright);}
+  .msg.user .avatar-sm{background:var(--bg-elevated); color:var(--text-secondary);}
+  .msg .bubble{background:var(--bg-surface); border:1px solid var(--border); border-radius:10px; padding:11px 14px; font-size:12.5px; line-height:1.6;}
+  .msg.user .bubble{background:rgba(60,242,154,0.08); border-color:rgba(60,242,154,0.3);}
+  .msg .bubble table{width:100%; border-collapse:collapse; margin-top:8px; font-size:11.5px;}
+  .msg .bubble th{text-align:left; color:var(--text-secondary); font-weight:700; padding:4px 8px 4px 0; border-bottom:1px solid var(--border);}
+  .msg .bubble td{padding:4px 8px 4px 0; border-bottom:1px solid var(--border-soft);}
+  .msg .bubble .mini-bar-wrap{width:80px; height:6px; background:var(--bg-elevated); border-radius:3px; overflow:hidden; display:inline-block; margin-right:6px; vertical-align:middle;}
+  .msg .bubble .mini-bar-fill{height:100%; background:var(--accent-bright);}
+  .chat-suggest{display:flex; gap:8px; flex-wrap:wrap; padding:10px 0;}
+  .chat-suggest .sug{font-size:11px; font-weight:600; padding:6px 12px; border:1px solid var(--border); border-radius:20px; color:var(--text-secondary); cursor:pointer; background:var(--bg-elevated);}
+  .chat-suggest .sug:hover{border-color:var(--accent-bright); color:var(--accent-bright);}
+  .chat-input-row{display:flex; gap:10px; padding-top:8px; border-top:1px solid var(--border);}
+  .chat-input-row input{flex:1; background:var(--bg-elevated); border:1px solid var(--border); border-radius:8px; padding:11px 14px; color:var(--text-primary); font-size:12.5px;}
+  .chat-typing{display:flex; gap:4px; padding:4px 0;}
+  .chat-typing span{width:5px; height:5px; border-radius:50%; background:var(--text-dim); animation:pulse 1s infinite;}
+  .chat-typing span:nth-child(2){animation-delay:.15s;} .chat-typing span:nth-child(3){animation-delay:.3s;}
+
+  /* ============ GUIDELINE ============ */
+  .faq-item .faq-q{font-size:12.5px; font-weight:700; margin-bottom:6px;}
+  .faq-item .faq-a{font-size:11.5px; color:var(--text-secondary); line-height:1.6;}
+  .mod-card .mod-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;}
+  .mod-card .mod-head h3{margin-bottom:0;}
+  .mod-card .mod-desc{font-size:12px; line-height:1.7; color:var(--text-secondary); margin-bottom:12px;}
+  .mod-card .mod-features{display:flex; gap:6px; flex-wrap:wrap;}
+
+  .empty-hint{font-size:11px; color:var(--text-dim); padding:10px 2px;}
+
+  /* ============ MODAL: BUAT MISI ============ */
+  .modal-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:1000; display:none; align-items:center; justify-content:center;}
+  .modal-overlay.show{display:flex;}
+  .modal-box{width:560px; max-width:92vw; max-height:88vh; overflow-y:auto; background:#050708; border:1px solid var(--border); border-radius:10px; padding:22px;}
+  .modal-box h2{font-size:15px; font-weight:800; margin-bottom:4px;}
+  .modal-box .modal-sub{font-size:11px; color:var(--text-secondary); margin-bottom:18px;}
+  .form-field{margin-bottom:14px;}
+  .form-field label{display:block; font-size:10.5px; font-weight:800; letter-spacing:0.04em; color:var(--text-secondary); margin-bottom:6px;}
+  .form-field input, .form-field textarea, .form-field select{width:100%; background:var(--bg-elevated); border:1px solid var(--border); border-radius:6px; padding:9px 12px; color:var(--text-primary); font-size:12.5px; font-family:inherit;}
+  .form-field textarea{min-height:80px; resize:vertical;}
+  .form-row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .modal-actions{display:flex; justify-content:flex-end; gap:10px; margin-top:18px;}
+  .ai-generating{display:flex; flex-direction:column; align-items:center; gap:14px; padding:40px 10px; text-align:center;}
+  .ai-generating .spin{width:36px; height:36px; border-radius:50%; border:3px solid var(--border); border-top-color:var(--accent-bright); animation:spin 0.8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .ai-generating .gen-txt{font-size:12px; color:var(--text-secondary);}
+  .misi-result-summary{background:rgba(63,169,201,0.08); border:1px solid rgba(63,169,201,0.3); border-radius:8px; padding:12px; margin-bottom:14px; font-size:12px; line-height:1.6;}
+
+  /* ============ PROFILE (member detail) ============ */
+  .profile-header{display:flex; gap:14px; align-items:center; padding-bottom:16px; margin-bottom:14px; border-bottom:1px solid var(--border);}
+  .profile-avatar{width:72px; height:72px; border-radius:10px; border:1px solid var(--border); flex-shrink:0; background:var(--bg-elevated); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; overflow:hidden;}
+  .profile-avatar svg{display:block;}
+  .avatar-hint{font-size:6.5px; color:var(--text-dim); letter-spacing:0.02em; text-align:center; line-height:1;}
+  .profile-id .pname{font-size:16px; font-weight:800;}
+  .profile-id .pmeta{font-size:11px; color:var(--text-secondary); font-family:var(--mono); margin-top:2px;}
+  .social-row{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;}
+  .soc-btn{display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; padding:7px 11px; border-radius:6px; border:1px solid var(--border); background:var(--bg-elevated); color:var(--text-primary);}
+  .soc-btn.wa:hover{border-color:var(--accent-bright); color:var(--accent-bright);}
+  .soc-btn.mail:hover{border-color:var(--cyan); color:var(--cyan);}
+  .soc-btn.ig:hover, .soc-btn.li:hover{border-color:var(--amber); color:var(--amber);}
+  .tag-row{display:flex; gap:6px; flex-wrap:wrap;}
+  .tag-chip{font-size:10.5px; font-weight:700; padding:4px 10px; border-radius:20px; background:rgba(60,242,154,0.1); color:var(--accent-bright); border:1px solid rgba(60,242,154,0.3);}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ================= SIDEBAR ================= -->
+  <div class="sidebar">
+    <div class="sb-brand">
+      <div class="sb-mark"><div class="half red"></div><div class="half white"></div></div>
+      <div class="sb-name">AI KOMCAD<small>COMMAND CENTER</small></div>
+    </div>
+    <div class="sb-scroll">
+      <div class="sb-group">
+        <div class="sb-group-label">RINGKASAN</div>
+        <div class="sb-item active" data-view="dashboard"><span class="ic">▣</span><span class="lb">Overview</span></div>
+      </div>
+      <div class="sb-group">
+        <div class="sb-group-label">OPERASI</div>
+        <div class="sb-item alert" data-view="case"><span class="ic">⚠</span><span class="lb">Manajemen Misi</span><span class="ct">3</span></div>
+        <div class="sb-item" data-view="ai"><span class="ic">◎</span><span class="lb">AI Mobilization</span></div>
+      </div>
+      <div class="sb-group">
+        <div class="sb-group-label">DATA ANGGOTA</div>
+        <div class="sb-item" data-view="anggota"><span class="ic">☰</span><span class="lb">Direktori Anggota</span><span class="ct">48.2K</span></div>
+        <div class="sb-item" data-view="sertifikasi"><span class="ic">✚</span><span class="lb">Kompetensi & Sertifikasi</span></div>
+        <div class="sb-item" data-view="pelatihan"><span class="ic">▤</span><span class="lb">Riwayat Pelatihan</span></div>
+      </div>
+      <div class="sb-group">
+        <div class="sb-group-label">LAPORAN</div>
+        <div class="sb-item" data-view="analitik"><span class="ic">◈</span><span class="lb">Analitik Kesiapsiagaan</span></div>
+        <div class="sb-item" data-view="laporan"><span class="ic">▥</span><span class="lb">Laporan & Ekspor</span></div>
+        <div class="sb-item" data-view="riwayat"><span class="ic">⏱</span><span class="lb">Riwayat Mobilisasi</span></div>
+      </div>
+      <div class="sb-group">
+        <div class="sb-group-label">ASISTEN</div>
+        <div class="sb-item" data-view="aichat"><span class="ic">✦</span><span class="lb">AI Chat</span></div>
+      </div>
+      <div class="sb-group">
+        <div class="sb-group-label">SISTEM</div>
+        <div class="sb-item" data-view="pengguna"><span class="ic">◐</span><span class="lb">Pengguna & Role</span></div>
+        <div class="sb-item" data-view="pengaturan"><span class="ic">⚙</span><span class="lb">Pengaturan</span></div>
+        <div class="sb-item" data-view="guideline"><span class="ic">❔</span><span class="lb">Guideline</span></div>
+      </div>
+    </div>
+    <div class="sb-foot">
+      <div class="sb-avatar">AO</div>
+      <div class="who"><div>Andri Operator</div><div>Operator · Nasional</div></div>
+    </div>
+  </div>
+
+  <!-- ================= MAIN COLUMN ================= -->
+  <div class="col">
+    <div class="topbar">
+      <div class="icon-btn" id="sidebar-toggle" title="Tampilkan/sembunyikan menu">☰</div>
+      <div class="page-title">
+        <h1 id="pt-title">Overview</h1>
+        <span class="crumb" id="pt-crumb">RINGKASAN / OVERVIEW</span>
+      </div>
+      <div class="live-pill"><span class="dot"></span>LIVE</div>
+      <div class="top-actions">
+        <div class="select-chip">Nasional ▾</div>
+        <button class="btn outline" id="btn-buat-misi">◎ BUAT MISI</button>
+        <div class="readiness-chip"><span class="label">READINESS</span><span class="value">84%</span></div>
+        <button class="btn solid-red">⚠ MISI AKTIF <span class="count">3</span></button>
+        <div class="search-chip">Cari anggota / Misi <kbd>⌘K</kbd></div>
+        <div class="icon-btn">⚙</div>
+        <button class="btn signin">Masuk</button>
+      </div>
+    </div>
+
+    <!-- ============ VIEW: DASHBOARD ============ -->
+    <div class="view active" id="view-dashboard">
+      <div class="situation-bar">
+        <h2>SITUASI KESIAPSIAGAAN NASIONAL</h2>
+        <span class="timestamp" id="clock">RABU, 05 AGU 2026 · 08:47:39 WIB</span>
+        <div class="seg"><span class="active">2D</span><span>3D</span></div>
+        <div class="btn outline" id="toggle-all-panels" style="margin-left:10px;">Sembunyikan Semua Panel ▾</div>
+      </div>
+      <div class="map-wrap">
+        <div id="leafmap"></div>
+        <div class="layers-panel" id="layers-panel-dash"></div>
+        <div class="map-search">🔍 Cari wilayah / koordinat...</div>
+        <div class="icon-btn map-fullscreen-btn" id="map-fullscreen-btn" title="Tampilan layar penuh">⛶</div>
+
+        <div class="training-panel">
+          <div class="layers-head"><span style="color:var(--amber);">◆</span><span>AKTIVITAS PELATIHAN TERBARU</span></div>
+          <div class="training-list" id="training-list"></div>
+          <div class="layers-footer">Diperbarui otomatis dari modul Pelatihan</div>
+        </div>
+
+        <div class="legend">
+          <div class="li"><span class="sw" style="background:var(--red);"></span>Misi Kritis</div>
+          <div class="li"><span class="sw" style="background:var(--amber);"></span>Misi Siaga</div>
+          <div class="li"><span class="sw" style="background:var(--accent-bright);"></span>Anggota Siap</div>
+          <div class="li"><span class="sw" style="background:var(--gold);"></span>Pos Komando</div>
+        </div>
+      </div>
+      <div class="hidden-tray" id="hidden-tray"></div>
+      <div class="bottom" id="bottom-panels">
+        <div class="panel stats" id="panel-stats" data-title="Statistik Anggota">
+          <div class="panel-head"><h3>STATISTIK ANGGOTA</h3><div class="spacer"></div><span class="live-tag" style="background:var(--cyan); color:#00131A;">NASIONAL</span><div class="panel-toggle" title="Sembunyikan panel">−</div></div>
+          <div class="stats-body" id="stats-body"></div>
+        </div>
+        <div class="panel feed" id="panel-feed" data-title="Misi Terbaru">
+          <div class="panel-head"><h3>MISI TERBARU</h3><div class="badge-count">● 3</div><div class="spacer"></div><div class="panel-toggle" title="Sembunyikan panel">−</div></div>
+          <div class="region-tabs">
+            <div class="rt active">SEMUA</div><div class="rt">JAWA</div><div class="rt">SUMATERA</div><div class="rt">KALIMANTAN</div><div class="rt">SULAWESI</div>
+          </div>
+          <div class="feed-body" id="feed-body"></div>
+        </div>
+        <div class="panel ai" id="panel-ai" data-title="AI Mobilization">
+          <div class="panel-head"><h3>AI MOBILIZATION</h3><div class="spacer"></div><span class="live-tag">● LIVE</span><div class="panel-toggle" title="Sembunyikan panel">−</div></div>
+          <div class="ai-body">
+            <div class="ai-brief"><div class="tag">◈ RINGKASAN AI</div><p>Misi Garut membutuhkan tambahan <b>2 tenaga medis</b>. Radius pencarian diperluas ke 40 km. Estimasi seluruh personel berkumpul <b>2 jam 15 menit</b>.</p></div>
+            <div class="ai-cand" id="cand-list-dash"></div>
+            <div class="timeline-box">
+              <div class="th"><h4>READINESS TIMELINE</h4><span class="tag">MEMBAIK</span></div>
+              <div class="tl-stats">
+                <div><div class="num">3</div><div class="cap">Misi aktif/kritis</div></div>
+                <div><div class="num">6</div><div class="cap">Mobilisasi 7 hari</div></div>
+                <div><div class="num" style="color:var(--accent-bright);">+1.2</div><div class="cap">Δ Readiness</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ VIEW: CASE ============ -->
+    <div class="view" id="view-case">
+      <div class="view-body">
+        <div class="kpi-row">
+          <div class="kpi-card"><div class="lbl">MISI AKTIF</div><div class="val">3</div><div class="delta down">2 kritis</div></div>
+          <div class="kpi-card"><div class="lbl">SELESAI BULAN INI</div><div class="val">27</div><div class="delta up">▲ 4 vs bulan lalu</div></div>
+          <div class="kpi-card"><div class="lbl">RATA² WAKTU BERKUMPUL</div><div class="val">2j 08m</div><div class="delta up">▼ 12 menit lebih cepat</div></div>
+          <div class="kpi-card"><div class="lbl">PERSONEL TERMOBILISASI</div><div class="val">156</div><div class="delta up">▲ 18 minggu ini</div></div>
+        </div>
+        <div class="toolbar">
+          <input id="case-search" placeholder="Cari Case (ID, lokasi, jenis kejadian)...">
+          <div class="filter-chip active" data-f="Semua">Semua</div><div class="filter-chip" data-f="Kritis">Kritis</div><div class="filter-chip" data-f="Tinggi">Tinggi</div><div class="filter-chip" data-f="Selesai">Selesai</div>
+        </div>
+        <table class="data-table" id="case-table">
+          <thead><tr><th>ID MISI</th><th>JENIS KEJADIAN</th><th>LOKASI</th><th>URGENSI</th><th>STATUS</th><th>PERSONEL</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ VIEW: AI MOBILIZATION ============ -->
+    <div class="view" id="view-ai">
+      <div class="view-body">
+        <div class="card-simple">
+          <h3>◈ Rekomendasi Aktif — MISI-2026-0142 (Mobilisasi Banjir, Kab. Garut)</h3>
+          <div class="ai-cand" id="cand-list-full"></div>
+        </div>
+        <div class="card-simple">
+          <h3>Parameter Model AI Mobilization</h3>
+          <div class="settings-row"><div><div class="st">Radius pencarian default</div><div class="sd">Jarak maksimum kandidat dari lokasi Misi</div></div><div class="v" style="font-family:var(--mono);">25 km</div></div>
+          <div class="settings-row"><div><div class="st">Bobot Readiness Score</div><div class="sd">Kontribusi skor kesiapan pada ranking kandidat</div></div><div class="v" style="font-family:var(--mono);">40%</div></div>
+          <div class="settings-row"><div><div class="st">Bobot jarak/ETA</div><div class="sd">Kontribusi estimasi waktu tempuh</div></div><div class="v" style="font-family:var(--mono);">35%</div></div>
+          <div class="settings-row"><div><div class="st">Bobot kompetensi/sertifikasi</div><div class="sd">Kecocokan kebutuhan Misi dengan sertifikasi anggota</div></div><div class="v" style="font-family:var(--mono);">25%</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ VIEW: ANGGOTA ============ -->
+    <div class="view" id="view-anggota">
+      <div class="view-body">
+        <div class="kpi-row">
+          <div class="kpi-card"><div class="lbl">TOTAL ANGGOTA</div><div class="val">48.210</div></div>
+          <div class="kpi-card"><div class="lbl">AKTIF</div><div class="val" style="color:var(--accent-bright);">39.884</div></div>
+          <div class="kpi-card"><div class="lbl">SIAGA</div><div class="val" style="color:var(--amber);">5.102</div></div>
+          <div class="kpi-card"><div class="lbl">TIDAK TERSEDIA</div><div class="val" style="color:var(--text-secondary);">3.224</div></div>
+        </div>
+        <div class="toolbar">
+          <input id="anggota-search" placeholder="Cari NIK, nama, atau unit...">
+          <div class="filter-chip active" data-f="Semua">Semua</div><div class="filter-chip" data-f="Aktif">Siap</div><div class="filter-chip" data-f="Siaga">Siaga</div><div class="filter-chip" data-f="Tidak Tersedia">Tidak Tersedia</div>
+        </div>
+        <table class="data-table" id="anggota-table">
+          <thead><tr><th>ID</th><th>NAMA</th><th>UNIT ASAL</th><th>KOMPETENSI</th><th>READINESS</th><th>STATUS</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ VIEW: SERTIFIKASI ============ -->
+    <div class="view" id="view-sertifikasi">
+      <div class="view-body">
+        <div class="toolbar"><input placeholder="Cari jenis sertifikasi atau nama anggota..."></div>
+        <table class="data-table" id="sertifikasi-table">
+          <thead><tr><th>ANGGOTA</th><th>JENIS SERTIFIKASI</th><th>TANGGAL TERBIT</th><th>MASA BERLAKU</th><th>STATUS</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ VIEW: PELATIHAN ============ -->
+    <div class="view" id="view-pelatihan">
+      <div class="view-body">
+        <div class="toolbar"><input placeholder="Cari nama pelatihan..."></div>
+        <table class="data-table" id="pelatihan-table">
+          <thead><tr><th>ANGGOTA</th><th>NAMA PELATIHAN</th><th>TANGGAL</th><th>STATUS KELULUSAN</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ VIEW: ANALITIK ============ -->
+    <div class="view" id="view-analitik">
+      <div class="view-body">
+        <div class="kpi-row">
+          <div class="kpi-card"><div class="lbl">READINESS NASIONAL</div><div class="val">84,3</div><div class="delta up">▲ 1,2 vs minggu lalu</div></div>
+          <div class="kpi-card"><div class="lbl">MISI SELESAI (30 HARI)</div><div class="val">27</div><div class="delta up">▲ 4</div></div>
+          <div class="kpi-card"><div class="lbl">SERTIFIKASI KEDALUWARSA</div><div class="val" style="color:var(--amber);">312</div><div class="delta down">▼ butuh tindak lanjut</div></div>
+          <div class="kpi-card"><div class="lbl">UPTIME SISTEM</div><div class="val" style="color:var(--accent-bright);">99,7%</div></div>
+        </div>
+        <div class="card-simple">
+          <h3>Readiness Score per Wilayah</h3>
+          <div id="region-bars"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ VIEW: LAPORAN ============ -->
+    <div class="view" id="view-laporan">
+      <div class="view-body">
+        <div class="card-simple">
+          <h3>Laporan Tersedia</h3>
+          <div class="settings-row"><div><div class="st">Laporan Kesiapsiagaan Bulanan — Juli 2026</div><div class="sd">Dibuat 01 Agu 2026 · PDF · 2.4 MB</div></div><button class="btn outline">Unduh</button></div>
+          <div class="settings-row"><div><div class="st">Rekap Mobilisasi Q2 2026</div><div class="sd">Dibuat 05 Jul 2026 · XLSX · 1.1 MB</div></div><button class="btn outline">Unduh</button></div>
+          <div class="settings-row"><div><div class="st">Evaluasi AI Mobilization — Semester I 2026</div><div class="sd">Dibuat 02 Jul 2026 · PDF · 3.8 MB</div></div><button class="btn outline">Unduh</button></div>
+        </div>
+        <div class="card-simple">
+          <h3>Buat Laporan Baru</h3>
+          <div class="toolbar"><div class="filter-chip active">Per Wilayah</div><div class="filter-chip">Per Misi</div><div class="filter-chip">Per Periode</div></div>
+          <button class="btn outline" style="width:fit-content;">＋ Susun Laporan</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ VIEW: RIWAYAT MOBILISASI ============ -->
+    <div class="view" id="view-riwayat">
+      <div class="view-body">
+        <table class="data-table" id="riwayat-table">
+          <thead><tr><th>ID MISI</th><th>JENIS</th><th>LOKASI</th><th>TANGGAL SELESAI</th><th>PERSONEL</th><th>EVALUASI</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ VIEW: PENGGUNA & ROLE ============ -->
+    <div class="view" id="view-pengguna">
+      <div class="view-body">
+        <div class="card-simple">
+          <h3>Pengguna & Role</h3>
+          <div class="settings-row"><div><div class="st">Super Admin</div><div class="sd">Akses penuh ke seluruh modul</div></div><div class="pill green">2 pengguna</div></div>
+          <div class="settings-row"><div><div class="st">Operator Komcad</div><div class="sd">Kelola Misi & mobilisasi</div></div><div class="pill green">14 pengguna</div></div>
+          <div class="settings-row"><div><div class="st">Analis/Evaluator</div><div class="sd">Akses baca laporan & analitik</div></div><div class="pill gray">6 pengguna</div></div>
+        </div>
+        <div class="card-simple">
+          <h3>Daftar Pengguna</h3>
+          <table class="data-table">
+            <thead><tr><th>NAMA</th><th>ROLE</th><th>WILAYAH</th><th>STATUS</th></tr></thead>
+            <tbody>
+              <tr><td>Andri Operator</td><td>Operator</td><td>Nasional</td><td><span class="pill green">Aktif</span></td></tr>
+              <tr><td>Maya Analis</td><td>Analis/Evaluator</td><td>Jawa Barat</td><td><span class="pill green">Aktif</span></td></tr>
+              <tr><td>Budi Superadmin</td><td>Super Admin</td><td>Nasional</td><td><span class="pill green">Aktif</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ VIEW: PENGATURAN ============ -->
+    <div class="view" id="view-pengaturan">
+      <div class="view-body">
+        <div class="card-simple">
+          <h3>Notifikasi</h3>
+          <div class="settings-row"><div><div class="st">Notifikasi Misi baru</div><div class="sd">Kirim ke seluruh Operator wilayah terkait</div></div><div class="toggle on" data-toggle></div></div>
+          <div class="settings-row"><div><div class="st">Reminder sertifikasi kedaluwarsa</div><div class="sd">H-30 sebelum masa berlaku habis</div></div><div class="toggle on" data-toggle></div></div>
+          <div class="settings-row"><div><div class="st">Fallback SMS</div><div class="sd">Kirim SMS jika notifikasi push gagal</div></div><div class="toggle" data-toggle></div></div>
+        </div>
+        <div class="card-simple">
+          <h3>Preferensi Peta</h3>
+          <div class="settings-row"><div><div class="st">Tampilkan kepadatan wilayah otomatis</div><div class="sd">Heat-zone aktif saat zoom keluar</div></div><div class="toggle" data-toggle></div></div>
+          <div class="settings-row"><div><div class="st">Auto-refresh data peta</div><div class="sd">Setiap 15 detik</div></div><div class="toggle on" data-toggle></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ VIEW: AI CHAT ============ -->
+    <div class="view" id="view-aichat">
+      <div class="chat-wrap">
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-suggest" id="chat-suggest"></div>
+        <div class="chat-input-row">
+          <input id="chat-input" placeholder="Tanyakan data Komcad, mis. 'sebaran anggota berdasarkan pendidikan'...">
+          <button class="btn outline" id="chat-send">Kirim ➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ VIEW: GUIDELINE ============ -->
+    <div class="view" id="view-guideline">
+      <div class="view-body">
+        <div class="toolbar">
+          <div class="filter-chip active" data-tab="panduan">Panduan Pengguna</div>
+          <div class="filter-chip" data-tab="faq">Tanya Jawab (FAQ)</div>
+          <div class="filter-chip" data-tab="modul">Modul</div>
+        </div>
+
+        <div class="gl-section" id="gl-panduan">
+          <div class="card-simple">
+            <h3>1. Memulai — Navigasi Dashboard</h3>
+            <div class="settings-row"><div><div class="st">Sidebar kiri</div><div class="sd">Berisi seluruh menu utama, dikelompokkan per fungsi (Ringkasan, Operasi, Data Anggota, Laporan, Asisten, Sistem). Gunakan ikon ☰ di pojok kiri atas untuk menyembunyikan/menampilkan sidebar.</div></div></div>
+            <div class="settings-row"><div><div class="st">Panel bawah Overview</div><div class="sd">Statistik Anggota, Misi Terbaru, dan AI Mobilization dapat disembunyikan lewat tombol "−" di setiap header panel. Panel yang disembunyikan muncul sebagai chip di bilah bawah untuk ditampilkan lagi.</div></div></div>
+            <div class="settings-row"><div><div class="st">Peta interaktif</div><div class="sd">Klik marker anggota/Misi untuk detail, gunakan panel Layers (kiri atas peta) untuk mengaktifkan/nonaktifkan lapisan data.</div></div></div>
+          </div>
+          <div class="card-simple">
+            <h3>2. Alur Kerja Operator — Menangani Misi</h3>
+            <div class="settings-row"><div><div class="st">Langkah 1</div><div class="sd">Buka menu Manajemen Misi → klik "Buat Misi Baru" (tombol di topbar), isi jenis kejadian, lokasi, dan kebutuhan personel.</div></div></div>
+            <div class="settings-row"><div><div class="st">Langkah 2</div><div class="sd">Buka menu AI Mobilization untuk meninjau kandidat yang direkomendasikan beserta skor kecocokan dan ETA.</div></div></div>
+            <div class="settings-row"><div><div class="st">Langkah 3</div><div class="sd">Setujui kandidat, sistem otomatis mengirim notifikasi mobilisasi dan memperbarui status Misi secara real-time.</div></div></div>
+          </div>
+          <div class="card-simple">
+            <h3>3. Mengelola Data Anggota</h3>
+            <div class="settings-row"><div><div class="st">Direktori Anggota</div><div class="sd">Cari, filter, dan klik nama anggota untuk membuka profil lengkap (kontak, kompetensi, sertifikasi, riwayat pelatihan & penugasan).</div></div></div>
+            <div class="settings-row"><div><div class="st">Kompetensi & Sertifikasi</div><div class="sd">Pantau status sertifikasi (Aktif / Akan Kedaluwarsa / Kedaluwarsa) seluruh anggota dalam satu tabel.</div></div></div>
+          </div>
+        </div>
+
+        <div class="gl-section" id="gl-faq" style="display:none;">
+          <div class="card-simple faq-item">
+            <div class="faq-q">▸ Bagaimana cara mengetahui anggota mana yang paling siap dimobilisasi?</div>
+            <div class="faq-a">Buka menu AI Mobilization atau lihat kolom Readiness pada Direktori Anggota — semakin tinggi skor (0–100), semakin siap anggota tersebut. Anda juga bisa bertanya langsung ke menu AI Chat.</div>
+          </div>
+          <div class="card-simple faq-item">
+            <div class="faq-q">▸ Apa yang terjadi jika kandidat rekomendasi AI menolak notifikasi mobilisasi?</div>
+            <div class="faq-a">Sistem otomatis mengusulkan kandidat cadangan berikutnya berdasarkan skor kecocokan tertinggi selanjutnya, tanpa perlu Operator membuat permintaan baru.</div>
+          </div>
+          <div class="card-simple faq-item">
+            <div class="faq-q">▸ Bagaimana cara menyembunyikan/menampilkan panel di Overview?</div>
+            <div class="faq-a">Klik ikon "−" pada pojok kanan header setiap panel untuk menyembunyikannya. Panel yang disembunyikan bisa dimunculkan lagi lewat chip pada bilah kecil tepat di atas panel.</div>
+          </div>
+          <div class="card-simple faq-item">
+            <div class="faq-q">▸ Siapa yang bisa mengubah data profil anggota?</div>
+            <div class="faq-a">Anggota dapat memperbarui profil miliknya sendiri lewat Sisi Anggota. Perubahan data sensitif (mis. NIK) memerlukan verifikasi Admin sebelum aktif.</div>
+          </div>
+          <div class="card-simple faq-item">
+            <div class="faq-q">▸ Apa itu Readiness Score dan bagaimana cara menghitungnya?</div>
+            <div class="faq-a">Skor komposit 0–100 dari kombinasi kompetensi, kesehatan, riwayat pelatihan, dan riwayat penugasan. Bobot masing-masing komponen dapat dilihat/diatur di menu AI Mobilization → Parameter Model.</div>
+          </div>
+        </div>
+
+        <div class="gl-section" id="gl-modul" style="display:none;">
+          <div class="card-simple mod-card">
+            <div class="mod-head"><h3>Modul 1 — Manajemen Data Anggota</h3><span class="pill green">Aktif</span></div>
+            <p class="mod-desc">Fondasi Big Data seluruh platform. Modul ini menyimpan dan mengelola profil lengkap tiap anggota Komcad — identitas, demografi, sebaran wilayah, kompetensi/sertifikasi, riwayat pelatihan, hingga status siaga terkini. Fungsinya adalah menjadi <b>satu sumber data terpusat (single source of truth)</b> agar data anggota tidak lagi tersebar di berbagai tempat, sekaligus jadi bahan mentah bagi mesin AI Mobilization untuk menghasilkan rekomendasi yang akurat.</p>
+            <div class="mod-features">
+              <span class="tag-chip">CRUD Profil</span><span class="tag-chip">Sertifikasi & Kompetensi</span><span class="tag-chip">Riwayat Pelatihan</span><span class="tag-chip">Peta Sebaran Wilayah</span>
+            </div>
+          </div>
+          <div class="card-simple mod-card">
+            <div class="mod-head"><h3>Modul 2 — Manajemen Misi & AI Mobilization</h3><span class="pill green">Aktif</span></div>
+            <p class="mod-desc">Jantung operasional platform. Saat sebuah kejadian terjadi, Operator membuat Misi baru lewat modul ini, lalu AI Mobilization secara otomatis menganalisis Big Data anggota (lokasi, kompetensi, status kesiapan, riwayat penugasan) untuk mengusulkan personel paling sesuai lengkap dengan alasan dan estimasi waktu kedatangan (ETA). Fungsinya mempercepat proses mobilisasi dari hitungan jam menjadi hitungan menit, sekaligus membuat keputusan pengerahan personel lebih objektif dan dapat dipertanggungjawabkan.</p>
+            <div class="mod-features">
+              <span class="tag-chip">Buat Misi</span><span class="tag-chip">Rekomendasi AI</span><span class="tag-chip">Verifikasi Operator</span><span class="tag-chip">Notifikasi Otomatis</span><span class="tag-chip">Pemantauan Real-time</span>
+            </div>
+          </div>
+          <div class="card-simple mod-card">
+            <div class="mod-head"><h3>Modul 3 — Analitik & Evaluasi</h3><span class="pill green">Aktif</span></div>
+            <p class="mod-desc">Memberikan visibilitas menyeluruh atas kesiapsiagaan nasional kepada pimpinan dan Analis — mulai dari Readiness Score per wilayah, tren mobilisasi, hingga efektivitas rekomendasi AI dari waktu ke waktu. Fungsinya adalah dasar pengambilan keputusan berbasis data: mengidentifikasi wilayah yang perlu diperkuat, mengevaluasi hasil operasi yang sudah selesai, dan menyusun laporan resmi (PDF/Excel) untuk kebutuhan pelaporan ke pimpinan.</p>
+            <div class="mod-features">
+              <span class="tag-chip">Dashboard Nasional</span><span class="tag-chip">Laporan & Ekspor</span><span class="tag-chip">Tren Kesiapsiagaan</span><span class="tag-chip">Riwayat Mobilisasi</span>
+            </div>
+          </div>
+          <div class="card-simple mod-card">
+            <div class="mod-head"><h3>Modul 4 — Akses Mandiri Anggota</h3><span class="pill amber">Beta</span></div>
+            <p class="mod-desc">Portal khusus untuk anggota Komcad memantau dan memperbarui datanya sendiri — profil pribadi, riwayat pelatihan, riwayat penugasan, dan status kesiapan — tanpa harus menghubungi Admin. Fungsinya meringankan beban administrasi Operator sekaligus memastikan data anggota selalu diperbarui langsung oleh pemiliknya (lebih akurat dan real-time), termasuk menerima dan merespons notifikasi mobilisasi langsung dari genggaman.</p>
+            <div class="mod-features">
+              <span class="tag-chip">Profil Mandiri</span><span class="tag-chip">Update Status Siaga</span><span class="tag-chip">Notifikasi Mobilisasi</span>
+            </div>
+          </div>
+          <div class="card-simple mod-card">
+            <div class="mod-head"><h3>Modul 5 — AI Chat Assistant</h3><span class="pill amber">Beta</span></div>
+            <p class="mod-desc">Asisten tanya-jawab berbasis bahasa natural yang memungkinkan Operator/Analis menggali data platform tanpa perlu membuka banyak menu atau menyusun laporan manual — cukup ketik pertanyaan seperti "berapa anggota yang belum pelatihan 3 bulan terakhir" atau "sebaran anggota berdasarkan pendidikan". Fungsinya mempercepat eksplorasi data dan membuat insight lebih mudah diakses oleh siapa pun, kapan pun dibutuhkan.</p>
+            <div class="mod-features">
+              <span class="tag-chip">Tanya-Jawab Data</span><span class="tag-chip">Bahasa Natural</span><span class="tag-chip">Insight Instan</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer"><span class="ftxt">AI KOMCAD · v1.4.0 · Big Data & Kesiapsiagaan Platform</span></div>
+  </div>
+</div>
+
+<!-- DETAIL DRAWER -->
+<div class="drawer-overlay" id="drawer-overlay"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head"><h3 id="drawer-title">Detail</h3><div class="drawer-close" id="drawer-close">✕</div></div>
+  <div class="drawer-body" id="drawer-body"></div>
+</div>
+
+<!-- MODAL: BUAT MISI -->
+<div class="modal-overlay" id="misi-modal-overlay">
+  <div class="modal-box" id="misi-modal-box"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/* ============ DATA DUMMY ============ */
+const personSvg = `<svg viewBox="0 0 64 64" width="40" height="40" fill="none">
+  <circle cx="32" cy="32" r="32" fill="#0E1215"/>
+  <circle cx="32" cy="24" r="11" fill="#3A4550"/>
+  <path d="M10 56c0-13 9.8-20 22-20s22 7 22 20" fill="#3A4550"/>
+</svg>`;
+const anggotaData = [
+  {id:'ANG-00123', nik:'3204170302990091', nama:'Rian Pratama', unit:'Kodim 0611/Garut', komp:'SAR, Water Rescue', readiness:92, status:'Aktif', lat:-7.2247, lng:107.8951,
+    usia:29, jk:'Laki-laki', pendidikan:'S1 Teknik Sipil', pekerjaan:'Kontraktor Bangunan', golda:'O', alamat:'Kec. Tarogong Kidul, Kab. Garut, Jawa Barat',
+    telp:'+62 812-3456-7891', email:'rian.pratama@komcad.go.id', wa:'6281234567891', ig:'@rian.pratama', linkedin:'rian-pratama-sar', bergabung:'14 Feb 2022', emergency:'Fitri Pratama (Istri) · +62 813-1122-3344'},
+  {id:'ANG-00456', nik:'3273220805950045', nama:'Siti Nurhaliza', unit:'Kodim 0618/Kab. Bandung', komp:'Medis, P3K Lanjutan', readiness:87, status:'Siaga', lat:-7.0089, lng:107.6244,
+    usia:31, jk:'Perempuan', pendidikan:'D3 Keperawatan', pekerjaan:'Perawat RSUD Kab. Bandung', golda:'A', alamat:'Kec. Baleendah, Kab. Bandung, Jawa Barat',
+    telp:'+62 813-9988-1122', email:'siti.nurhaliza@komcad.go.id', wa:'6281399881122', ig:'@sitinh.medic', linkedin:'siti-nurhaliza-ns', bergabung:'02 Sep 2021', emergency:'Yusuf Hidayat (Suami) · +62 812-4455-6677'},
+  {id:'ANG-00789', nik:'3578120711920012', nama:'Ahmad Fauzi', unit:'Kodim 0810/Kab. Nganjuk', komp:'Drone/Pemetaan Udara', readiness:95, status:'Aktif', lat:-7.6053, lng:111.9047,
+    usia:27, jk:'Laki-laki', pendidikan:'S1 Teknik Geodesi', pekerjaan:'Surveyor Independen', golda:'B', alamat:'Kec. Nganjuk, Kab. Nganjuk, Jawa Timur',
+    telp:'+62 815-2233-4455', email:'ahmad.fauzi@komcad.go.id', wa:'6281522334455', ig:'@fauzi.drone', linkedin:'ahmad-fauzi-geo', bergabung:'20 Jan 2023', emergency:'Siti Aminah (Ibu) · +62 815-9988-7766'},
+  {id:'ANG-01011', nik:'3171080409880078', nama:'Dewi Anggraini', unit:'Kodim 0501/Jakarta Pusat', komp:'Logistik, Radio', readiness:61, status:'Tidak Tersedia', lat:-6.1966, lng:106.8342,
+    usia:33, jk:'Perempuan', pendidikan:'S1 Manajemen', pekerjaan:'Staf Logistik Swasta', golda:'AB', alamat:'Kec. Menteng, Jakarta Pusat, DKI Jakarta',
+    telp:'+62 817-6677-8899', email:'dewi.anggraini@komcad.go.id', wa:'6281766778899', ig:'@dewi.anggr', linkedin:'dewi-anggraini-log', bergabung:'11 Nov 2020', emergency:'Bambang S. (Ayah) · +62 817-1122-3344'},
+  {id:'ANG-01234', nik:'3276030212970033', nama:'Bagus Wicaksono', unit:'Kodim 0619/Kab. Purwakarta', komp:'SAR, Evakuasi Vertikal', readiness:78, status:'Siaga', lat:-6.5569, lng:107.4438,
+    usia:28, jk:'Laki-laki', pendidikan:'SMA/SMK', pekerjaan:'Wiraswasta', golda:'O', alamat:'Kec. Purwakarta, Kab. Purwakarta, Jawa Barat',
+    telp:'+62 819-3344-5566', email:'bagus.wicaksono@komcad.go.id', wa:'6281933445566', ig:'@bagus.wck', linkedin:'bagus-wicaksono', bergabung:'05 Jun 2022', emergency:'Rina Wicaksono (Ibu) · +62 819-7788-9900'},
+  {id:'ANG-01502', nik:'1671150109890021', nama:'Reza Saputra', unit:'Kodim 0415/Palembang', komp:'SAR, Logistik', readiness:81, status:'Aktif', lat:-2.9909, lng:104.7566,
+    usia:35, jk:'Laki-laki', pendidikan:'D3 Teknik Mesin', pekerjaan:'Teknisi Pabrik', golda:'B', alamat:'Kec. Ilir Barat I, Palembang, Sumatera Selatan',
+    telp:'+62 821-5566-7788', email:'reza.saputra@komcad.go.id', wa:'6282155667788', ig:'@reza.sptr', linkedin:'reza-saputra-mesin', bergabung:'18 Mar 2019', emergency:'Lina Saputra (Istri) · +62 821-2233-4455'},
+  {id:'ANG-01633', nik:'1275250612940087', nama:'Yuni Kartika', unit:'Kodim 0201/Medan', komp:'Medis', readiness:74, status:'Siaga', lat:3.5952, lng:98.6722,
+    usia:30, jk:'Perempuan', pendidikan:'S1 Kedokteran Umum', pekerjaan:'Dokter Puskesmas', golda:'A', alamat:'Kec. Medan Baru, Kota Medan, Sumatera Utara',
+    telp:'+62 822-3344-9988', email:'yuni.kartika@komcad.go.id', wa:'6282233449988', ig:'@dr.yunik', linkedin:'yuni-kartika-md', bergabung:'27 Jul 2021', emergency:'Andi Kartika (Suami) · +62 822-6677-1122'},
+  {id:'ANG-01788', nik:'7371040311910044', nama:'Hendra Gunawan', unit:'Kodim 1408/Makassar', komp:'SAR, Drone', readiness:88, status:'Aktif', lat:-5.1477, lng:119.4327,
+    usia:34, jk:'Laki-laki', pendidikan:'S1 Ilmu Komputer', pekerjaan:'IT Freelancer', golda:'O', alamat:'Kec. Panakkukang, Kota Makassar, Sulawesi Selatan',
+    telp:'+62 823-4455-6677', email:'hendra.gunawan@komcad.go.id', wa:'6282344556677', ig:'@hendra.gun', linkedin:'hendra-gunawan-it', bergabung:'09 Oct 2020', emergency:'Nurul Gunawan (Istri) · +62 823-8899-0011'},
+];
+
+const caseData = [
+  {id:'MISI-2026-0142', jenis:'Mobilisasi Banjir', lokasi:'Kab. Garut', urgensi:'Kritis', status:'Dimobilisasi', personel:33, lat:-7.2247, lng:107.8951},
+  {id:'MISI-2026-0143', jenis:'Longsor', lokasi:'Kab. Purwakarta', urgensi:'Tinggi', status:'Baru', personel:0, lat:-6.5569, lng:107.4438},
+  {id:'MISI-2026-0141', jenis:'Angin Puting Beliung', lokasi:'Kab. Nganjuk', urgensi:'Sedang', status:'Verifikasi', personel:8, lat:-7.6053, lng:111.9047},
+  {id:'MISI-2026-0140', jenis:'Gempa Bumi', lokasi:'Kab. Nganjuk', urgensi:'Kritis', status:'Selesai', personel:24, lat:-7.55, lng:111.85, tanggalSelesai:'22 Jul 2026', evaluasi:'Baik'},
+];
+
+const posKomando = [
+  {nama:'Pos Komando Nasional', lat:-6.2, lng:106.816},
+  {nama:'Pos Komando Regional Jawa Barat', lat:-6.9175, lng:107.6191},
+  {nama:'Pos Komando Regional Sumatera', lat:-2.9909, lng:104.7566},
+  {nama:'Pos Komando Regional Sulawesi', lat:-5.1477, lng:119.4327},
+];
+
+const feedItems = [
+  {dot:'red', txt:'<b>MISI-2026-0142</b> — Mobilisasi Banjir, Kab. Garut. Status: <b>Dimobilisasi</b>. 33 personel dikerahkan.', time:'08:31'},
+  {dot:'amber', txt:'<b>MISI-2026-0143</b> — Longsor, Kab. Purwakarta. AI menyusun rekomendasi 13 kandidat personel.', time:'08:12'},
+  {dot:'green', txt:'<b>ANG-00789</b> mengonfirmasi kehadiran di lokasi Misi Garut — ETA lebih cepat 6 menit.', time:'07:58'},
+  {dot:'green', txt:'<b>MISI-2026-0140</b> — Gempa Bumi Kab. Nganjuk resmi ditutup, evaluasi tersimpan.', time:'07:40'},
+  {dot:'amber', txt:'Sertifikasi <b>Evakuasi Vertikal — ANG-01234</b> telah kedaluwarsa.', time:'07:05'},
+  {dot:'green', txt:'Readiness Score rata-rata nasional naik menjadi <b>84,3</b> (+1,2 vs minggu lalu).', time:'06:50'},
+];
+
+const candidates = [
+  {score:96, name:'ANG-00123 · Rian Pratama', reason:'Jarak 4,2 km · SAR & Water Rescue · Readiness 92', eta:'18 mnt'},
+  {score:89, name:'ANG-00456 · Siti Nurhaliza', reason:'Jarak 31 km · P3K Lanjutan · Readiness 87', eta:'55 mnt'},
+  {score:91, name:'ANG-00789 · Ahmad Fauzi', reason:'Operator Drone · Readiness 95', eta:'2j 15m'},
+];
+
+const sertifikasiData = [
+  {anggota:'ANG-00123 · Rian Pratama', jenis:'SAR Basic', terbit:'12 Jan 2024', berlaku:'12 Jan 2027', status:'Aktif'},
+  {anggota:'ANG-00123 · Rian Pratama', jenis:'Water Rescue', terbit:'03 Mar 2025', berlaku:'03 Mar 2027', status:'Aktif'},
+  {anggota:'ANG-00456 · Siti Nurhaliza', jenis:'P3K Lanjutan', terbit:'20 Jun 2023', berlaku:'20 Jun 2026', status:'Akan Kedaluwarsa'},
+  {anggota:'ANG-00789 · Ahmad Fauzi', jenis:'Operator Drone (Pemetaan)', terbit:'15 Sep 2024', berlaku:'15 Sep 2027', status:'Aktif'},
+  {anggota:'ANG-01234 · Bagus Wicaksono', jenis:'Evakuasi Vertikal', terbit:'02 Feb 2022', berlaku:'02 Feb 2025', status:'Kedaluwarsa'},
+];
+
+const pelatihanData = [
+  {anggota:'ANG-00123 · Rian Pratama', nama:'Pelatihan Dasar Kebencanaan', tanggal:'10–14 Feb 2024', status:'Lulus'},
+  {anggota:'ANG-00456 · Siti Nurhaliza', nama:'Pelatihan Medis Lapangan Darurat', tanggal:'05–08 Mei 2025', status:'Lulus'},
+  {anggota:'ANG-00789 · Ahmad Fauzi', nama:'Pelatihan Pemetaan Udara Lanjutan', tanggal:'22–24 Jul 2025', status:'Lulus'},
+  {anggota:'ANG-01234 · Bagus Wicaksono', nama:'Refreshment Evakuasi Vertikal', tanggal:'Belum dijadwalkan', status:'Dibutuhkan'},
+];
+
+const regionReadiness = [
+  {name:'Jawa Barat', score:88}, {name:'Jawa Timur', score:83}, {name:'Sumatera Utara', score:79},
+  {name:'Sulawesi Selatan', score:85}, {name:'Kalimantan Timur', score:74}, {name:'DKI Jakarta', score:91},
+];
+
+const riwayatData = [
+  {id:'MISI-2026-0140', jenis:'Gempa Bumi', lokasi:'Kab. Nganjuk', tanggal:'22 Jul 2026', personel:24, evaluasi:'Baik'},
+  {id:'MISI-2025-0988', jenis:'Banjir', lokasi:'Kab. Cilacap', tanggal:'14 Jun 2026', personel:19, evaluasi:'Sangat Baik'},
+  {id:'MISI-2025-0921', jenis:'Kebakaran Hutan', lokasi:'Kab. Ketapang', tanggal:'02 Mei 2026', personel:31, evaluasi:'Baik'},
+  {id:'MISI-2025-0877', jenis:'Longsor', lokasi:'Kab. Purwakarta', tanggal:'19 Mar 2026', personel:12, evaluasi:'Cukup'},
+];
+
+/* ============ HELPERS ============ */
+function esc(s){ return String(s).replace(/</g,'&lt;'); }
+function pillClassCase(c){ return c.status==='Selesai' ? 'gray' : (c.urgensi==='Kritis'?'red':(c.urgensi==='Tinggi'?'amber':'green')); }
+function pillClassAnggota(a){ return a.status==='Aktif'?'green':(a.status==='Siaga'?'amber':'gray'); }
+function pillClassSert(s){ return s.status==='Aktif'?'green':(s.status==='Akan Kedaluwarsa'?'amber':'red'); }
+
+/* ============ SIDEBAR NAV ============ */
+const titles = {
+  dashboard:['Overview','RINGKASAN / OVERVIEW'],
+  case:['Manajemen Misi','OPERASI / MISI'],
+  ai:['AI Mobilization','OPERASI / AI MOBILIZATION'],
+  anggota:['Direktori Anggota','DATA ANGGOTA / DIREKTORI'],
+  sertifikasi:['Kompetensi & Sertifikasi','DATA ANGGOTA / SERTIFIKASI'],
+  pelatihan:['Riwayat Pelatihan','DATA ANGGOTA / PELATIHAN'],
+  analitik:['Analitik Kesiapsiagaan','LAPORAN / ANALITIK'],
+  laporan:['Laporan & Ekspor','LAPORAN / EKSPOR'],
+  riwayat:['Riwayat Mobilisasi','LAPORAN / RIWAYAT'],
+  pengguna:['Pengguna & Role','SISTEM / PENGGUNA'],
+  pengaturan:['Pengaturan','SISTEM / PENGATURAN'],
+  aichat:['AI Chat','ASISTEN / AI CHAT'],
+  guideline:['Guideline','SISTEM / GUIDELINE']
+};
+document.querySelectorAll('.sb-item').forEach(item=>{
+  item.addEventListener('click', ()=>{
+    document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
+    item.classList.add('active');
+    const v = item.dataset.view;
+    document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+    document.getElementById('view-'+v).classList.add('active');
+    document.getElementById('pt-title').textContent = titles[v][0];
+    document.getElementById('pt-crumb').textContent = titles[v][1];
+    if(v==='dashboard'){ setTimeout(()=>{ if(window.__map) window.__map.invalidateSize(); },50); }
+  });
+});
+
+/* ============ DRAWER ============ */
+const drawer = document.getElementById('drawer');
+const overlay = document.getElementById('drawer-overlay');
+function openDrawer(title, html){
+  document.getElementById('drawer-title').textContent = title;
+  document.getElementById('drawer-body').innerHTML = html;
+  drawer.classList.add('show'); overlay.classList.add('show');
+}
+document.getElementById('drawer-close').addEventListener('click', ()=>{drawer.classList.remove('show'); overlay.classList.remove('show');});
+overlay.addEventListener('click', ()=>{drawer.classList.remove('show'); overlay.classList.remove('show');});
+
+function candHtml(cd){
+  return '<div class="cand-row"><div class="score">'+cd.score+'</div><div class="info"><div class="name">'+cd.name+'</div><div class="reason">'+cd.reason+'</div></div><div class="eta">'+cd.eta+'</div></div>';
+}
+function bindCandRows(container){
+  container.querySelectorAll('.cand-row').forEach((row,i)=>{
+    row.addEventListener('click', ()=>{
+      const cd = candidates[i];
+      openDrawer(cd.name,
+        '<div class="dr-field"><div class="k">SKOR KECOCOKAN</div><div class="v" style="color:var(--accent-bright)">'+cd.score+'</div></div>'+
+        '<div class="dr-field"><div class="k">ALASAN</div><div class="v">'+cd.reason+'</div></div>'+
+        '<div class="dr-field"><div class="k">ETA</div><div class="v">'+cd.eta+'</div></div>');
+    });
+  });
+}
+
+function anggotaDetailHtml(a){
+  const sertList = sertifikasiData.filter(s=>s.anggota.startsWith(a.id));
+  const latList = pelatihanData.filter(p=>p.anggota.startsWith(a.id));
+  const komp = a.komp.split(',').map(k=>`<span class="tag-chip">${k.trim()}</span>`).join('');
+  return `
+    <div class="profile-header">
+      <div class="profile-avatar">${personSvg}<span class="avatar-hint">Foto belum tersedia</span></div>
+      <div class="profile-id">
+        <div class="pname">${a.nama}</div>
+        <div class="pmeta">${a.id} · ${a.unit}</div>
+        <div style="margin-top:6px; display:flex; gap:8px; align-items:center;">
+          <span class="pill ${pillClassAnggota(a)}">${a.status}</span>
+          <span class="pill" style="background:rgba(60,242,154,0.1); color:var(--accent-bright);">Readiness ${a.readiness}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="social-row">
+      <a href="https://wa.me/${a.wa}" target="_blank" class="soc-btn wa">💬 WhatsApp</a>
+      <a href="mailto:${a.email}" class="soc-btn mail">✉️ Email</a>
+      <a href="#" class="soc-btn ig">📷 ${a.ig}</a>
+      <a href="#" class="soc-btn li">🔗 LinkedIn</a>
+    </div>
+
+    <div class="card-simple">
+      <h3>Kompetensi & Spesialisasi</h3>
+      <div class="tag-row">${komp}</div>
+    </div>
+
+    <div class="card-simple">
+      <h3>Data Pribadi</h3>
+      <div class="dr-grid">
+        <div class="dr-field"><div class="k">USIA</div><div class="v">${a.usia} tahun</div></div>
+        <div class="dr-field"><div class="k">JENIS KELAMIN</div><div class="v">${a.jk}</div></div>
+        <div class="dr-field"><div class="k">GOLONGAN DARAH</div><div class="v">${a.golda}</div></div>
+        <div class="dr-field"><div class="k">BERGABUNG SEJAK</div><div class="v">${a.bergabung}</div></div>
+        <div class="dr-field"><div class="k">PENDIDIKAN</div><div class="v">${a.pendidikan}</div></div>
+        <div class="dr-field"><div class="k">PEKERJAAN SIPIL</div><div class="v">${a.pekerjaan}</div></div>
+      </div>
+      <div class="dr-field"><div class="k">NIK</div><div class="v" style="font-family:var(--mono);">${a.nik}</div></div>
+      <div class="dr-field"><div class="k">ALAMAT DOMISILI</div><div class="v">${a.alamat}</div></div>
+      <div class="dr-field"><div class="k">KOORDINAT TERKINI</div><div class="v" style="font-family:var(--mono);">${a.lat.toFixed(4)}, ${a.lng.toFixed(4)}</div></div>
+      <div class="dr-field"><div class="k">TELEPON</div><div class="v">${a.telp}</div></div>
+      <div class="dr-field"><div class="k">KONTAK DARURAT</div><div class="v">${a.emergency}</div></div>
+    </div>
+
+    <div class="card-simple">
+      <h3>Sertifikasi</h3>
+      ${sertList.length ? sertList.map(s=>`<div class="settings-row"><div><div class="st">${s.jenis}</div><div class="sd">Berlaku s.d. ${s.berlaku}</div></div><span class="pill ${pillClassSert(s)}">${s.status}</span></div>`).join('') : '<div class="empty-hint">Belum ada data sertifikasi.</div>'}
+    </div>
+
+    <div class="card-simple">
+      <h3>Riwayat Pelatihan</h3>
+      ${latList.length ? latList.map(p=>`<div class="settings-row"><div><div class="st">${p.nama}</div><div class="sd">${p.tanggal}</div></div><span class="pill ${p.status==='Lulus'?'green':'amber'}">${p.status}</span></div>`).join('') : '<div class="empty-hint">Belum ada riwayat pelatihan.</div>'}
+    </div>
+
+    <div class="card-simple">
+      <h3>Riwayat Penugasan Terakhir</h3>
+      <div class="settings-row"><div><div class="st">MISI-2026-0140 · Gempa Nganjuk</div><div class="sd">Selesai · evaluasi: Baik</div></div></div>
+      <div class="settings-row"><div><div class="st">MISI-2025-0988 · Banjir Cilacap</div><div class="sd">Selesai · evaluasi: Sangat Baik</div></div></div>
+    </div>`;
+}
+function caseDetailHtml(c){
+  const candHtmlStr = candidates.map(candHtml).join('');
+  return `
+    <div class="dr-grid">
+      <div class="dr-field"><div class="k">ID MISI</div><div class="v">${c.id}</div></div>
+      <div class="dr-field"><div class="k">STATUS</div><div class="v"><span class="pill ${pillClassCase(c)}">${c.status}</span></div></div>
+      <div class="dr-field"><div class="k">JENIS KEJADIAN</div><div class="v">${c.jenis}</div></div>
+      <div class="dr-field"><div class="k">URGENSI</div><div class="v">${c.urgensi}</div></div>
+    </div>
+    <div class="dr-field"><div class="k">LOKASI</div><div class="v">${c.lokasi}</div></div>
+    <div class="dr-field"><div class="k">KOORDINAT</div><div class="v" style="font-family:var(--mono);">${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}</div></div>
+    <div class="dr-field"><div class="k">PERSONEL DIKERAHKAN</div><div class="v">${c.personel} personel</div></div>
+    <div class="card-simple" style="margin-top:14px;"><h3>Rekomendasi AI Mobilization</h3><div class="ai-cand" id="drawer-cand">${candHtmlStr}</div></div>`;
+}
+
+/* ============ RENDER: FEED ============ */
+const feedBody = document.getElementById('feed-body');
+feedBody.innerHTML = feedItems.map(f=>`<div class="feed-row"><span class="fdot ${f.dot}"></span><div class="ftxt">${f.txt}</div><span class="ftime">${f.time}</span></div>`).join('');
+feedBody.querySelectorAll('.feed-row').forEach((row,i)=>{
+  row.addEventListener('click', ()=>{
+    const f = feedItems[i];
+    openDrawer('Detail Aktivitas', `<div class="dr-field"><div class="v" style="font-size:13px;line-height:1.6">${f.txt}</div></div><div class="dr-field" style="margin-top:10px"><div class="k">WAKTU</div><div class="v">${f.time} WIB</div></div>`);
+  });
+});
+
+/* ============ RENDER: AKTIVITAS PELATIHAN TERBARU ============ */
+const pelatihanAktivitas = [
+  {nama:'Pelatihan Dasar Kebencanaan Batch 9', lokasi:'Kab. Garut', tanggal:'04 Agu 2026', peserta:28},
+  {nama:'Refreshment Evakuasi Vertikal', lokasi:'Kab. Purwakarta', tanggal:'02 Agu 2026', peserta:15},
+  {nama:'Pelatihan Medis Lapangan Darurat', lokasi:'Kota Medan', tanggal:'30 Jul 2026', peserta:22},
+  {nama:'Pemetaan Udara Lanjutan', lokasi:'Kab. Nganjuk', tanggal:'28 Jul 2026', peserta:12},
+  {nama:'SAR Basic Batch 14', lokasi:'Kota Makassar', tanggal:'25 Jul 2026', peserta:34},
+  {nama:'Water Rescue Refreshment', lokasi:'Kab. Bandung', tanggal:'21 Jul 2026', peserta:19},
+];
+(function renderTraining(){
+  const list = document.getElementById('training-list');
+  list.innerHTML = pelatihanAktivitas.map((t,i)=>`
+    <div class="training-item" data-i="${i}">
+      <div class="tname">${t.nama}</div>
+      <div class="tmeta"><span class="tloc">📍 ${t.lokasi}</span><span class="tdate">${t.tanggal}</span></div>
+      <div class="tpart">${t.peserta} peserta</div>
+    </div>`).join('');
+  list.querySelectorAll('.training-item').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const t = pelatihanAktivitas[el.dataset.i];
+      openDrawer(t.nama, `<div class="dr-field"><div class="k">LOKASI</div><div class="v">${t.lokasi}</div></div><div class="dr-field"><div class="k">TANGGAL</div><div class="v">${t.tanggal}</div></div><div class="dr-field"><div class="k">JUMLAH PESERTA</div><div class="v">${t.peserta} anggota</div></div>`);
+    });
+  });
+})();
+
+/* ============ RENDER: STATISTIK ANGGOTA ============ */
+const statNasional = {
+  total:48210, laki:31960, perempuan:16250,
+  provinsi:[
+    {name:'Jawa Barat', jml:9120},
+    {name:'Jawa Timur', jml:7430},
+    {name:'Sumatera Utara', jml:5210},
+    {name:'Sulawesi Selatan', jml:4860},
+    {name:'Kalimantan Timur', jml:3102},
+  ]
+};
+(function renderStats(){
+  const lakiPct = Math.round(statNasional.laki/statNasional.total*100);
+  const perempuanPct = 100-lakiPct;
+  const maxProv = Math.max(...statNasional.provinsi.map(p=>p.jml));
+  const body = document.getElementById('stats-body');
+  body.innerHTML = `
+    <div>
+      <div class="stats-section-title">KOMPOSISI GENDER</div>
+      <div class="gender-bar"><div class="seg-l" style="width:${lakiPct}%"></div><div class="seg-p" style="width:${perempuanPct}%"></div></div>
+      <div class="gender-legend"><span>● Laki-laki <b>${statNasional.laki.toLocaleString('id-ID')}</b> (${lakiPct}%)</span><span>● Perempuan <b>${statNasional.perempuan.toLocaleString('id-ID')}</b> (${perempuanPct}%)</span></div>
+    </div>
+    <div class="stat-mini-row">
+      <div class="stat-mini"><div class="num">${statNasional.total.toLocaleString('id-ID')}</div><div class="cap">Total anggota terdaftar</div></div>
+      <div class="stat-mini"><div class="num" style="color:var(--accent-bright)">39.884</div><div class="cap">Berstatus aktif</div></div>
+    </div>
+    <div>
+      <div class="stats-section-title">PROVINSI TERBANYAK</div>
+      ${statNasional.provinsi.map(p=>`<div class="prov-row"><div class="pname">${p.name}</div><div class="pbar-wrap"><div class="pbar-fill" style="width:${(p.jml/maxProv*100).toFixed(0)}%"></div></div><div class="pnum">${p.jml.toLocaleString('id-ID')}</div></div>`).join('')}
+    </div>`;
+})();
+
+/* ============ RENDER: CANDIDATES (dashboard & AI view) ============ */
+const candHtmlStr = candidates.map(candHtml).join('');
+document.getElementById('cand-list-dash').innerHTML = candHtmlStr;
+document.getElementById('cand-list-full').innerHTML = candHtmlStr;
+bindCandRows(document.getElementById('cand-list-dash'));
+bindCandRows(document.getElementById('cand-list-full'));
+
+/* ============ RENDER: CASE TABLE ============ */
+function renderCaseTable(filter, query){
+  filter = filter || 'Semua'; query = (query||'').toLowerCase();
+  const tbody = document.querySelector('#case-table tbody');
+  const filtered = caseData.filter(c=>{
+    const matchFilter = filter==='Semua' ? true : (filter==='Selesai' ? c.status==='Selesai' : c.urgensi===filter);
+    const matchQuery = !query || c.id.toLowerCase().includes(query) || c.jenis.toLowerCase().includes(query) || c.lokasi.toLowerCase().includes(query);
+    return matchFilter && matchQuery;
+  });
+  if(filtered.length===0){ tbody.innerHTML = '<tr><td colspan="6" class="empty-hint">Tidak ada Misi yang cocok.</td></tr>'; return; }
+  tbody.innerHTML = filtered.map(c=>{
+    const idx = caseData.indexOf(c);
+    return `<tr data-idx="${idx}"><td style="font-family:var(--mono)">${c.id}</td><td>${c.jenis}</td><td>${c.lokasi}</td><td><span class="pill ${pillClassCase(c)}">${c.urgensi}</span></td><td>${c.status}</td><td>${c.personel}</td></tr>`;
+  }).join('');
+  tbody.querySelectorAll('tr[data-idx]').forEach(tr=>tr.addEventListener('click', ()=>{
+    const c = caseData[tr.dataset.idx];
+    openDrawer(c.id, caseDetailHtml(c));
+    setTimeout(()=>bindCandRows(document.getElementById('drawer-cand')),0);
+  }));
+}
+renderCaseTable('Semua','');
+document.getElementById('case-search').addEventListener('input', e=>{
+  const active = document.querySelector('#view-case .filter-chip.active');
+  renderCaseTable(active ? active.dataset.f : 'Semua', e.target.value);
+});
+document.querySelectorAll('#view-case .filter-chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    document.querySelectorAll('#view-case .filter-chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    renderCaseTable(chip.dataset.f, document.getElementById('case-search').value);
+  });
+});
+
+/* ============ RENDER: ANGGOTA TABLE ============ */
+function renderAnggotaTable(filter, query){
+  filter = filter || 'Semua'; query = (query||'').toLowerCase();
+  const tbody = document.querySelector('#anggota-table tbody');
+  const filtered = anggotaData.filter(a=>{
+    const matchFilter = filter==='Semua' ? true : a.status===filter;
+    const matchQuery = !query || a.nama.toLowerCase().includes(query) || a.id.toLowerCase().includes(query) || a.unit.toLowerCase().includes(query);
+    return matchFilter && matchQuery;
+  });
+  if(filtered.length===0){ tbody.innerHTML = '<tr><td colspan="6" class="empty-hint">Tidak ada anggota yang cocok.</td></tr>'; return; }
+  tbody.innerHTML = filtered.map(a=>{
+    const idx = anggotaData.indexOf(a);
+    return `<tr data-idx="${idx}"><td style="font-family:var(--mono)">${a.id}</td><td>${a.nama}</td><td>${a.unit}</td><td>${a.komp}</td>
+      <td><span class="bar-wrap"><span class="bar-fill" style="width:${a.readiness}%"></span></span>${a.readiness}</td>
+      <td><span class="pill ${pillClassAnggota(a)}">${a.status}</span></td></tr>`;
+  }).join('');
+  tbody.querySelectorAll('tr[data-idx]').forEach(tr=>tr.addEventListener('click', ()=>{
+    const a = anggotaData[tr.dataset.idx];
+    openDrawer(a.nama, anggotaDetailHtml(a));
+  }));
+}
+renderAnggotaTable('Semua','');
+document.getElementById('anggota-search').addEventListener('input', e=>{
+  const active = document.querySelector('#view-anggota .filter-chip.active');
+  renderAnggotaTable(active ? active.dataset.f : 'Semua', e.target.value);
+});
+document.querySelectorAll('#view-anggota .filter-chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    document.querySelectorAll('#view-anggota .filter-chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    renderAnggotaTable(chip.dataset.f, document.getElementById('anggota-search').value);
+  });
+});
+
+/* ============ RENDER: SERTIFIKASI ============ */
+document.querySelector('#sertifikasi-table tbody').innerHTML = sertifikasiData.map(s=>
+  `<tr><td>${s.anggota}</td><td>${s.jenis}</td><td>${s.terbit}</td><td>${s.berlaku}</td><td><span class="pill ${pillClassSert(s)}">${s.status}</span></td></tr>`
+).join('');
+
+/* ============ RENDER: PELATIHAN ============ */
+document.querySelector('#pelatihan-table tbody').innerHTML = pelatihanData.map(p=>
+  `<tr><td>${p.anggota}</td><td>${p.nama}</td><td>${p.tanggal}</td><td><span class="pill ${p.status==='Lulus'?'green':'amber'}">${p.status}</span></td></tr>`
+).join('');
+
+/* ============ RENDER: RIWAYAT MOBILISASI ============ */
+document.querySelector('#riwayat-table tbody').innerHTML = riwayatData.map(r=>
+  `<tr><td style="font-family:var(--mono)">${r.id}</td><td>${r.jenis}</td><td>${r.lokasi}</td><td>${r.tanggal}</td><td>${r.personel}</td><td><span class="pill green">${r.evaluasi}</span></td></tr>`
+).join('');
+
+/* ============ RENDER: REGION BARS ============ */
+document.getElementById('region-bars').innerHTML = regionReadiness.map(r=>`
+  <div class="settings-row"><div class="st" style="min-width:160px">${r.name}</div>
+  <div style="flex:1;display:flex;align-items:center;gap:10px;">
+    <div class="bar-wrap" style="width:100%;height:8px;"><div class="bar-fill" style="width:${r.score}%"></div></div>
+    <div style="font-family:var(--mono);font-weight:700;width:30px;text-align:right;">${r.score}</div>
+  </div></div>`).join('');
+
+/* ============ TOGGLES ============ */
+document.querySelectorAll('[data-toggle]').forEach(t=>{
+  t.addEventListener('click', ()=> t.classList.toggle('on'));
+});
+
+/* ============ LEAFLET MAPS ============ */
+function buildMap(elId, layersPanelId){
+  const idBounds = L.latLngBounds([-11.5, 93.5], [7, 141.5]);
+  const map = L.map(elId, {zoomControl:true, attributionControl:false, minZoom:5, maxZoom:12}).fitBounds(idBounds);
+  map.setMaxBounds(idBounds.pad(0.25));
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom:19,
+    className:'tactical-tiles'
+  }).addTo(map);
+
+  const layerGroups = {
+    anggota: L.layerGroup().addTo(map),
+    siaga: L.layerGroup().addTo(map),
+    case: L.layerGroup().addTo(map),
+    pos: L.layerGroup().addTo(map),
+  };
+
+  anggotaData.forEach(a=>{
+    const isReady = a.status==='Aktif', isSiaga = a.status==='Siaga';
+    if(!isReady && !isSiaga) return;
+    const color = isReady ? '#3CF29A' : '#E0A83E';
+    const m = L.circleMarker([a.lat,a.lng], {radius:6, color:color, weight:1.5, fillColor:color, fillOpacity:0.85});
+    m.bindPopup(`<b>${a.nama}</b><br>${a.id} · ${a.status}<br>Readiness: ${a.readiness}<br>${a.komp}`);
+    m.on('click', ()=>openDrawer(a.nama, anggotaDetailHtml(a)));
+    m.addTo(isReady ? layerGroups.anggota : layerGroups.siaga);
+  });
+
+  caseData.forEach(c=>{
+    if(c.status==='Selesai') return;
+    const color = c.urgensi==='Kritis' ? '#E14C45' : (c.urgensi==='Tinggi' ? '#E0A83E' : '#3FA9C9');
+    const circle = L.circle([c.lat,c.lng], {radius:15000, color:color, weight:1.5, fillColor:color, fillOpacity:0.16});
+    circle.bindPopup(`<b>${c.id}</b><br>${c.jenis} — ${c.lokasi}<br>Status: ${c.status} · Urgensi: ${c.urgensi}`);
+    circle.on('click', ()=>openDrawer(c.id, caseDetailHtml(c)));
+    circle.addTo(layerGroups.case);
+    const marker = L.circleMarker([c.lat,c.lng], {radius:8, color:color, weight:2, fillColor:'#000', fillOpacity:0.9});
+    marker.on('click', ()=>openDrawer(c.id, caseDetailHtml(c)));
+    marker.addTo(layerGroups.case);
+  });
+
+  posKomando.forEach(p=>{
+    const icon = L.divIcon({className:'', html:`<div style="width:14px;height:14px;border:2px solid #B08D4F;background:rgba(176,141,79,0.35);transform:rotate(45deg);"></div>`, iconSize:[14,14]});
+    const m = L.marker([p.lat,p.lng], {icon});
+    m.bindPopup(`<b>${p.nama}</b>`);
+    m.addTo(layerGroups.pos);
+  });
+
+  const panel = document.getElementById(layersPanelId);
+  panel.innerHTML = `
+    <div class="layers-head"><div class="ring"></div><span>LAYERS</span></div>
+    <div class="layer-item on" data-layer="anggota"><div class="chk">✓</div><span class="swatch" style="background:#3CF29A;"></span><span class="lbl">Anggota Siap</span></div>
+    <div class="layer-item on" data-layer="siaga"><div class="chk">✓</div><span class="swatch" style="background:#E0A83E;"></span><span class="lbl">Anggota Siaga</span></div>
+    <div class="layer-item on" data-layer="case"><div class="chk">✓</div><span class="swatch" style="background:#E14C45;"></span><span class="lbl">Zona Misi</span></div>
+    <div class="layer-item on" data-layer="pos"><div class="chk">✓</div><span class="swatch" style="background:#B08D4F;"></span><span class="lbl">Pos Komando</span></div>
+    <div class="layers-footer">Data: Komcad Big Data Platform</div>`;
+  panel.querySelectorAll('.layer-item').forEach(item=>{
+    item.addEventListener('click', ()=>{
+      const key = item.dataset.layer;
+      const isOn = item.classList.toggle('on');
+      if(isOn){ map.addLayer(layerGroups[key]); } else { map.removeLayer(layerGroups[key]); }
+      item.querySelector('.chk').textContent = isOn ? '✓' : '';
+    });
+  });
+  return map;
+}
+window.__map = buildMap('leafmap','layers-panel-dash');
+
+/* ============ MAP FULLSCREEN TOGGLE ============ */
+const mapWrapDash = document.querySelector('#view-dashboard .map-wrap');
+document.getElementById('map-fullscreen-btn').addEventListener('click', ()=>{
+  mapWrapDash.classList.toggle('fullscreen-mode');
+  const isFull = mapWrapDash.classList.contains('fullscreen-mode');
+  document.getElementById('map-fullscreen-btn').textContent = isFull ? '✕' : '⛶';
+  document.getElementById('map-fullscreen-btn').title = isFull ? 'Keluar layar penuh' : 'Tampilan layar penuh';
+  setTimeout(()=>{ if(window.__map) window.__map.invalidateSize(); }, 150);
+});
+
+/* ============ SIDEBAR TOGGLE ============ */
+document.getElementById('sidebar-toggle').addEventListener('click', ()=>{
+  document.querySelector('.app').classList.toggle('sidebar-collapsed');
+  setTimeout(()=>{ if(window.__map) window.__map.invalidateSize(); }, 200);
+});
+
+/* ============ PANEL SHOW/HIDE ============ */
+function refreshHiddenTray(){
+  const tray = document.getElementById('hidden-tray');
+  const hidden = document.querySelectorAll('#bottom-panels .panel.hidden-panel');
+  tray.innerHTML = Array.from(hidden).map(p=>`<div class="tray-chip" data-target="${p.id}"><span class="plus">＋</span>${p.dataset.title}</div>`).join('');
+  tray.querySelectorAll('.tray-chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      document.getElementById(chip.dataset.target).classList.remove('hidden-panel');
+      refreshHiddenTray();
+      syncToggleAllLabel();
+    });
+  });
+}
+document.querySelectorAll('#bottom-panels .panel-toggle').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const panel = btn.closest('.panel');
+    panel.classList.add('hidden-panel');
+    refreshHiddenTray();
+    syncToggleAllLabel();
+  });
+});
+
+/* Master show/hide-all toggle for bottom panels */
+const toggleAllBtn = document.getElementById('toggle-all-panels');
+function syncToggleAllLabel(){
+  const allHidden = document.querySelectorAll('#bottom-panels .panel:not(.hidden-panel)').length === 0;
+  toggleAllBtn.textContent = allHidden ? 'Tampilkan Semua Panel ▸' : 'Sembunyikan Semua Panel ▾';
+}
+toggleAllBtn.addEventListener('click', ()=>{
+  const panels = document.querySelectorAll('#bottom-panels .panel');
+  const anyVisible = document.querySelectorAll('#bottom-panels .panel:not(.hidden-panel)').length > 0;
+  panels.forEach(p=> p.classList.toggle('hidden-panel', anyVisible));
+  refreshHiddenTray();
+  syncToggleAllLabel();
+});
+
+/* ============ GUIDELINE TABS ============ */
+document.querySelectorAll('#view-guideline .filter-chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    document.querySelectorAll('#view-guideline .filter-chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    ['panduan','faq','modul'].forEach(t=>{
+      document.getElementById('gl-'+t).style.display = (t===chip.dataset.tab) ? '' : 'none';
+    });
+  });
+});
+
+/* ============ AI CHAT ============ */
+const chatMessages = document.getElementById('chat-messages');
+function addMsg(role, html){
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.innerHTML = `<div class="avatar-sm">${role==='ai' ? '✦' : '👤'}</div><div class="bubble">${html}</div>`;
+  chatMessages.appendChild(div);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  return div;
+}
+function addTyping(){
+  const div = document.createElement('div');
+  div.className = 'msg ai'; div.id = 'typing-indicator';
+  div.innerHTML = `<div class="avatar-sm">✦</div><div class="bubble"><div class="chat-typing"><span></span><span></span><span></span></div></div>`;
+  chatMessages.appendChild(div);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+function removeTyping(){ const t = document.getElementById('typing-indicator'); if(t) t.remove(); }
+
+const chatKB = [
+  { match:['belum pelatihan','3 bulan','pelatihan terakhir'],
+    answer: `Berdasarkan data platform, <b>1.284 anggota (2,7%)</b> belum mengikuti pelatihan dalam 3 bulan terakhir.<br><br>
+    <table><tr><th>Wilayah</th><th>Jumlah</th></tr>
+    <tr><td>Sumatera Utara</td><td>412</td></tr>
+    <tr><td>Kalimantan Timur</td><td>335</td></tr>
+    <tr><td>Sulawesi Selatan</td><td>287</td></tr>
+    <tr><td>Lainnya</td><td>250</td></tr></table>
+    <br>Rekomendasi: jadwalkan refreshment untuk wilayah dengan jumlah tertinggi terlebih dahulu.` },
+  { match:['sebaran','pendidikan'],
+    answer: `Sebaran anggota berdasarkan tingkat pendidikan (data nasional):<br><br>
+    <div style="margin-bottom:6px;"><span class="mini-bar-wrap"><span class="mini-bar-fill" style="width:38%"></span></span>S1/D4 — 38% (18.320)</div>
+    <div style="margin-bottom:6px;"><span class="mini-bar-wrap"><span class="mini-bar-fill" style="width:22%"></span></span>D3 — 22% (10.606)</div>
+    <div style="margin-bottom:6px;"><span class="mini-bar-wrap"><span class="mini-bar-fill" style="width:33%"></span></span>SMA/SMK — 33% (15.909)</div>
+    <div><span class="mini-bar-wrap"><span class="mini-bar-fill" style="width:7%"></span></span>S2 ke atas — 7% (3.375)</div>` },
+  { match:['jumlah anggota','total anggota','berapa anggota'],
+    answer: `Total anggota Komcad terdaftar saat ini: <b>48.210 orang</b><br><br>
+    <table><tr><th>Status</th><th>Jumlah</th></tr>
+    <tr><td>Aktif</td><td>39.884 (82,7%)</td></tr>
+    <tr><td>Siaga</td><td>5.102 (10,6%)</td></tr>
+    <tr><td>Tidak Tersedia</td><td>3.224 (6,7%)</td></tr></table>` },
+  { match:['readiness','kesiapan nasional','skor kesiapan'],
+    answer: `Rata-rata Readiness Score nasional saat ini: <b>84,3</b> (naik +1,2 dari minggu lalu).<br><br>Wilayah dengan Readiness tertinggi: <b>DKI Jakarta (91)</b>. Wilayah yang perlu perhatian: <b>Kalimantan Timur (74)</b>.` },
+  { match:['case aktif','berapa case','case sekarang','misi aktif','berapa misi','misi sekarang'],
+    answer: `Saat ini ada <b>3 Misi aktif</b>:<br><br>
+    <table><tr><th>ID</th><th>Lokasi</th><th>Status</th></tr>
+    <tr><td>MISI-2026-0142</td><td>Kab. Garut</td><td>Dimobilisasi</td></tr>
+    <tr><td>MISI-2026-0143</td><td>Kab. Purwakarta</td><td>Baru</td></tr>
+    <tr><td>MISI-2026-0141</td><td>Kab. Nganjuk</td><td>Verifikasi</td></tr></table>` },
+  { match:['sertifikasi kedaluwarsa','sertifikasi habis','sertifikat habis'],
+    answer: `Ada <b>312 anggota</b> dengan sertifikasi yang akan/sudah kedaluwarsa dalam 30 hari ke depan. Reminder otomatis H-30 sudah aktif ke seluruh anggota terkait (lihat menu Pengaturan → Notifikasi).` },
+  { match:['gender','laki','perempuan','jenis kelamin'],
+    answer: `Komposisi gender anggota Komcad: <b>66% Laki-laki (31.960)</b> dan <b>34% Perempuan (16.250)</b>.` },
+];
+function findAnswer(q){
+  const ql = q.toLowerCase();
+  for(const item of chatKB){
+    if(item.match.some(k=>ql.includes(k))) return item.answer;
+  }
+  return `Saya belum menemukan data spesifik untuk pertanyaan itu. Coba tanyakan hal seperti: jumlah anggota, sebaran pendidikan, Readiness nasional, Misi aktif, atau sertifikasi kedaluwarsa — atau buka menu <b>Analitik Kesiapsiagaan</b> untuk eksplorasi lebih lanjut.`;
+}
+function sendChat(text){
+  if(!text || !text.trim()) return;
+  addMsg('user', esc(text));
+  document.getElementById('chat-input').value = '';
+  addTyping();
+  setTimeout(()=>{
+    removeTyping();
+    addMsg('ai', findAnswer(text));
+  }, 700);
+}
+document.getElementById('chat-send').addEventListener('click', ()=>sendChat(document.getElementById('chat-input').value));
+document.getElementById('chat-input').addEventListener('keydown', e=>{ if(e.key==='Enter') sendChat(e.target.value); });
+
+const chatSuggestions = ['Berapa jumlah anggota yang belum pelatihan 3 bulan terakhir?','Sebaran anggota berdasarkan pendidikan?','Bagaimana Readiness nasional saat ini?','Ada berapa Misi aktif sekarang?'];
+document.getElementById('chat-suggest').innerHTML = chatSuggestions.map(s=>`<div class="sug">${s}</div>`).join('');
+document.querySelectorAll('.chat-suggest .sug').forEach(el=>el.addEventListener('click', ()=>sendChat(el.textContent)));
+
+/* Contoh percakapan awal (pre-filled) */
+addMsg('ai', `Halo, saya <b>AI Komcad Assistant</b>. Anda bisa bertanya seputar data anggota, Misi, Readiness, atau pelatihan dalam bahasa natural. Contoh:`);
+addMsg('user', 'Berapa jumlah anggota Komcad yang dalam 3 bulan terakhir belum mengikuti pelatihan?');
+addMsg('ai', findAnswer('belum pelatihan 3 bulan'));
+addMsg('user', 'Coba tampilkan sebaran anggota berdasarkan pendidikan');
+addMsg('ai', findAnswer('sebaran pendidikan'));
+
+/* ============ MODAL: BUAT MISI ============ */
+const misiOverlay = document.getElementById('misi-modal-overlay');
+const misiBox = document.getElementById('misi-modal-box');
+
+function renderMisiForm(){
+  misiBox.innerHTML = `
+    <h2>◎ Buat Misi Baru</h2>
+    <div class="modal-sub">Isi detail Misi — AI Mobilization akan menyusun rekomendasi personel setelah formulir disubmit.</div>
+    <div class="form-field">
+      <label>PEMBERI PERINTAH</label>
+      <input id="f-pemberi" placeholder="mis. Kolonel Arif Nugroho — Danrem 062/Tarumanagara">
+    </div>
+    <div class="form-row2">
+      <div class="form-field">
+        <label>JENIS KEJADIAN</label>
+        <select id="f-jenis">
+          <option>Banjir</option><option>Longsor</option><option>Gempa Bumi</option><option>Kebakaran Hutan</option><option>Angin Puting Beliung</option><option>Lainnya</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>URGENSI</label>
+        <select id="f-urgensi">
+          <option>Kritis</option><option>Tinggi</option><option>Sedang</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-field">
+      <label>LOKASI</label>
+      <input id="f-lokasi" placeholder="mis. Kab. Sumedang, Jawa Barat">
+    </div>
+    <div class="form-field">
+      <label>DESKRIPSI MISI</label>
+      <textarea id="f-deskripsi" placeholder="Jelaskan situasi, kebutuhan personel, dan target operasi..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="misi-cancel">Batal</button>
+      <button class="btn outline" id="misi-submit">Generate Rekomendasi AI ➤</button>
+    </div>`;
+  document.getElementById('misi-cancel').addEventListener('click', closeMisiModal);
+  document.getElementById('misi-submit').addEventListener('click', submitMisiForm);
+}
+
+function submitMisiForm(){
+  const pemberi = document.getElementById('f-pemberi').value.trim() || 'Operator Komcad';
+  const jenis = document.getElementById('f-jenis').value;
+  const urgensi = document.getElementById('f-urgensi').value;
+  const lokasi = document.getElementById('f-lokasi').value.trim() || '(lokasi belum diisi)';
+  const deskripsi = document.getElementById('f-deskripsi').value.trim() || '(deskripsi belum diisi)';
+
+  misiBox.innerHTML = `<div class="ai-generating"><div class="spin"></div><div class="gen-txt">AI Mobilization sedang menganalisis Big Data anggota berdasarkan lokasi, kompetensi, dan Readiness Score...</div></div>`;
+
+  setTimeout(()=>{
+    const newId = 'MISI-2026-0' + (144 + Math.floor(Math.random()*50));
+    misiBox.innerHTML = `
+      <h2>✅ Rekomendasi AI Mobilization Siap</h2>
+      <div class="modal-sub">${newId} · ${jenis} — ${lokasi} · Urgensi ${urgensi}</div>
+      <div class="misi-result-summary">
+        <b>◈ Ringkasan AI:</b> Berdasarkan perintah dari <b>${esc(pemberi)}</b> dan deskripsi "<i>${esc(deskripsi)}</i>", sistem mengidentifikasi <b>${candidates.length} kandidat</b> terbaik dalam radius pencarian aktif. Estimasi seluruh personel berkumpul di lokasi <b>2 jam 15 menit</b>.
+      </div>
+      <div class="ai-cand">${candidates.map(candHtml).join('')}</div>
+      <div class="modal-actions">
+        <button class="btn" id="misi-close">Tutup</button>
+        <button class="btn outline" id="misi-confirm">Setujui &amp; Kirim Notifikasi ✓</button>
+      </div>`;
+    document.getElementById('misi-close').addEventListener('click', closeMisiModal);
+    document.getElementById('misi-confirm').addEventListener('click', ()=>{
+      misiBox.innerHTML = `<div class="ai-generating"><div style="font-size:34px;">✅</div><div class="gen-txt"><b>${newId} berhasil dibuat.</b><br>Notifikasi mobilisasi telah dikirim ke ${candidates.length} kandidat terpilih.</div></div><div class="modal-actions" style="justify-content:center;"><button class="btn outline" id="misi-done">Selesai</button></div>`;
+      document.getElementById('misi-done').addEventListener('click', closeMisiModal);
+    });
+  }, 1400);
+}
+
+function openMisiModal(){ renderMisiForm(); misiOverlay.classList.add('show'); }
+function closeMisiModal(){ misiOverlay.classList.remove('show'); }
+misiOverlay.addEventListener('click', e=>{ if(e.target===misiOverlay) closeMisiModal(); });
+document.getElementById('btn-buat-misi').addEventListener('click', openMisiModal);
+
+/* ============ CLOCK ============ */
+function tick(){
+  const d = new Date();
+  const days=['MINGGU','SENIN','SELASA','RABU','KAMIS','JUMAT','SABTU'];
+  const hh=String(d.getHours()).padStart(2,'0'), mm=String(d.getMinutes()).padStart(2,'0'), ss=String(d.getSeconds()).padStart(2,'0');
+  document.getElementById('clock').textContent = `${days[d.getDay()]}, 05 AGU 2026 · ${hh}:${mm}:${ss} WIB`;
+}
+tick(); setInterval(tick, 1000);
+</script>
+</body>
+</html>

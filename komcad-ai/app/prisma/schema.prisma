@@ -1,0 +1,250 @@
+// AI Komcad — Prisma schema
+// Dev: SQLite (zero-setup). Prod: ganti provider ke "postgresql" + DATABASE_URL Postgres (lihat CLAUDE.md §2).
+// SQLite tidak mendukung native enum Prisma, jadi status/role dipakai sebagai String
+// dengan nilai yang divalidasi di layer aplikasi (Zod) — lihat src/lib/constants.ts.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ================= AUTH & USERS =================
+
+/// Role: SUPER_ADMIN | OPERATOR | ANALIS | ANGGOTA (FRD §4)
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  name          String
+  role          String
+  anggotaId     String?  @unique
+  anggota       Anggota? @relation(fields: [anggotaId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  auditLogs     AuditLog[]
+}
+
+// ================= ANGGOTA (Big Data Komcad) =================
+
+/// StatusKeanggotaan: Aktif | Nonaktif
+/// StatusSiaga: Aktif | Siaga | Tidak Tersedia (FR-07)
+model Anggota {
+  id                String    @id @default(cuid())
+  nik               String    @unique // 16 digit, tervalidasi di aplikasi (FR-01)
+  nama              String
+  fotoUrl           String? // null = pakai placeholder siluet SVG di UI (FRD §10.6)
+  unitAsal          String
+  statusKeanggotaan String    @default("Aktif")
+  statusSiaga       String    @default("Siaga")
+
+  telepon    String?
+  email      String?
+  whatsapp   String?
+  instagram  String?
+  linkedin   String?
+  kontakDarurat String?
+
+  readinessScore    Int      @default(0) // hasil cache dari kalkulasi terakhir (FR-04)
+  readinessUpdatedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user               User?
+  profilDemografi    ProfilDemografi?
+  lokasiHistori      Lokasi[]
+  sertifikasi        Sertifikasi[]
+  pelatihan          Pelatihan[]
+  penugasan          Penugasan[]
+  readinessHistori   ReadinessScoreHistory[]
+  aktivitasPelatihan AktivitasPelatihanPeserta[]
+  notifikasi         Notifikasi[]
+
+  @@index([statusSiaga])
+  @@index([unitAsal])
+}
+
+model ProfilDemografi {
+  id              String   @id @default(cuid())
+  anggotaId       String   @unique
+  anggota         Anggota  @relation(fields: [anggotaId], references: [id], onDelete: Cascade)
+  tanggalLahir    DateTime?
+  jenisKelamin    String // Laki-laki | Perempuan
+  pendidikan      String?
+  pekerjaanSipil  String?
+  golonganDarah   String?
+  alamatDomisili  String?
+  provinsi        String?
+  kabupatenKota   String?
+}
+
+/// Riwayat titik lokasi anggota — dipakai marker peta Overview (FR-03)
+model Lokasi {
+  id          String   @id @default(cuid())
+  anggotaId   String
+  anggota     Anggota  @relation(fields: [anggotaId], references: [id], onDelete: Cascade)
+  latitude    Float
+  longitude   Float
+  provinsi    String
+  kabupatenKota String?
+  recordedAt  DateTime @default(now())
+
+  @@index([anggotaId, recordedAt])
+}
+
+/// Status: Aktif | Akan Kedaluwarsa | Kedaluwarsa (FR-06, dihitung dari tanggalBerlaku)
+model Sertifikasi {
+  id              String    @id @default(cuid())
+  anggotaId       String
+  anggota         Anggota   @relation(fields: [anggotaId], references: [id], onDelete: Cascade)
+  jenisSertifikasi String
+  tanggalTerbit   DateTime
+  tanggalBerlaku  DateTime // tanggal kedaluwarsa
+  status          String    @default("Aktif")
+
+  @@index([anggotaId])
+  @@index([status])
+}
+
+/// Status kelulusan: Lulus | Tidak Lulus | Sedang Berjalan
+model Pelatihan {
+  id             String   @id @default(cuid())
+  anggotaId      String
+  anggota        Anggota  @relation(fields: [anggotaId], references: [id], onDelete: Cascade)
+  namaPelatihan  String
+  tanggal        DateTime
+  sertifikatUrl  String?
+  statusKelulusan String  @default("Lulus")
+
+  @@index([anggotaId])
+}
+
+/// Event pelatihan (Panel Aktivitas Pelatihan Terbaru, FR-20) — beda dari riwayat Pelatihan per-anggota di atas
+model AktivitasPelatihan {
+  id            String   @id @default(cuid())
+  namaPelatihan String
+  lokasi        String
+  tanggal       DateTime
+  jumlahPeserta Int      @default(0)
+
+  peserta AktivitasPelatihanPeserta[]
+
+  @@index([tanggal])
+}
+
+model AktivitasPelatihanPeserta {
+  id                    String              @id @default(cuid())
+  aktivitasPelatihanId  String
+  aktivitasPelatihan    AktivitasPelatihan  @relation(fields: [aktivitasPelatihanId], references: [id], onDelete: Cascade)
+  anggotaId             String
+  anggota               Anggota             @relation(fields: [anggotaId], references: [id], onDelete: Cascade)
+
+  @@unique([aktivitasPelatihanId, anggotaId])
+}
+
+// ================= MISI & AI MOBILIZATION =================
+
+/// Urgensi: Kritis | Tinggi | Sedang
+/// Status: Draft | Dimobilisasi | Selesai | Dibatalkan
+model Misi {
+  id               String   @id @default(cuid()) // internal id
+  kodeMisi         String   @unique // format MISI-{tahun}-{urutan}, FR-12
+  pemberiPerintah  String
+  jenisKejadian    String
+  urgensi          String
+  lokasi           String
+  latitude         Float?
+  longitude        Float?
+  deskripsiMisi    String
+  status           String   @default("Draft")
+  kebutuhanPersonel Int?    @default(1)
+
+  ringkasanAI      String? // hasil generate AI Mobilization, mengutip pemberiPerintah & deskripsiMisi (FR-09)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  dimobilisasiAt DateTime?
+  selesaiAt   DateTime?
+  hasilEvaluasi String?
+
+  penugasan Penugasan[]
+
+  @@index([status])
+  @@index([urgensi])
+}
+
+/// StatusKehadiran: Menunggu Respons | Dikonfirmasi | Ditolak | Hadir | Selesai
+model Penugasan {
+  id              String   @id @default(cuid())
+  misiId          String
+  misi            Misi     @relation(fields: [misiId], references: [id], onDelete: Cascade)
+  anggotaId       String
+  anggota         Anggota  @relation(fields: [anggotaId], references: [id])
+
+  skorRekomendasi Int // 0-100 (FR-10)
+  alasan          String // JSON-encoded string array minimal 3 faktor (FR-10)
+  etaMenit        Int? // estimasi waktu kedatangan dalam menit (FR-11)
+
+  statusKehadiran String   @default("Menunggu Respons")
+  hasilEvaluasi   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([misiId, anggotaId])
+  @@index([misiId])
+  @@index([anggotaId])
+}
+
+model ReadinessScoreHistory {
+  id         String   @id @default(cuid())
+  anggotaId  String
+  anggota    Anggota  @relation(fields: [anggotaId], references: [id], onDelete: Cascade)
+  skor       Int
+  komponen   String // JSON-encoded breakdown (kompetensi/kesehatan/pelatihan/riwayat)
+  dihitungPada DateTime @default(now())
+
+  @@index([anggotaId, dihitungPada])
+}
+
+// ================= NOTIFIKASI =================
+
+/// Channel: Push | SMS | Aplikasi
+/// Status: Terkirim | Dibaca | Direspons
+model Notifikasi {
+  id          String   @id @default(cuid())
+  anggotaId   String
+  anggota     Anggota  @relation(fields: [anggotaId], references: [id], onDelete: Cascade)
+  misiId      String?
+  judul       String
+  pesan       String
+  channel     String   @default("Aplikasi")
+  status      String   @default("Terkirim")
+  responsTipe String? // Konfirmasi | Tolak
+  responsAlasan String?
+  createdAt   DateTime @default(now())
+  respondedAt DateTime?
+
+  @@index([anggotaId, status])
+}
+
+// ================= AUDIT LOG =================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  aksi       String // mis. "CREATE_ANGGOTA", "APPROVE_MISI", "AI_MOBILIZATION_GENERATE"
+  entitas    String // mis. "Anggota", "Misi"
+  entitasId  String?
+  metadata   String? // JSON-encoded detail perubahan
+  createdAt  DateTime @default(now())
+
+  @@index([entitas, entitasId])
+  @@index([createdAt])
+}
