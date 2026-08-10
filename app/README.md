@@ -125,9 +125,9 @@ Schema (`prisma/schema.prisma`) sudah di-set ke provider `postgresql`. Dev lokal
 
 **1. Provisikan database (Neon)**
 - Buat akun di [neon.tech](https://neon.tech) (free tier cukup untuk demo)
-- Buat project baru, misal nama `siaga`
-- Di dalam project itu, buat **dua branch/database terpisah**: satu untuk dev lokal (`dev`), satu untuk demo publik (`main`/`production`) — supaya `prisma db push --force-reset` yang dijalankan saat iterasi lokal tidak pernah menyentuh data yang sedang diakses orang lain
-- Ambil connection string tiap branch dari dashboard Neon: **Connect → pilih "Prisma"** (formatnya sudah termasuk `?sslmode=require` yang dibutuhkan Prisma)
+- Buat project baru, misal nama `siaga` — Neon otomatis membuatkan **dua branch**: `production` (default) dan `main`. Pakai `production` untuk demo publik (Vercel), `main` untuk dev lokal — supaya `prisma db push --force-reset` yang dijalankan saat iterasi lokal tidak pernah menyentuh data yang sedang diakses orang lain. (Kalau versi Neon kamu cuma bikin satu branch, buat satu lagi manual lewat tombol **New Branch**.)
+- Ambil connection string tiap branch: klik branch itu → **Connect** → tab **Postgres database** → connection string yang tampil (dengan `-pooler` di hostname, `Connection pooling` menyala) itu yang dipakai — Neon versi terbaru tidak lagi punya dropdown preset per-framework ("Prisma"/"Next.js"), cuma satu connection string generik yang sudah cocok dipakai Prisma apa adanya
+- **`DATABASE_URL_UNPOOLED` / `directUrl` tidak perlu diisi** — itu cuma relevan untuk Prisma <5.10, sedangkan repo ini pakai Prisma 6. `schema.prisma` sudah benar apa adanya (satu `url = env("DATABASE_URL")`, tanpa `directUrl`), jangan diubah
 
 **2. Push kode ke GitHub**
 
