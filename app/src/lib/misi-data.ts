@@ -121,6 +121,26 @@ export async function getMisiKpi() {
 
 export type MisiKpi = Awaited<ReturnType<typeof getMisiKpi>>;
 
+/** FR-28: tabel historis Misi Selesai, terurut dari yang paling baru selesai. */
+export async function getRiwayatMobilisasi() {
+  const misi = await prisma.misi.findMany({
+    where: { status: STATUS_MISI.SELESAI },
+    orderBy: { selesaiAt: "desc" },
+    include: { _count: { select: { penugasan: true } } },
+  });
+  return misi.map((m) => ({
+    id: m.id,
+    kodeMisi: m.kodeMisi,
+    jenisKejadian: m.jenisKejadian,
+    lokasi: m.lokasi,
+    selesaiAt: m.selesaiAt,
+    personel: m._count.penugasan,
+    hasilEvaluasi: m.hasilEvaluasi,
+  }));
+}
+
+export type RiwayatMobilisasiItem = Awaited<ReturnType<typeof getRiwayatMobilisasi>>[number];
+
 export type KandidatPool = {
   anggotaId: string;
   kodeAnggota: string;
