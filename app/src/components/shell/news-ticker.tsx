@@ -35,13 +35,6 @@ export function NewsTicker({ headlines }: { headlines: NewsHeadline[] }) {
         <span className="text-[9.5px] font-black tracking-[0.18em] text-white">LIVE</span>
       </div>
 
-      {/* Label konteks: menegaskan bar ini bukan notifikasi sistem, tapi pantauan sumber terbuka. */}
-      <div className="hidden shrink-0 items-center border-r border-border-soft px-[12px] xl:flex">
-        <span className="text-[9px] font-black tracking-[0.18em] text-ink-3">
-          PANTAUAN SUMBER TERBUKA
-        </span>
-      </div>
-
       <div className="hud-ticker-viewport relative min-w-0 flex-1 overflow-hidden">
         <div
           className="hud-ticker-track flex h-full w-max items-center whitespace-nowrap"
