@@ -358,14 +358,16 @@ body::after {
  * tanpa elemen baru. 4 varian delay negatif supaya ratusan titik tidak berkedip serentak —
  * serentak kelihatan mekanis/norak, acak kelihatan hidup. Amplitudo sengaja tipis. */
 .hud-marker-breathe {
-  animation: hud-marker-breathe 3.6s ease-in-out infinite;
+  animation: hud-marker-breathe 2.6s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
 }
-.hud-marker-breathe.hud-delay-1 { animation-delay: -0.9s; }
-.hud-marker-breathe.hud-delay-2 { animation-delay: -1.8s; }
-.hud-marker-breathe.hud-delay-3 { animation-delay: -2.7s; }
+.hud-marker-breathe.hud-delay-1 { animation-delay: -0.65s; }
+.hud-marker-breathe.hud-delay-2 { animation-delay: -1.3s; }
+.hud-marker-breathe.hud-delay-3 { animation-delay: -1.95s; }
 @keyframes hud-marker-breathe {
-  0%, 100% { opacity: 0.75; filter: brightness(1); }
-  50% { opacity: 1; filter: brightness(1.25); }
+  0%, 100% { opacity: 0.55; filter: brightness(1); transform: scale(0.88); }
+  50% { opacity: 1; filter: brightness(1.5); transform: scale(1.12); }
 }
 @media (prefers-reduced-motion: reduce) {
   .hud-marker-breathe {
