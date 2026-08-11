@@ -163,15 +163,16 @@ export async function updateStatusSiagaAction(id: string, status: string): Promi
     return { error: "Status tidak valid." };
   }
 
-  await prisma.anggota.update({ where: { id }, data: { statusSiaga: status } });
-
-  await writeAuditLog({
-    userId: session!.user.id,
-    aksi: "UPDATE_STATUS_SIAGA",
-    entitas: "Anggota",
-    entitasId: id,
-    metadata: { status },
-  });
+  await Promise.all([
+    prisma.anggota.update({ where: { id }, data: { statusSiaga: status } }),
+    writeAuditLog({
+      userId: session!.user.id,
+      aksi: "UPDATE_STATUS_SIAGA",
+      entitas: "Anggota",
+      entitasId: id,
+      metadata: { status },
+    }),
+  ]);
 
   // FR-07: perubahan status harus tercermin di peta Overview (marker warna berubah).
   revalidatePath("/anggota");

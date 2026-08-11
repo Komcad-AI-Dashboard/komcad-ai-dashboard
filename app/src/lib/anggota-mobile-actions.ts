@@ -118,15 +118,16 @@ export async function updateStatusSiagaSelfAction(status: string): Promise<Actio
     return { error: "Status tidak valid." };
   }
 
-  await prisma.anggota.update({ where: { id: self.anggotaId }, data: { statusSiaga: status } });
-
-  await writeAuditLog({
-    userId: self.userId,
-    aksi: "UPDATE_STATUS_SIAGA_SELF",
-    entitas: "Anggota",
-    entitasId: self.anggotaId,
-    metadata: { status },
-  });
+  await Promise.all([
+    prisma.anggota.update({ where: { id: self.anggotaId }, data: { statusSiaga: status } }),
+    writeAuditLog({
+      userId: self.userId,
+      aksi: "UPDATE_STATUS_SIAGA_SELF",
+      entitas: "Anggota",
+      entitasId: self.anggotaId,
+      metadata: { status },
+    }),
+  ]);
 
   // FR-39: tersinkron ke peta Overview Command Center (refresh-on-navigate, sama seperti FR-07).
   revalidatePath("/m");
