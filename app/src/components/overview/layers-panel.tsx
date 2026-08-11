@@ -29,8 +29,8 @@ export function LayersPanel({
         <span className="text-[9.5px] font-black tracking-[0.2em] text-ink-2">LAYERS</span>
         <button
           onClick={() => setCollapsed((v) => !v)}
-          title={collapsed ? "Perluas panel Layers" : "Ciutkan panel Layers"}
-          aria-label={collapsed ? "Perluas panel Layers" : "Ciutkan panel Layers"}
+          title={collapsed ? "Perluas panel Layers" : "Kecilkan panel Layers"}
+          aria-label={collapsed ? "Perluas panel Layers" : "Kecilkan panel Layers"}
           className="ml-auto flex size-[22px] shrink-0 items-center justify-center rounded-[5px] text-ink-3 hover:bg-surface-hover hover:text-ink"
         >
           {collapsed ? <ChevronDown className="size-4" strokeWidth={2} /> : <ChevronUp className="size-4" strokeWidth={2} />}

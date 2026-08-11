@@ -28,8 +28,8 @@ export function TrainingPanel({
         <span className="text-[9.5px] font-black tracking-[0.2em] text-ink-2">AKTIVITAS PELATIHAN</span>
         <button
           onClick={() => setCollapsed((v) => !v)}
-          title={collapsed ? "Perluas panel Aktivitas Pelatihan" : "Ciutkan panel Aktivitas Pelatihan"}
-          aria-label={collapsed ? "Perluas panel Aktivitas Pelatihan" : "Ciutkan panel Aktivitas Pelatihan"}
+          title={collapsed ? "Perluas panel Aktivitas Pelatihan" : "Kecilkan panel Aktivitas Pelatihan"}
+          aria-label={collapsed ? "Perluas panel Aktivitas Pelatihan" : "Kecilkan panel Aktivitas Pelatihan"}
           className="ml-auto flex size-[22px] shrink-0 items-center justify-center rounded-[5px] text-ink-3 hover:bg-surface-hover hover:text-ink"
         >
           {collapsed ? <ChevronDown className="size-4" strokeWidth={2} /> : <ChevronUp className="size-4" strokeWidth={2} />}
