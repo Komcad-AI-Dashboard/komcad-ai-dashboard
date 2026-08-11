@@ -95,7 +95,9 @@ async function main() {
   const anggotaList = [];
   for (let i = 0; i < JUMLAH_ANGGOTA; i++) {
     const prov = pick(PROVINSI, i);
-    const nama = `${pick(NAMA_DEPAN, i)} ${pick(NAMA_BELAKANG, i + 3)}`;
+    // Nama belakang increment per blok NAMA_DEPAN.length, biar pasangan (depan, belakang) gak
+    // berulang sampai NAMA_DEPAN.length * NAMA_BELAKANG.length anggota (bukan cuma NAMA_DEPAN.length).
+    const nama = `${pick(NAMA_DEPAN, i)} ${NAMA_BELAKANG[Math.floor(i / NAMA_DEPAN.length) % NAMA_BELAKANG.length]}`;
     const statusSiaga = i % 5 === 0 ? "Tidak Tersedia" : i % 3 === 0 ? "Siaga" : "Aktif";
     const nikPlain = nikDummy(i);
 
