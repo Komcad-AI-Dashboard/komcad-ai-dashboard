@@ -19,7 +19,7 @@ export default function LoginPage() {
             <div className="flex-1 bg-[#F2F2F2]" />
           </div>
           <div>
-            <div className="text-[15px] font-black tracking-[0.13em]">SIAGA</div>
+            <div className="text-[15px] font-black tracking-[0.13em]">KOMCAD</div>
             <div className="mt-px text-[8.5px] font-bold tracking-[0.28em] text-accent-bright">
               COMMAND CENTER
             </div>
@@ -28,7 +28,7 @@ export default function LoginPage() {
 
         <h1 className="mb-1 text-[16px] font-extrabold">Masuk</h1>
         <p className="mb-5 text-[12px] leading-relaxed text-ink-2">
-          <span className="font-semibold text-ink">Sistem Identifikasi, Analitik &amp; Gerak Anggota</span>{" "}
+          <span className="font-semibold text-ink">Sistem Identifikasi, Analitik &amp; Gerak Anggota (SIAGA)</span>{" "}
           — platform Command Center Komponen Cadangan. Masuk sesuai role Anda.
         </p>
 
