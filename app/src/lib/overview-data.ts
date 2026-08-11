@@ -167,18 +167,17 @@ export async function getMisiTerbaruFeed(): Promise<FeedItem[]> {
 }
 
 export async function getAiMobilizationSummary() {
-  const misi = await prisma.misi.findFirst({
-    where: { status: STATUS_MISI.DIMOBILISASI },
-    orderBy: { dimobilisasiAt: "desc" },
-    include: {
-      penugasan: {
-        include: { anggota: true },
-        orderBy: { skorRekomendasi: "desc" },
+  const [misi, misiAktifCount, misiSevenDaysCount] = await Promise.all([
+    prisma.misi.findFirst({
+      where: { status: STATUS_MISI.DIMOBILISASI },
+      orderBy: { dimobilisasiAt: "desc" },
+      include: {
+        penugasan: {
+          include: { anggota: true },
+          orderBy: { skorRekomendasi: "desc" },
+        },
       },
-    },
-  });
-
-  const [misiAktifCount, misiSevenDaysCount] = await Promise.all([
+    }),
     prisma.misi.count({ where: { status: { in: [STATUS_MISI.DRAFT, STATUS_MISI.DIMOBILISASI] } } }),
     prisma.misi.count({
       where: { dimobilisasiAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },

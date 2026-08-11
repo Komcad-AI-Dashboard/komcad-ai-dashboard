@@ -103,32 +103,33 @@ export async function updateAnggotaAction(
   const existing = await prisma.anggota.findUnique({ where: { nikHash } });
   if (existing && existing.id !== id) return { error: "NIK sudah terdaftar untuk anggota lain." };
 
-  await prisma.anggota.update({
-    where: { id },
-    data: {
-      nik: encryptSensitive(data.nik),
-      nikHash,
-      nama: data.nama,
-      unitAsal: data.unitAsal,
-      telepon: data.telepon || null,
-      email: data.email || null,
-      whatsapp: data.whatsapp || null,
-      profilDemografi: {
-        upsert: {
-          create: { jenisKelamin: data.jenisKelamin, provinsi: data.provinsi || null },
-          update: { jenisKelamin: data.jenisKelamin, provinsi: data.provinsi || null },
+  await Promise.all([
+    prisma.anggota.update({
+      where: { id },
+      data: {
+        nik: encryptSensitive(data.nik),
+        nikHash,
+        nama: data.nama,
+        unitAsal: data.unitAsal,
+        telepon: data.telepon || null,
+        email: data.email || null,
+        whatsapp: data.whatsapp || null,
+        profilDemografi: {
+          upsert: {
+            create: { jenisKelamin: data.jenisKelamin, provinsi: data.provinsi || null },
+            update: { jenisKelamin: data.jenisKelamin, provinsi: data.provinsi || null },
+          },
         },
       },
-    },
-  });
-
-  await writeAuditLog({
-    userId: session!.user.id,
-    aksi: "UPDATE_ANGGOTA",
-    entitas: "Anggota",
-    entitasId: id,
-    metadata: { nama: data.nama },
-  });
+    }),
+    writeAuditLog({
+      userId: session!.user.id,
+      aksi: "UPDATE_ANGGOTA",
+      entitas: "Anggota",
+      entitasId: id,
+      metadata: { nama: data.nama },
+    }),
+  ]);
 
   revalidatePath("/anggota");
   return { error: null };
@@ -138,17 +139,18 @@ export async function deactivateAnggotaAction(id: string): Promise<ActionState> 
   const { session, error } = await requireCrudPermission();
   if (error) return { error };
 
-  await prisma.anggota.update({
-    where: { id },
-    data: { statusKeanggotaan: "Nonaktif", statusSiaga: STATUS_SIAGA.TIDAK_TERSEDIA },
-  });
-
-  await writeAuditLog({
-    userId: session!.user.id,
-    aksi: "DEACTIVATE_ANGGOTA",
-    entitas: "Anggota",
-    entitasId: id,
-  });
+  await Promise.all([
+    prisma.anggota.update({
+      where: { id },
+      data: { statusKeanggotaan: "Nonaktif", statusSiaga: STATUS_SIAGA.TIDAK_TERSEDIA },
+    }),
+    writeAuditLog({
+      userId: session!.user.id,
+      aksi: "DEACTIVATE_ANGGOTA",
+      entitas: "Anggota",
+      entitasId: id,
+    }),
+  ]);
 
   revalidatePath("/anggota");
   revalidatePath("/overview");

@@ -32,19 +32,20 @@ export async function updatePreferensiAction(input: unknown): Promise<ActionStat
   const parsed = preferensiSchema.safeParse(input);
   if (!parsed.success) return { error: "Data preferensi tidak valid." };
 
-  await prisma.pengaturanSistem.upsert({
-    where: { id: "default" },
-    create: { id: "default", ...parsed.data },
-    update: parsed.data,
-  });
-
-  await writeAuditLog({
-    userId: session!.user.id,
-    aksi: "UPDATE_PENGATURAN_PREFERENSI",
-    entitas: "PengaturanSistem",
-    entitasId: "default",
-    metadata: parsed.data,
-  });
+  await Promise.all([
+    prisma.pengaturanSistem.upsert({
+      where: { id: "default" },
+      create: { id: "default", ...parsed.data },
+      update: parsed.data,
+    }),
+    writeAuditLog({
+      userId: session!.user.id,
+      aksi: "UPDATE_PENGATURAN_PREFERENSI",
+      entitas: "PengaturanSistem",
+      entitasId: "default",
+      metadata: parsed.data,
+    }),
+  ]);
 
   revalidatePath("/pengaturan");
   revalidatePath("/overview");
@@ -69,19 +70,20 @@ export async function updateParameterAiAction(input: unknown): Promise<ActionSta
   const parsed = parameterAiSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Data parameter tidak valid." };
 
-  await prisma.pengaturanSistem.upsert({
-    where: { id: "default" },
-    create: { id: "default", ...parsed.data },
-    update: parsed.data,
-  });
-
-  await writeAuditLog({
-    userId: session!.user.id,
-    aksi: "UPDATE_PARAMETER_AI_MOBILIZATION",
-    entitas: "PengaturanSistem",
-    entitasId: "default",
-    metadata: parsed.data,
-  });
+  await Promise.all([
+    prisma.pengaturanSistem.upsert({
+      where: { id: "default" },
+      create: { id: "default", ...parsed.data },
+      update: parsed.data,
+    }),
+    writeAuditLog({
+      userId: session!.user.id,
+      aksi: "UPDATE_PARAMETER_AI_MOBILIZATION",
+      entitas: "PengaturanSistem",
+      entitasId: "default",
+      metadata: parsed.data,
+    }),
+  ]);
 
   revalidatePath("/pengaturan");
   revalidatePath("/ai-mobilization");

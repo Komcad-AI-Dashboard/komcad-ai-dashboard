@@ -35,25 +35,26 @@ export async function approvePermintaanNikAction(permintaanId: string): Promise<
     return { error: "NIK baru sudah terdaftar untuk anggota lain — tidak dapat disetujui." };
   }
 
-  await prisma.$transaction([
-    prisma.anggota.update({
-      where: { id: permintaan.anggotaId },
-      data: { nik: encryptSensitive(nikBaruPlain), nikHash: nikBaruHash },
-    }),
-    prisma.permintaanUbahData.update({
-      where: { id: permintaanId },
-      data: { status: "Disetujui", diprosesOlehId: session!.user.id, diprosesPada: new Date() },
+  await Promise.all([
+    prisma.$transaction([
+      prisma.anggota.update({
+        where: { id: permintaan.anggotaId },
+        data: { nik: encryptSensitive(nikBaruPlain), nikHash: nikBaruHash },
+      }),
+      prisma.permintaanUbahData.update({
+        where: { id: permintaanId },
+        data: { status: "Disetujui", diprosesOlehId: session!.user.id, diprosesPada: new Date() },
+      }),
+    ]),
+    writeAuditLog({
+      userId: session!.user.id,
+      aksi: "APPROVE_PERMINTAAN_NIK",
+      entitas: "Anggota",
+      entitasId: permintaan.anggotaId,
+      // NIK tidak ditulis plaintext ke metadata audit log (NFR-04/NFR-05) — cukup catat bahwa NIK berubah.
+      metadata: { fieldBerubah: "nik" },
     }),
   ]);
-
-  await writeAuditLog({
-    userId: session!.user.id,
-    aksi: "APPROVE_PERMINTAAN_NIK",
-    entitas: "Anggota",
-    entitasId: permintaan.anggotaId,
-    // NIK tidak ditulis plaintext ke metadata audit log (NFR-04/NFR-05) — cukup catat bahwa NIK berubah.
-    metadata: { fieldBerubah: "nik" },
-  });
 
   revalidatePath("/anggota");
   return { error: null };
@@ -67,23 +68,24 @@ export async function rejectPermintaanNikAction(permintaanId: string, alasan: st
   if (!permintaan) return { error: "Permintaan tidak ditemukan." };
   if (permintaan.status !== "Menunggu") return { error: "Permintaan ini sudah diproses sebelumnya." };
 
-  await prisma.permintaanUbahData.update({
-    where: { id: permintaanId },
-    data: {
-      status: "Ditolak",
-      alasanTolak: alasan.trim() || null,
-      diprosesOlehId: session!.user.id,
-      diprosesPada: new Date(),
-    },
-  });
-
-  await writeAuditLog({
-    userId: session!.user.id,
-    aksi: "REJECT_PERMINTAAN_NIK",
-    entitas: "Anggota",
-    entitasId: permintaan.anggotaId,
-    metadata: { alasan },
-  });
+  await Promise.all([
+    prisma.permintaanUbahData.update({
+      where: { id: permintaanId },
+      data: {
+        status: "Ditolak",
+        alasanTolak: alasan.trim() || null,
+        diprosesOlehId: session!.user.id,
+        diprosesPada: new Date(),
+      },
+    }),
+    writeAuditLog({
+      userId: session!.user.id,
+      aksi: "REJECT_PERMINTAAN_NIK",
+      entitas: "Anggota",
+      entitasId: permintaan.anggotaId,
+      metadata: { alasan },
+    }),
+  ]);
 
   revalidatePath("/anggota");
   return { error: null };

@@ -71,15 +71,16 @@ export async function updateUserAction(userId: string, input: unknown): Promise<
     return { error: "Tidak dapat mengubah role akun Anda sendiri keluar dari Super Admin." };
   }
 
-  await prisma.user.update({ where: { id: userId }, data: parsed.data });
-
-  await writeAuditLog({
-    userId: session!.user.id,
-    aksi: "UPDATE_USER",
-    entitas: "User",
-    entitasId: userId,
-    metadata: parsed.data,
-  });
+  await Promise.all([
+    prisma.user.update({ where: { id: userId }, data: parsed.data }),
+    writeAuditLog({
+      userId: session!.user.id,
+      aksi: "UPDATE_USER",
+      entitas: "User",
+      entitasId: userId,
+      metadata: parsed.data,
+    }),
+  ]);
 
   revalidatePath("/pengguna");
   return { error: null };
@@ -97,15 +98,16 @@ export async function toggleUserStatusAction(userId: string): Promise<ActionStat
   if (!target) return { error: "Pengguna tidak ditemukan." };
 
   const nextStatus = target.status === "Aktif" ? "Nonaktif" : "Aktif";
-  await prisma.user.update({ where: { id: userId }, data: { status: nextStatus } });
-
-  await writeAuditLog({
-    userId: session!.user.id,
-    aksi: nextStatus === "Nonaktif" ? "DEACTIVATE_USER" : "ACTIVATE_USER",
-    entitas: "User",
-    entitasId: userId,
-    metadata: { status: nextStatus },
-  });
+  await Promise.all([
+    prisma.user.update({ where: { id: userId }, data: { status: nextStatus } }),
+    writeAuditLog({
+      userId: session!.user.id,
+      aksi: nextStatus === "Nonaktif" ? "DEACTIVATE_USER" : "ACTIVATE_USER",
+      entitas: "User",
+      entitasId: userId,
+      metadata: { status: nextStatus },
+    }),
+  ]);
 
   revalidatePath("/pengguna");
   return { error: null };

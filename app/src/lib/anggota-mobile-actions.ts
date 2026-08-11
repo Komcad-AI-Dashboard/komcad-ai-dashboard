@@ -68,43 +68,44 @@ export async function updateProfilSelfAction(input: unknown): Promise<ActionStat
     nikMenunggu = true;
   }
 
-  await prisma.anggota.update({
-    where: { id: self.anggotaId },
-    data: {
-      telepon: data.telepon || null,
-      email: data.email || null,
-      whatsapp: data.whatsapp || null,
-      instagram: data.instagram || null,
-      linkedin: data.linkedin || null,
-      kontakDarurat: data.kontakDarurat || null,
-      profilDemografi: {
-        upsert: {
-          create: {
-            jenisKelamin: data.jenisKelamin,
-            golonganDarah: data.golonganDarah || null,
-            pendidikan: data.pendidikan || null,
-            pekerjaanSipil: data.pekerjaanSipil || null,
-            alamatDomisili: data.alamatDomisili || null,
-          },
-          update: {
-            jenisKelamin: data.jenisKelamin,
-            golonganDarah: data.golonganDarah || null,
-            pendidikan: data.pendidikan || null,
-            pekerjaanSipil: data.pekerjaanSipil || null,
-            alamatDomisili: data.alamatDomisili || null,
+  await Promise.all([
+    prisma.anggota.update({
+      where: { id: self.anggotaId },
+      data: {
+        telepon: data.telepon || null,
+        email: data.email || null,
+        whatsapp: data.whatsapp || null,
+        instagram: data.instagram || null,
+        linkedin: data.linkedin || null,
+        kontakDarurat: data.kontakDarurat || null,
+        profilDemografi: {
+          upsert: {
+            create: {
+              jenisKelamin: data.jenisKelamin,
+              golonganDarah: data.golonganDarah || null,
+              pendidikan: data.pendidikan || null,
+              pekerjaanSipil: data.pekerjaanSipil || null,
+              alamatDomisili: data.alamatDomisili || null,
+            },
+            update: {
+              jenisKelamin: data.jenisKelamin,
+              golonganDarah: data.golonganDarah || null,
+              pendidikan: data.pendidikan || null,
+              pekerjaanSipil: data.pekerjaanSipil || null,
+              alamatDomisili: data.alamatDomisili || null,
+            },
           },
         },
       },
-    },
-  });
-
-  await writeAuditLog({
-    userId: self.userId,
-    aksi: "UPDATE_PROFIL_SELF",
-    entitas: "Anggota",
-    entitasId: self.anggotaId,
-    metadata: { nikMenunggu },
-  });
+    }),
+    writeAuditLog({
+      userId: self.userId,
+      aksi: "UPDATE_PROFIL_SELF",
+      entitas: "Anggota",
+      entitasId: self.anggotaId,
+      metadata: { nikMenunggu },
+    }),
+  ]);
 
   revalidatePath("/m/profil");
   return { error: null, nikMenunggu };

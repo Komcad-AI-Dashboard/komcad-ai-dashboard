@@ -17,7 +17,11 @@ import { AiPanelContent } from "./ai-panel-content";
 import { SituationClock } from "./situation-clock";
 import { AnggotaCvDrawerContent } from "@/components/anggota/anggota-cv-drawer-content";
 import { MisiDetailDrawerContent } from "@/components/misi/misi-detail-drawer-content";
-import { getAnggotaCvAction, getMisiDetailForOverviewAction } from "@/lib/overview-actions";
+import {
+  getAnggotaCvAction,
+  getMisiDetailForOverviewAction,
+  getOverviewLiveDataAction,
+} from "@/lib/overview-actions";
 import type { AnggotaFull } from "@/lib/anggota-data";
 import type { MisiListItem } from "@/lib/misi-data";
 import type { Role } from "@/lib/constants";
@@ -62,13 +66,13 @@ type Selection =
   | null;
 
 export function OverviewView({
-  anggota,
-  misi,
+  anggota: initialAnggota,
+  misi: initialMisi,
   posKomando,
-  aktivitasPelatihan,
-  stats,
-  feed,
-  aiSummary,
+  aktivitasPelatihan: initialAktivitasPelatihan,
+  stats: initialStats,
+  feed: initialFeed,
+  aiSummary: initialAiSummary,
   autoRefresh,
   heatzoneDefault,
   role,
@@ -85,6 +89,15 @@ export function OverviewView({
   role: Role | undefined;
 }) {
   const router = useRouter();
+  // State (bukan langsung dipakai dari props) — auto-refresh 5 detik di bawah update ini via
+  // Server Action ringan (cuma data Overview), BUKAN router.refresh() (itu akan me-render ulang
+  // seluruh route termasuk layout/topbar KPI yang tidak perlu ikut refresh sesering itu).
+  const [anggota, setAnggota] = useState(initialAnggota);
+  const [misi, setMisi] = useState(initialMisi);
+  const [aktivitasPelatihan, setAktivitasPelatihan] = useState(initialAktivitasPelatihan);
+  const [stats, setStats] = useState(initialStats);
+  const [feed, setFeed] = useState(initialFeed);
+  const [aiSummary, setAiSummary] = useState(initialAiSummary);
   const [layers, setLayers] = useState<LayerVisibility>({
     anggota: true,
     siaga: true,
@@ -158,15 +171,29 @@ export function OverviewView({
     }
   }, [selection]);
 
-  // Preferensi "Auto-refresh data peta" (menu Pengaturan) — polling revalidate data server tiap 5
-  // detik, mendekati target FR-07 (≤5 detik). Ini bukan push real-time sungguhan (masih
-  // request-based, jadi latensi sebenarnya sedikit di atas 5 detik tergantung waktu request), tapi
-  // jauh lebih dekat ke target dibanding interval 15 detik sebelumnya.
+  // Preferensi "Auto-refresh data peta" (menu Pengaturan) — polling data server tiap 5 detik,
+  // mendekati target FR-07 (≤5 detik). Ini bukan push real-time sungguhan (masih request-based,
+  // jadi latensi sebenarnya sedikit di atas 5 detik tergantung waktu request). Pakai Server Action
+  // yang cuma ambil data Overview (bukan router.refresh() yang me-render ulang seluruh route
+  // termasuk layout/topbar KPI).
   useEffect(() => {
     if (!autoRefresh) return;
-    const interval = setInterval(() => router.refresh(), 5000);
-    return () => clearInterval(interval);
-  }, [autoRefresh, router]);
+    let cancelled = false;
+    const interval = setInterval(async () => {
+      const data = await getOverviewLiveDataAction();
+      if (cancelled || !data) return;
+      setAnggota(data.anggota);
+      setMisi(data.misi);
+      setAktivitasPelatihan(data.aktivitasPelatihan);
+      setStats(data.stats);
+      setFeed(data.feed);
+      setAiSummary(data.aiSummary);
+    }, 5000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [autoRefresh]);
 
   function toggleLayer(key: keyof LayerVisibility) {
     setLayers((prev) => ({ ...prev, [key]: !prev[key] }));

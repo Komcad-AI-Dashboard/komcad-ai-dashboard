@@ -72,6 +72,10 @@ export async function generateMisiAction(input: unknown): Promise<GenerateMisiRe
   const data = parsed.data;
   const lokasi = { label: data.lokasiLabel, lat: data.lokasiLat, lng: data.lokasiLng };
 
+  // nextKodeMisi() tidak bergantung ke pengaturan/kandidat/rekomendasi AI — mulai jalan sekarang,
+  // paralel sama rangkaian panggilan AI di bawah (yang jauh lebih lama), bukan menunggu di akhir.
+  const kodeMisiPromise = nextKodeMisi();
+
   const pengaturan = await getPengaturanSistem();
   const kandidatPool = await getKandidatPool(lokasi.lat, lokasi.lng, 15, pengaturan.aiRadiusKm);
   const rekomendasi = await generateAiMobilizationRecommendation({
@@ -89,7 +93,7 @@ export async function generateMisiAction(input: unknown): Promise<GenerateMisiRe
   });
 
   const poolById = new Map(kandidatPool.map((k) => [k.anggotaId, k]));
-  const kodeMisi = await nextKodeMisi();
+  const kodeMisi = await kodeMisiPromise;
 
   const misi = await prisma.misi.create({
     data: {
@@ -160,25 +164,28 @@ export async function approveMisiAction(misiId: string): Promise<ApproveMisiResu
 
   const pengaturan = await getPengaturanSistem();
 
-  await prisma.misi.update({
-    where: { id: misiId },
-    data: { status: STATUS_MISI.DIMOBILISASI, dimobilisasiAt: new Date() },
-  });
-
-  // FR-13 / preferensi "Notifikasi Misi baru" (menu Pengaturan) — kalau dimatikan Admin, Misi tetap
-  // dimobilisasi tapi Notifikasi tidak dibuat. Dikirim di luar transaksi status Misi (NFR-07: retry +
-  // fallback per-notifikasi lewat deliverNotifikasiBatch) supaya satu kandidat gagal tidak membatalkan
-  // perubahan status Misi yang sudah pasti terjadi.
-  const jumlahDinotifikasi = pengaturan.notifMisiBaru
-    ? await deliverNotifikasiBatch(
-        misi.penugasan.map((p) => ({
-          anggotaId: p.anggotaId,
-          misiId: misi.id,
-          judul: `Mobilisasi ${misi.kodeMisi}`,
-          pesan: `Anda direkomendasikan untuk Misi ${misi.jenisKejadian} di ${misi.lokasi}. Segera konfirmasi kehadiran. ETA perkiraan ${p.etaMenit ?? "-"} menit.`,
-        }))
-      )
-    : 0;
+  // Update status Misi & pengiriman Notifikasi independen satu sama lain (lihat catatan di bawah
+  // soal kenapa Notifikasi sengaja di luar transaksi status Misi), jadi bisa jalan berbarengan.
+  const [, jumlahDinotifikasi] = await Promise.all([
+    prisma.misi.update({
+      where: { id: misiId },
+      data: { status: STATUS_MISI.DIMOBILISASI, dimobilisasiAt: new Date() },
+    }),
+    // FR-13 / preferensi "Notifikasi Misi baru" (menu Pengaturan) — kalau dimatikan Admin, Misi tetap
+    // dimobilisasi tapi Notifikasi tidak dibuat. Dikirim di luar transaksi status Misi (NFR-07: retry +
+    // fallback per-notifikasi lewat deliverNotifikasiBatch) supaya satu kandidat gagal tidak membatalkan
+    // perubahan status Misi yang sudah pasti terjadi.
+    pengaturan.notifMisiBaru
+      ? deliverNotifikasiBatch(
+          misi.penugasan.map((p) => ({
+            anggotaId: p.anggotaId,
+            misiId: misi.id,
+            judul: `Mobilisasi ${misi.kodeMisi}`,
+            pesan: `Anda direkomendasikan untuk Misi ${misi.jenisKejadian} di ${misi.lokasi}. Segera konfirmasi kehadiran. ETA perkiraan ${p.etaMenit ?? "-"} menit.`,
+          }))
+        )
+      : Promise.resolve(0),
+  ]);
 
   await writeAuditLog({
     userId: session!.user.id,
@@ -205,28 +212,33 @@ export async function closeMisiAction(misiId: string, hasilEvaluasi: string): Pr
 
   const evaluasi = hasilEvaluasi.trim() || "Tidak ada catatan evaluasi.";
 
-  await prisma.$transaction([
-    prisma.misi.update({
-      where: { id: misiId },
-      data: { status: STATUS_MISI.SELESAI, selesaiAt: new Date(), hasilEvaluasi: evaluasi },
-    }),
-    prisma.penugasan.updateMany({
-      where: { misiId, statusKehadiran: { notIn: [STATUS_KEHADIRAN.DITOLAK] } },
-      data: { statusKehadiran: STATUS_KEHADIRAN.SELESAI },
+  // writeAuditLog tidak butuh hasil transaksi (metadata-nya sudah lengkap dari `misi` yang di-fetch
+  // di atas), jadi jalan berbarengan dengan transaksi, bukan menunggunya kelar dulu.
+  await Promise.all([
+    prisma.$transaction([
+      prisma.misi.update({
+        where: { id: misiId },
+        data: { status: STATUS_MISI.SELESAI, selesaiAt: new Date(), hasilEvaluasi: evaluasi },
+      }),
+      prisma.penugasan.updateMany({
+        where: { misiId, statusKehadiran: { notIn: [STATUS_KEHADIRAN.DITOLAK] } },
+        data: { statusKehadiran: STATUS_KEHADIRAN.SELESAI },
+      }),
+    ]),
+    writeAuditLog({
+      userId: session!.user.id,
+      aksi: "CLOSE_MISI",
+      entitas: "Misi",
+      entitasId: misiId,
+      metadata: { kodeMisi: misi.kodeMisi, hasilEvaluasi: evaluasi },
     }),
   ]);
 
-  // Readiness Score anggota terlibat berubah karena riwayat kehadiran mereka baru saja bertambah.
+  // Readiness Score anggota terlibat berubah karena riwayat kehadiran mereka baru saja bertambah —
+  // ini WAJIB setelah transaksi di atas kelar (recalculateReadinessScore baca ulang statusKehadiran
+  // dari DB, jadi butuh update penugasan sudah commit).
   const anggotaIdUnik = [...new Set(misi.penugasan.map((p) => p.anggotaId))];
   await Promise.all(anggotaIdUnik.map((id) => recalculateReadinessScore(id)));
-
-  await writeAuditLog({
-    userId: session!.user.id,
-    aksi: "CLOSE_MISI",
-    entitas: "Misi",
-    entitasId: misiId,
-    metadata: { kodeMisi: misi.kodeMisi, hasilEvaluasi: evaluasi },
-  });
 
   revalidatePath("/misi");
   revalidatePath("/riwayat");
@@ -248,15 +260,18 @@ export async function updateKehadiranAction(penugasanId: string, status: string)
     where: { id: penugasanId },
     data: { statusKehadiran: status },
   });
-  await recalculateReadinessScore(penugasan.anggotaId);
-
-  await writeAuditLog({
-    userId: session!.user.id,
-    aksi: "UPDATE_KEHADIRAN",
-    entitas: "Penugasan",
-    entitasId: penugasanId,
-    metadata: { status },
-  });
+  // recalculateReadinessScore butuh update di atas sudah commit (baca ulang statusKehadiran dari
+  // DB), tapi writeAuditLog tidak bergantung ke keduanya — jalan berbarengan.
+  await Promise.all([
+    recalculateReadinessScore(penugasan.anggotaId),
+    writeAuditLog({
+      userId: session!.user.id,
+      aksi: "UPDATE_KEHADIRAN",
+      entitas: "Penugasan",
+      entitasId: penugasanId,
+      metadata: { status },
+    }),
+  ]);
 
   revalidatePath("/misi");
   return { error: null };
