@@ -3,10 +3,8 @@
 import { useEffect, useState } from "react";
 import type { Session } from "next-auth";
 import type { getTopbarKpi } from "@/lib/overview-data";
-import type { NewsHeadline } from "@/lib/news-ticker";
 import { BuatMisiModal } from "@/components/misi/buat-misi-modal";
 import { AutoScale } from "./auto-scale";
-import { NewsTicker } from "./news-ticker";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 
@@ -18,12 +16,15 @@ export function AppShell({
   children,
   user,
   kpi,
-  headlines,
+  ticker,
 }: {
   children: React.ReactNode;
   user: Session["user"] | null;
   kpi: TopbarKpi;
-  headlines: NewsHeadline[];
+  /** Diterima sebagai ReactNode (bukan data mentah lalu di-render di sini) supaya NewsTicker
+   * tetap Server Component: waktu terbitnya diformat di server dengan zona Asia/Jakarta, dan
+   * daftar berita tidak ikut terkirim ke bundle client. */
+  ticker: React.ReactNode;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [buatMisiOpen, setBuatMisiOpen] = useState(false);
@@ -48,16 +49,14 @@ export function AppShell({
 
   return (
     <AutoScale>
-      <div className="flex h-screen flex-col bg-base">
-        <div className="flex min-h-0 flex-1">
-          <Sidebar collapsed={collapsed} user={user} kpi={kpi} />
-          <div className="flex min-w-0 flex-1 flex-col">
-            <Topbar onToggleSidebar={toggle} onBuatMisi={() => setBuatMisiOpen(true)} user={user} kpi={kpi} />
-            <main className="flex min-h-0 flex-1 flex-col overflow-auto">{children}</main>
-          </div>
-          <BuatMisiModal open={buatMisiOpen} onOpenChange={setBuatMisiOpen} />
+      <div className="flex h-screen bg-base">
+        <Sidebar collapsed={collapsed} user={user} kpi={kpi} />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <Topbar onToggleSidebar={toggle} onBuatMisi={() => setBuatMisiOpen(true)} user={user} kpi={kpi} />
+          {ticker}
+          <main className="flex min-h-0 flex-1 flex-col overflow-auto">{children}</main>
         </div>
-        <NewsTicker headlines={headlines} />
+        <BuatMisiModal open={buatMisiOpen} onOpenChange={setBuatMisiOpen} />
       </div>
     </AutoScale>
   );

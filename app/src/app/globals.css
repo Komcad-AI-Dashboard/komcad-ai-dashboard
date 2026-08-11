@@ -318,7 +318,9 @@ body::after {
 }
 
 /* Running text berita (AppShell, semua menu Command Center) — track digandakan 2x di JSX,
- * animasi geser tepat -50% supaya sambungan antar salinan tidak terlihat. */
+ * animasi geser tepat -50% supaya sambungan antar salinan tidak terlihat. Durasinya di-set
+ * inline dari komponen (dihitung dari jumlah headline) supaya kecepatan bacanya konsisten,
+ * tidak melambat/mengebut mengikuti ramai-sepinya feed. */
 .hud-ticker-dot {
   animation: hud-ticker-blink 1.4s ease-in-out infinite;
 }
@@ -327,14 +329,27 @@ body::after {
   50% { opacity: 0.25; }
 }
 .hud-ticker-track {
-  animation: hud-ticker-scroll 90s linear infinite;
+  animation-name: hud-ticker-scroll;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
 }
+/* Berhenti saat disentuh kursor supaya judul yang panjang sempat dibaca & diklik. */
 .hud-ticker-viewport:hover .hud-ticker-track {
   animation-play-state: paused;
 }
 @keyframes hud-ticker-scroll {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
+}
+/* Hormati preferensi sistem "kurangi animasi" (§10.8) — teks tetap tampil, cuma tidak berjalan. */
+@media (prefers-reduced-motion: reduce) {
+  .hud-ticker-track,
+  .hud-ticker-dot {
+    animation: none;
+  }
+  .hud-ticker-viewport {
+    overflow-x: auto;
+  }
 }
 
 }
