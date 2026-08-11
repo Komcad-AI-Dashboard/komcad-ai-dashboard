@@ -1,4 +1,4 @@
-// Seed data dummy — 60 anggota tersebar 12 provinsi (skala target FRD §3, 50-100 anggota).
+// Seed data dummy — 110 anggota tersebar 12 provinsi (skala target FRD §3, 50-100 anggota).
 // SEMUA data di bawah ini FIKTIF, bukan data personel TNI/Komcad sungguhan.
 
 import { PrismaClient } from "@prisma/client";
@@ -91,7 +91,7 @@ async function main() {
 
   console.log("Seeding anggota dummy...");
 
-  const JUMLAH_ANGGOTA = 60;
+  const JUMLAH_ANGGOTA = 110;
   const anggotaList = [];
   for (let i = 0; i < JUMLAH_ANGGOTA; i++) {
     const prov = pick(PROVINSI, i);
