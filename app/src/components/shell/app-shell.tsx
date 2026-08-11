@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import type { Session } from "next-auth";
 import type { getTopbarKpi } from "@/lib/overview-data";
+import type { NewsHeadline } from "@/lib/news-ticker";
 import { BuatMisiModal } from "@/components/misi/buat-misi-modal";
 import { AutoScale } from "./auto-scale";
+import { NewsTicker } from "./news-ticker";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 
@@ -16,10 +18,12 @@ export function AppShell({
   children,
   user,
   kpi,
+  headlines,
 }: {
   children: React.ReactNode;
   user: Session["user"] | null;
   kpi: TopbarKpi;
+  headlines: NewsHeadline[];
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [buatMisiOpen, setBuatMisiOpen] = useState(false);
@@ -44,13 +48,16 @@ export function AppShell({
 
   return (
     <AutoScale>
-      <div className="flex h-screen bg-base">
-        <Sidebar collapsed={collapsed} user={user} kpi={kpi} />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <Topbar onToggleSidebar={toggle} onBuatMisi={() => setBuatMisiOpen(true)} user={user} kpi={kpi} />
-          <main className="flex min-h-0 flex-1 flex-col overflow-auto">{children}</main>
+      <div className="flex h-screen flex-col bg-base">
+        <div className="flex min-h-0 flex-1">
+          <Sidebar collapsed={collapsed} user={user} kpi={kpi} />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <Topbar onToggleSidebar={toggle} onBuatMisi={() => setBuatMisiOpen(true)} user={user} kpi={kpi} />
+            <main className="flex min-h-0 flex-1 flex-col overflow-auto">{children}</main>
+          </div>
+          <BuatMisiModal open={buatMisiOpen} onOpenChange={setBuatMisiOpen} />
         </div>
-        <BuatMisiModal open={buatMisiOpen} onOpenChange={setBuatMisiOpen} />
+        <NewsTicker headlines={headlines} />
       </div>
     </AutoScale>
   );

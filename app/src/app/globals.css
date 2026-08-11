@@ -317,5 +317,25 @@ body::after {
   box-shadow: 0 0 12px rgba(60, 242, 154, 0.65);
 }
 
+/* Running text berita (AppShell, semua menu Command Center) — track digandakan 2x di JSX,
+ * animasi geser tepat -50% supaya sambungan antar salinan tidak terlihat. */
+.hud-ticker-dot {
+  animation: hud-ticker-blink 1.4s ease-in-out infinite;
+}
+@keyframes hud-ticker-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+.hud-ticker-track {
+  animation: hud-ticker-scroll 90s linear infinite;
+}
+.hud-ticker-viewport:hover .hud-ticker-track {
+  animation-play-state: paused;
+}
+@keyframes hud-ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
 }
 /* ^ tutup @layer components — jangan tambahkan kelas HUD di luar kurung ini. */
