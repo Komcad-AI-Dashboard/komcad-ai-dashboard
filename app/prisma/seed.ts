@@ -131,8 +131,12 @@ async function main() {
         },
         lokasiHistori: {
           create: {
-            latitude: prov.lat + (i % 5) * 0.01,
-            longitude: prov.lng + (i % 5) * 0.01,
+            // Jitter kecil biar marker gak numpuk persis di satu titik per kota — sebelumnya
+            // sampai 0.04° (~5-6km diagonal), yang buat beberapa anggota kota pesisir/dekat selat
+            // sempit (dikonfirmasi: Surabaya, ANG-00100) ke-plot di air. Dikecilin ke maks 0.012°
+            // (~1.3km), diverifikasi ulang via reverse-geocode tetap darat di kota paling rawan.
+            latitude: prov.lat + (i % 5) * 0.003,
+            longitude: prov.lng + (i % 5) * 0.003,
             provinsi: prov.nama,
             kabupatenKota: prov.kab,
           },
