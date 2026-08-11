@@ -3,9 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Session } from "next-auth";
-import { COMMAND_NAV, PRODUK_NAMA, ROLE_LABELS } from "@/lib/constants";
+import { COMMAND_NAV, ROLE_LABELS } from "@/lib/constants";
 import { NavIcon } from "./nav-icon";
-import { BrandTagline } from "./brand-tagline";
 import { cn } from "@/lib/utils";
 import type { TopbarKpi } from "./app-shell";
 
@@ -35,14 +34,12 @@ export function Sidebar({
             <div className="flex-1 bg-[#F2F2F2]" />
           </div>
           <div>
-            <div className="text-[15px] font-black tracking-[0.13em]">{PRODUK_NAMA}</div>
+            <div className="text-[15px] font-black tracking-[0.13em]">KOMCAD</div>
             <div className="mt-px text-[8.5px] font-bold tracking-[0.28em] text-accent-bright">
               COMMAND CENTER
             </div>
           </div>
         </div>
-        {/* Kepanjangan akronim — selalu tampil, huruf S-I-A-G-A ber-aksen (lihat BrandTagline). */}
-        <BrandTagline className="mt-[9px] border-t border-border-soft pt-[8px]" />
       </div>
 
       <nav className="flex-1 overflow-y-auto p-[10px] pt-[14px]">
