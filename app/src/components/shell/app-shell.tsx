@@ -49,7 +49,11 @@ export function AppShell({
 
   return (
     <AutoScale>
-      <div className="flex h-screen bg-base">
+      {/* h-full (bukan h-screen) — di dalam AutoScale, elemen ini dibungkus wrapper yang
+          di-transform:scale(); "100vh" tetap merujuk viewport ASLI (bukan tinggi wrapper),
+          jadi kalau dipaksa h-screen konten cuma ngisi sebagian wrapper dan sisanya jadi
+          celah hitam di bawah — sudah kejadian, dilaporkan user, ini fix-nya. */}
+      <div className="flex h-full bg-base">
         <Sidebar collapsed={collapsed} user={user} kpi={kpi} />
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar onToggleSidebar={toggle} onBuatMisi={() => setBuatMisiOpen(true)} user={user} kpi={kpi} />

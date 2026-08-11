@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /** Command Center HUD didesain dengan ukuran px tetap (bukan responsive), pas dilihat di kanvas
  * selebar ini. Di layar yang lebih sempit, hasilnya kepotong/sesak kecuali user zoom-out manual
@@ -9,36 +9,37 @@ import { useEffect, useState } from "react";
 const DESIGN_WIDTH = 1600;
 
 export function AutoScale({ children }: { children: React.ReactNode }) {
-  const [scale, setScale] = useState<number | null>(null);
+  const outerRef = useRef<HTMLDivElement>(null);
+  // Default 1 (bukan null) — wrapper SELALU dirender sama persis di server & client pertama kali
+  // (scale(1) di lebar viewport berapa pun = visual identik dengan tanpa wrapper), jadi tidak ada
+  // celah hydration mismatch, dan tidak ada lagi cabang "kadang ada wrapper, kadang tidak".
+  const [scale, setScale] = useState(1);
 
   useEffect(() => {
-    function sync() {
-      // >= DESIGN_WIDTH: tidak usah dikecilin sama sekali (null = render natural, isi layout
-      // fluid milik AppShell sendiri yang ngatur lebarnya, bukan dipaksa pas 1600px).
-      const raw = window.innerWidth / DESIGN_WIDTH;
-      setScale(raw >= 1 ? null : raw);
-    }
-    sync();
-    window.addEventListener("resize", sync);
-    return () => window.removeEventListener("resize", sync);
+    const el = outerRef.current;
+    if (!el) return;
+
+    // ResizeObserver, BUKAN window "resize" — window resize di sebagian kasus tidak menembak
+    // secepat/sesering perubahan browser zoom sungguhan (beda dari resize jendela biasa), jadi
+    // skalanya bisa nyangkut di nilai lama. ResizeObserver melacak ukuran KOTAK yang dirender
+    // (bukan event dari OS/browser), jadi ikut berubah persis mengikuti zoom, resize window,
+    // maupun perubahan sidebar DevTools sekalipun.
+    const ro = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width;
+      if (!width) return;
+      setScale(Math.min(1, width / DESIGN_WIDTH));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
 
-  // Render tanpa skala dulu di render pertama (scale belum dihitung, sama antara server & client)
-  // — begitu efek di atas jalan (client-only, lebar window baru bisa dibaca), skala baru diterapkan
-  // kalau memang perlu (layar sempit).
-  if (scale === null) return children;
-
   return (
-    <div style={{ width: "100vw", height: "100vh", overflow: "hidden" }}>
+    <div ref={outerRef} style={{ width: "100vw", height: "100vh", overflow: "hidden" }}>
       <div
         style={{
-          // Dua-duanya rumus relatif (vw/vh), BUKAN width:DESIGN_WIDTH px tetap — supaya
-          // lebar-setelah-transform = (100/scale)vw * scale = 100vw selalu, PERSIS identik
-          // dengan tinggi, berapa pun viewport asli berubah setelahnya. Ini bikin geometrinya
-          // tahan terhadap `scale` yang telat ke-update (mis. browser real zoom yang di sebagian
-          // kasus tidak selalu memicu event "resize" secepat perubahannya) — pakai px tetap
-          // dulu sempat bikin lebar "telat" sementara tinggi sudah benar, kelihatan seperti ada
-          // bagian layar yang tidak ke-cover (dilaporkan user).
+          // Rumus relatif (vw/vh), BUKAN px tetap — lebar/tinggi-setelah-transform selalu
+          // = (100/scale) * scale = 100vw/100vh, PERSIS, berapa pun nilai scale saat itu
+          // (termasuk kalau kebetulan sesaat belum sempat ke-update ke nilai terbaru).
           width: `${100 / scale}vw`,
           height: `${100 / scale}vh`,
           transform: `scale(${scale})`,

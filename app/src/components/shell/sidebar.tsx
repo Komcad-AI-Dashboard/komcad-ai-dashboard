@@ -24,7 +24,7 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "hud-rule-y relative flex h-screen shrink-0 flex-col overflow-hidden border-r border-border-soft bg-gradient-to-b from-[#070a0b] to-black transition-[width,opacity] duration-[180ms] ease-out",
+        "hud-rule-y relative flex h-full shrink-0 flex-col overflow-hidden border-r border-border-soft bg-gradient-to-b from-[#070a0b] to-black transition-[width,opacity] duration-[180ms] ease-out",
         collapsed ? "w-0 border-r-0 opacity-0" : "w-[236px] opacity-100"
       )}
     >
