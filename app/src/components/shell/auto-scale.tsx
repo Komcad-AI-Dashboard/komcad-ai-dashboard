@@ -9,29 +9,32 @@ import { useEffect, useState } from "react";
 const DESIGN_WIDTH = 1600;
 
 export function AutoScale({ children }: { children: React.ReactNode }) {
-  const [dims, setDims] = useState<{ scale: number; height: number } | null>(null);
+  const [scale, setScale] = useState<number | null>(null);
 
   useEffect(() => {
     function sync() {
-      const scale = Math.min(1, window.innerWidth / DESIGN_WIDTH);
-      setDims({ scale, height: window.innerHeight / scale });
+      // >= DESIGN_WIDTH: tidak usah dikecilin sama sekali (null = render natural, isi layout
+      // fluid milik AppShell sendiri yang ngatur lebarnya, bukan dipaksa pas 1600px).
+      const raw = window.innerWidth / DESIGN_WIDTH;
+      setScale(raw >= 1 ? null : raw);
     }
     sync();
     window.addEventListener("resize", sync);
     return () => window.removeEventListener("resize", sync);
   }, []);
 
-  // Render tanpa skala dulu di render pertama (dims null, sama antara server & client) — begitu
-  // efek di atas jalan (client-only, lebar window baru bisa dibaca), skala sungguhan diterapkan.
-  if (!dims) return children;
+  // Render tanpa skala dulu di render pertama (scale belum dihitung, sama antara server & client)
+  // — begitu efek di atas jalan (client-only, lebar window baru bisa dibaca), skala baru diterapkan
+  // kalau memang perlu (layar sempit).
+  if (scale === null) return children;
 
   return (
     <div style={{ width: "100vw", height: "100vh", overflow: "hidden" }}>
       <div
         style={{
           width: DESIGN_WIDTH,
-          height: dims.height,
-          transform: `scale(${dims.scale})`,
+          height: `${100 / scale}vh`,
+          transform: `scale(${scale})`,
           transformOrigin: "top left",
         }}
       >
