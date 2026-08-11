@@ -2,7 +2,7 @@
 // Semua jawaban chat WAJIB dijawab dari snapshot ini (grounded), tidak pernah dikarang OpenAI.
 
 import { prisma } from "@/lib/prisma";
-import { STATUS_MISI, STATUS_SERTIFIKASI } from "@/lib/constants";
+import { STATUS_MISI, STATUS_SERTIFIKASI, STATUS_SIAGA } from "@/lib/constants";
 import { computeSertifikasiStatus } from "@/lib/sertifikasi";
 import { getReadinessPerWilayah } from "@/lib/analitik-data";
 
@@ -20,7 +20,7 @@ export async function getChatContext() {
     misiAktif,
     sertifikasiSemua,
     anggotaIdsLatihBaruBaru,
-    totalAnggotaAktif,
+    totalAnggotaStatusSiagaAktif,
   ] = await Promise.all([
     prisma.anggota.count(),
     prisma.anggota.groupBy({ by: ["statusSiaga"], _count: true }),
@@ -38,14 +38,18 @@ export async function getChatContext() {
       select: { anggotaId: true },
       distinct: ["anggotaId"],
     }),
-    prisma.anggota.count({ where: { statusKeanggotaan: "Aktif" } }),
+    // "Aktif" di sini WAJIB berdasarkan statusSiaga (Aktif/Siaga/Tidak Tersedia) — sama seperti
+    // KPI "Aktif" di Overview & Direktori Anggota. Sebelumnya salah pakai statusKeanggotaan
+    // (Aktif/Nonaktif, hampir semua anggota bernilai Aktif di sana), jadi AI Chat pernah menjawab
+    // "110 anggota aktif" padahal seharusnya ~59 — dua field "aktif" yang beda arti ketuker.
+    prisma.anggota.count({ where: { statusSiaga: STATUS_SIAGA.AKTIF } }),
   ]);
 
   const sertifikasiKedaluwarsa = sertifikasiSemua.filter(
     (s) => computeSertifikasiStatus(s.tanggalBerlaku, now) === STATUS_SERTIFIKASI.KEDALUWARSA
   ).length;
 
-  const belumPelatihan3Bulan = Math.max(0, totalAnggotaAktif - anggotaIdsLatihBaruBaru.length);
+  const belumPelatihan3Bulan = Math.max(0, totalAnggotaStatusSiagaAktif - anggotaIdsLatihBaruBaru.length);
 
   return {
     totalAnggota,
@@ -57,7 +61,7 @@ export async function getChatContext() {
     misiAktif,
     sertifikasiKedaluwarsa,
     belumPelatihan3Bulan,
-    totalAnggotaAktif,
+    totalAnggotaStatusSiagaAktif,
     waktuSnapshot: now.toISOString(),
   };
 }

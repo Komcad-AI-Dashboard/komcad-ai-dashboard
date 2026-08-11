@@ -33,14 +33,24 @@ async function nextKodeMisi(): Promise<string> {
  * (Nominatim, `lib/geocoding.ts`) — keduanya diseragamkan client-side jadi {label, lat, lng} yang
  * sama sebelum submit, jadi action ini tidak perlu tahu asalnya. Batas lat/lng divalidasi ulang di
  * sini (defense-in-depth) sama seperti batas di `geocodeAlamat`, karena nilai ini datang dari client.*/
+// Form-nya sengaja tidak menandai field ini wajib (boleh kosong, jatuh ke default) — tapi FormData
+// selalu kirim string kosong "" untuk input yang dikosongkan (bukan undefined), dan `.default()`
+// Zod cuma jalan untuk undefined. Tanpa preprocess ini, submit dengan field dikosongkan gagal
+// validasi ("string harus >=1 karakter") alih-alih jatuh ke default seperti niatnya.
+const optionalTextWithDefault = (fallback: string) =>
+  z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z.string().min(1).default(fallback)
+  );
+
 const buatMisiSchema = z.object({
-  pemberiPerintah: z.string().min(1).default("Operator Komcad"),
+  pemberiPerintah: optionalTextWithDefault("Operator Komcad"),
   jenisKejadian: z.enum(JENIS_KEJADIAN_OPTIONS),
   urgensi: z.enum([URGENSI_MISI.KRITIS, URGENSI_MISI.TINGGI, URGENSI_MISI.SEDANG]),
   lokasiLabel: z.string().min(1),
   lokasiLat: z.coerce.number().min(-11.5).max(7),
   lokasiLng: z.coerce.number().min(93.5).max(141.5),
-  deskripsiMisi: z.string().min(1).default("(deskripsi belum diisi)"),
+  deskripsiMisi: optionalTextWithDefault("(deskripsi belum diisi)"),
   kebutuhanPersonel: z.coerce.number().int().min(1).max(50).default(5),
 });
 

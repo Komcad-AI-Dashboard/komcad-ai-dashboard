@@ -19,7 +19,7 @@ export function fallbackAnswer(question: string, ctx: ChatContext): ChatAnswer {
     return {
       sumber: "fallback",
       cocok: true,
-      jawaban: `Berdasarkan data platform, ${ctx.belumPelatihan3Bulan} dari ${ctx.totalAnggotaAktif} anggota aktif (${Math.round((ctx.belumPelatihan3Bulan / Math.max(1, ctx.totalAnggotaAktif)) * 100)}%) belum mengikuti pelatihan dalam 3 bulan terakhir.`,
+      jawaban: `Berdasarkan data platform, ${ctx.belumPelatihan3Bulan} dari ${ctx.totalAnggotaStatusSiagaAktif} anggota aktif (${Math.round((ctx.belumPelatihan3Bulan / Math.max(1, ctx.totalAnggotaStatusSiagaAktif)) * 100)}%) belum mengikuti pelatihan dalam 3 bulan terakhir.`,
       tabel: null,
     };
   }
