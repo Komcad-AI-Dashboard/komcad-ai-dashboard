@@ -352,5 +352,27 @@ body::after {
   }
 }
 
+/* Titik anggota & misi di peta situasi "bernapas" halus biar peta gak kelihatan statis (diminta
+ * user) — BUKAN pengecualian dari larangan overlay dekoratif di atas: larangan itu soal lapisan
+ * tambahan yang menimpa marker (radar sweep/crosshair), ini animasi PADA marker itu sendiri,
+ * tanpa elemen baru. 4 varian delay negatif supaya ratusan titik tidak berkedip serentak —
+ * serentak kelihatan mekanis/norak, acak kelihatan hidup. Amplitudo sengaja tipis. */
+.hud-marker-breathe {
+  animation: hud-marker-breathe 3.6s ease-in-out infinite;
+}
+.hud-marker-breathe.hud-delay-1 { animation-delay: -0.9s; }
+.hud-marker-breathe.hud-delay-2 { animation-delay: -1.8s; }
+.hud-marker-breathe.hud-delay-3 { animation-delay: -2.7s; }
+@keyframes hud-marker-breathe {
+  0%, 100% { opacity: 0.75; filter: brightness(1); }
+  50% { opacity: 1; filter: brightness(1.25); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hud-marker-breathe {
+    animation: none;
+    opacity: 1;
+  }
+}
+
 }
 /* ^ tutup @layer components — jangan tambahkan kelas HUD di luar kurung ini. */

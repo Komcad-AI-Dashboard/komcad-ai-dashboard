@@ -55,6 +55,15 @@ function computeHeatBins(anggota: MapAnggota[]) {
   }));
 }
 
+const DELAY_CLASSES = ["", "hud-delay-1", "hud-delay-2", "hud-delay-3"];
+/** Kelas delay animasi "napas" marker, di-hash dari id supaya stabil per titik yang sama
+ * (bukan dari posisi array, biar gak ikut geser tiap filter/urut ulang list). */
+function breatheClass(id: string) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  return `hud-marker-breathe ${DELAY_CLASSES[hash % DELAY_CLASSES.length]}`;
+}
+
 function heatColor(count: number) {
   if (count >= 6) return "#E14C45";
   if (count >= 3) return "#E0A83E";
@@ -134,7 +143,13 @@ export function SituationMap({
             key={a.id}
             center={[a.lat, a.lng]}
             radius={6}
-            pathOptions={{ color: "#3CF29A", weight: 1.5, fillColor: "#3CF29A", fillOpacity: 0.85 }}
+            pathOptions={{
+              color: "#3CF29A",
+              weight: 1.5,
+              fillColor: "#3CF29A",
+              fillOpacity: 0.85,
+              className: breatheClass(a.id),
+            }}
             eventHandlers={{ click: () => onSelectAnggota(a) }}
           >
             <Popup>
@@ -155,7 +170,13 @@ export function SituationMap({
             key={a.id}
             center={[a.lat, a.lng]}
             radius={6}
-            pathOptions={{ color: "#E0A83E", weight: 1.5, fillColor: "#E0A83E", fillOpacity: 0.85 }}
+            pathOptions={{
+              color: "#E0A83E",
+              weight: 1.5,
+              fillColor: "#E0A83E",
+              fillOpacity: 0.85,
+              className: breatheClass(a.id),
+            }}
             eventHandlers={{ click: () => onSelectAnggota(a) }}
           >
             <Popup>
@@ -184,7 +205,13 @@ export function SituationMap({
               <CircleMarker
                 center={[m.lat, m.lng]}
                 radius={8}
-                pathOptions={{ color, weight: 2, fillColor: "#000", fillOpacity: 0.9 }}
+                pathOptions={{
+                  color,
+                  weight: 2,
+                  fillColor: "#000",
+                  fillOpacity: 0.9,
+                  className: breatheClass(m.id),
+                }}
                 eventHandlers={{ click: () => onSelectMisi(m) }}
               >
                 <Popup>
