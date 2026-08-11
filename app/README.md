@@ -173,6 +173,28 @@ Lalu kembalikan `.env` lokal ke branch `dev`, dan trigger deploy lagi di Vercel 
 
 Buka URL Vercel-nya, login dengan salah satu akun demo (lihat bagian "Akun Demo" di atas, password `komcad123`), pastikan Overview memuat peta & data. Kalau login gagal dengan error terkait host, cek `NEXTAUTH_URL` sudah diisi domain Vercel yang benar dan sudah redeploy.
 
+**Status: live di https://komcad-ai-dashboard.vercel.app**
+
+### Alur Staging → Production
+
+Domain publik **tidak** ter-update otomatis tiap ada commit — perubahan lewat branch `staging` dulu, direview di URL Preview, baru domain publik ter-update setelah `staging` di-merge ke `main`.
+
+**Setup (sekali saja):**
+1. Branch git `staging` dibuat dari `main`, di-push ke GitHub. **`main` tetap jadi Production Branch di Vercel** (Project Settings → Git) — jangan diubah.
+2. Branch Neon ketiga: **`staging`**, di-branch dari `production` (bukan dari `main`) — Neon menyalin datanya instan lewat copy-on-write, jadi langsung terisi tanpa perlu `migrate deploy`/`db:seed` ulang.
+   - **Kenapa dipisah dari branch Neon `main` (dev)**, bukan sekalian dipakai bareng: dev lokal pakai `prisma db push` (tidak tercatat di riwayat migrasi Prisma), sedangkan build Preview Vercel pakai `prisma migrate deploy` (strict terhadap riwayat migrasi). Kalau satu branch database dipakai keduanya, `db push` yang dijalankan saat iterasi cepat di lokal bisa bikin state-nya beda dari yang dicatat riwayat migrasi, dan `migrate deploy` berikutnya di staging bisa gagal karena mengira kolom/tabel itu belum pernah diterapkan padahal sudah ada dari `db push`.
+3. Vercel → Environment Variables → tambah `DATABASE_URL` (connection string branch Neon `staging`), `AUTH_SECRET`, `ENCRYPTION_KEY` (generate baru, jangan pakai ulang nilai Production/dev), `NEXTAUTH_URL` (domain Preview branch — lihat poin 5), `OPENAI_API_KEY` — **centang cuma scope "Preview"**, uncheck "Production".
+4. Build Command **tidak perlu di-override lagi terpisah** — override yang di-set untuk Production sebelumnya sudah project-wide, otomatis berlaku juga untuk build Preview. `prisma migrate deploy` di situ akan menerapkan migrasi ke `DATABASE_URL` manapun yang ter-resolve untuk deployment itu (branch Neon `staging`, sesuai env var di atas) — bukan ke `production`.
+5. Setelah push pertama ke `staging`, Vercel memberi domain Preview yang stabil per-branch, formatnya `<project>-git-staging-<username>.vercel.app` (lihat di tab Deployments, deployment dengan Source `staging`). Kalau tidak muncul deployment sama sekali setelah push, kemungkinan webhook GitHub→Vercel kelewat sekali — push commit kosong (`git commit --allow-empty -m "..."`) untuk re-trigger. Copy domain itu, isi ulang `NEXTAUTH_URL` (masih scope Preview), redeploy.
+6. **Deployment Protection (SSO) Vercel otomatis aktif di Preview** — bagus, memang harusnya begitu (staging bukan buat publik). Konsekuensinya: URL Preview cuma bisa dibuka kalau sedang login ke akun Vercel yang sama; agent/tooling otomatis (curl, Playwright headless) akan kena redirect ke `vercel.com/sso-api` dan tidak bisa verifikasi mandiri seperti untuk Production.
+
+**Alur kerja sehari-hari setelah setup:**
+```
+push ke branch "staging"  →  Preview build otomatis (migrasi ke Neon "staging")  →  review di URL Preview
+       ↓ sudah oke
+merge "staging" → "main", push  →  Production build otomatis (migrasi ke Neon "production")  →  domain publik ter-update
+```
+
 ### Rilis Produksi Sungguhan (belum dilakukan — jangan diasumsikan sendiri)
 
 Ini skenario berbeda dari demo publik di atas: data personel TNI/Komcad **asli**, bukan dummy. Yang masih perlu diputuskan sebelum ini terjadi (lihat `TODO.md` bagian Backlog):
