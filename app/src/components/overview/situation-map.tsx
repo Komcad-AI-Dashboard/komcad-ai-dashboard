@@ -12,7 +12,7 @@ import {
   ZoomControl,
   useMap,
 } from "react-leaflet";
-import { divIcon, latLngBounds } from "leaflet";
+import { divIcon, latLngBounds, type LeafletEvent, type Path } from "leaflet";
 import type { MapAnggota, MapMisi } from "@/lib/overview-data";
 import type { PosKomando } from "@/lib/pos-komando";
 
@@ -61,7 +61,19 @@ const DELAY_CLASSES = ["", "hud-delay-1", "hud-delay-2", "hud-delay-3"];
 function breatheClass(id: string) {
   let hash = 0;
   for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
-  return `hud-marker-breathe ${DELAY_CLASSES[hash % DELAY_CLASSES.length]}`;
+  return ["hud-marker-breathe", DELAY_CLASSES[hash % DELAY_CLASSES.length]].filter(Boolean);
+}
+
+/** pathOptions.className react-leaflet TIDAK selalu ke-apply ke elemen DOM (dikonfirmasi hilang
+ * total di production build lokal — kebetulan kepasang di dev karena timing render yang beda).
+ * ref callback JUGA tidak cukup — dipanggil React sebelum Leaflet sempat bikin elemen DOM path-nya
+ * (`getElement()` masih undefined). Event Leaflet "add" (bukan React) baru nembak SETELAH layer
+ * benar-benar ditambahkan ke map & elemen DOM-nya pasti sudah ada — ini yang dijamin jalan. */
+function attachBreathe(id: string) {
+  return (e: LeafletEvent) => {
+    const el = (e.target as Path).getElement?.();
+    if (el) el.classList.add(...breatheClass(id));
+  };
 }
 
 function heatColor(count: number) {
@@ -143,14 +155,8 @@ export function SituationMap({
             key={a.id}
             center={[a.lat, a.lng]}
             radius={6}
-            pathOptions={{
-              color: "#3CF29A",
-              weight: 1.5,
-              fillColor: "#3CF29A",
-              fillOpacity: 0.85,
-              className: breatheClass(a.id),
-            }}
-            eventHandlers={{ click: () => onSelectAnggota(a) }}
+            pathOptions={{ color: "#3CF29A", weight: 1.5, fillColor: "#3CF29A", fillOpacity: 0.85 }}
+            eventHandlers={{ click: () => onSelectAnggota(a), add: attachBreathe(a.id) }}
           >
             <Popup>
               <b>{a.nama}</b>
@@ -170,14 +176,8 @@ export function SituationMap({
             key={a.id}
             center={[a.lat, a.lng]}
             radius={6}
-            pathOptions={{
-              color: "#E0A83E",
-              weight: 1.5,
-              fillColor: "#E0A83E",
-              fillOpacity: 0.85,
-              className: breatheClass(a.id),
-            }}
-            eventHandlers={{ click: () => onSelectAnggota(a) }}
+            pathOptions={{ color: "#E0A83E", weight: 1.5, fillColor: "#E0A83E", fillOpacity: 0.85 }}
+            eventHandlers={{ click: () => onSelectAnggota(a), add: attachBreathe(a.id) }}
           >
             <Popup>
               <b>{a.nama}</b>
@@ -205,14 +205,8 @@ export function SituationMap({
               <CircleMarker
                 center={[m.lat, m.lng]}
                 radius={8}
-                pathOptions={{
-                  color,
-                  weight: 2,
-                  fillColor: "#000",
-                  fillOpacity: 0.9,
-                  className: breatheClass(m.id),
-                }}
-                eventHandlers={{ click: () => onSelectMisi(m) }}
+                pathOptions={{ color, weight: 2, fillColor: "#000", fillOpacity: 0.9 }}
+                eventHandlers={{ click: () => onSelectMisi(m), add: attachBreathe(m.id) }}
               >
                 <Popup>
                   <b>{m.kodeMisi}</b>
