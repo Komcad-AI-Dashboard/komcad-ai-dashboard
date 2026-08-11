@@ -32,7 +32,14 @@ export function AutoScale({ children }: { children: React.ReactNode }) {
     <div style={{ width: "100vw", height: "100vh", overflow: "hidden" }}>
       <div
         style={{
-          width: DESIGN_WIDTH,
+          // Dua-duanya rumus relatif (vw/vh), BUKAN width:DESIGN_WIDTH px tetap — supaya
+          // lebar-setelah-transform = (100/scale)vw * scale = 100vw selalu, PERSIS identik
+          // dengan tinggi, berapa pun viewport asli berubah setelahnya. Ini bikin geometrinya
+          // tahan terhadap `scale` yang telat ke-update (mis. browser real zoom yang di sebagian
+          // kasus tidak selalu memicu event "resize" secepat perubahannya) — pakai px tetap
+          // dulu sempat bikin lebar "telat" sementara tinggi sudah benar, kelihatan seperti ada
+          // bagian layar yang tidak ke-cover (dilaporkan user).
+          width: `${100 / scale}vw`,
           height: `${100 / scale}vh`,
           transform: `scale(${scale})`,
           transformOrigin: "top left",
