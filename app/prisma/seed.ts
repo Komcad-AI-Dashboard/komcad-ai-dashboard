@@ -275,8 +275,10 @@ async function main() {
       jenisKejadian: "Kebakaran Hutan",
       urgensi: "Kritis",
       lokasi: "Kabupaten Berau, Kalimantan Timur",
-      latitude: -1.3,
-      longitude: 117.0,
+      // Tanjung Redeb, ibu kota Kabupaten Berau — sebelumnya salah pakai koordinat sekitar
+      // Balikpapan (di laut), ratusan km di selatan lokasi sungguhan.
+      latitude: 2.15,
+      longitude: 117.48,
       deskripsiMisi: "Kebakaran hutan meluas mendekati permukiman, perlu personel tambahan segera.",
       status: "Dimobilisasi",
       kebutuhanPersonel: 6,
