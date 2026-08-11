@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { OverviewView } from "@/components/overview/overview-view";
 import { POS_KOMANDO } from "@/lib/pos-komando";
 import {
@@ -14,7 +15,8 @@ import { auth } from "@/lib/auth";
 
 export default async function OverviewPage() {
   // Cek H-30 sertifikasi seluruh anggota tiap kali Overview dibuka — lihat lib/reminder-sertifikasi.ts.
-  await ensureReminderSertifikasi();
+  // after() supaya cek ini (bisa banyak query notifikasi) tidak menunda render halaman.
+  after(() => ensureReminderSertifikasi());
 
   const [session, anggota, misi, aktivitasPelatihan, stats, feed, aiSummary, pengaturan] = await Promise.all([
     auth(),

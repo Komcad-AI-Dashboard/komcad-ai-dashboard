@@ -31,21 +31,22 @@ export async function ensureReminderSertifikasi(anggotaId?: string): Promise<num
   );
   if (akanKedaluwarsa.length === 0) return 0;
 
-  let dibuat = 0;
-  for (const s of akanKedaluwarsa) {
-    const judul = judulReminder(s.jenisSertifikasi, s.tanggalBerlaku);
-    const sudahAda = await prisma.notifikasi.findFirst({ where: { anggotaId: s.anggotaId, judul } });
-    if (sudahAda) continue;
-    await prisma.notifikasi.create({
-      data: {
-        anggotaId: s.anggotaId,
-        judul,
-        pesan: `Sertifikasi ${s.jenisSertifikasi} Anda akan kedaluwarsa pada ${s.tanggalBerlaku.toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })}. Segera ajukan perpanjangan.`,
-        channel: "Aplikasi",
-        status: "Terkirim",
-      },
-    });
-    dibuat++;
-  }
-  return dibuat;
+  const hasil = await Promise.all(
+    akanKedaluwarsa.map(async (s) => {
+      const judul = judulReminder(s.jenisSertifikasi, s.tanggalBerlaku);
+      const sudahAda = await prisma.notifikasi.findFirst({ where: { anggotaId: s.anggotaId, judul } });
+      if (sudahAda) return false;
+      await prisma.notifikasi.create({
+        data: {
+          anggotaId: s.anggotaId,
+          judul,
+          pesan: `Sertifikasi ${s.jenisSertifikasi} Anda akan kedaluwarsa pada ${s.tanggalBerlaku.toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })}. Segera ajukan perpanjangan.`,
+          channel: "Aplikasi",
+          status: "Terkirim",
+        },
+      });
+      return true;
+    })
+  );
+  return hasil.filter(Boolean).length;
 }
