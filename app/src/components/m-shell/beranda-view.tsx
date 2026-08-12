@@ -78,14 +78,14 @@ export function BerandaView({
   const style = STATUS_STYLE[status] ?? STATUS_STYLE[STATUS_SIAGA.AKTIF];
 
   return (
-    <>
-      <div className="flex items-center gap-3">
-        <div className="flex size-12 shrink-0 items-center justify-center rounded-[12px] border border-border bg-elevated">
+    <div className="flex flex-col gap-[14px] xl:gap-6">
+      <div className="flex items-center gap-3 xl:gap-4">
+        <div className="flex size-12 shrink-0 items-center justify-center rounded-[12px] border border-border bg-elevated xl:size-14">
           <AvatarPlaceholder />
         </div>
         <div>
           <div className="text-[11px] text-ink-2">Selamat datang,</div>
-          <div className="text-[16px] font-extrabold">{profil.nama}</div>
+          <div className="text-[16px] font-extrabold xl:text-[19px]">{profil.nama}</div>
         </div>
         <div className="ml-auto flex items-center gap-[5px] font-mono text-[10px] font-bold text-accent-bright">
           <span className="size-1.5 animate-pulse rounded-full bg-current shadow-[0_0_6px_currentColor]" />
@@ -93,7 +93,7 @@ export function BerandaView({
         </div>
       </div>
 
-      <div className="rounded-[14px] border border-accent-bright/25 bg-gradient-to-br from-accent-bright/10 to-transparent p-[18px]">
+      <div className="rounded-[14px] border border-accent-bright/25 bg-gradient-to-br from-accent-bright/10 to-transparent p-[18px] xl:p-6">
         <div className="text-[10px] font-extrabold tracking-wide text-ink-2">STATUS KESIAPAN SAYA</div>
         <div className={`mt-[6px] flex items-center gap-2 text-[18px] font-extrabold ${style.text}`}>
           <span className="size-[10px] rounded-full bg-current" style={{ boxShadow: "0 0 10px currentColor" }} />
@@ -120,7 +120,7 @@ export function BerandaView({
         {error && <p className="mt-2 text-[11px] text-[#F5A9A5]">{error}</p>}
       </div>
 
-      <div className="rounded-[12px] border border-border bg-surface p-4">
+      <div className="rounded-[12px] border border-border bg-surface p-4 xl:p-6">
         <h3 className="mb-3 text-[12px] font-extrabold uppercase tracking-wide text-ink-2">Readiness Score Saya</h3>
         <div className="flex items-center gap-4">
           <ReadinessRing score={profil.readinessScore} />
@@ -133,36 +133,41 @@ export function BerandaView({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-[10px] xl:grid-cols-4">
-        <div className="rounded-[10px] border border-border bg-surface p-3">
+      <div className="grid grid-cols-2 gap-[10px] xl:grid-cols-4 xl:gap-3">
+        <div className="rounded-[10px] border border-border bg-surface p-3 xl:p-4">
           <div className="mb-[6px] text-[16px]">🏅</div>
           <div className="font-mono text-[17px] font-extrabold">{stats.sertifikasiAktif}</div>
           <div className="mt-[2px] text-[9.5px] text-ink-2">Sertifikasi Aktif</div>
         </div>
-        <div className="rounded-[10px] border border-border bg-surface p-3">
+        <div className="rounded-[10px] border border-border bg-surface p-3 xl:p-4">
           <div className="mb-[6px] text-[16px]">📚</div>
           <div className="font-mono text-[17px] font-extrabold">{stats.pelatihanCount}</div>
           <div className="mt-[2px] text-[9.5px] text-ink-2">Pelatihan Diikuti</div>
         </div>
-        <div className="rounded-[10px] border border-border bg-surface p-3">
+        <div className="rounded-[10px] border border-border bg-surface p-3 xl:p-4">
           <div className="mb-[6px] text-[16px]">🎖️</div>
           <div className="font-mono text-[17px] font-extrabold">{stats.penugasanCount}</div>
           <div className="mt-[2px] text-[9.5px] text-ink-2">Riwayat Penugasan</div>
         </div>
-        <div className="rounded-[10px] border border-border bg-surface p-3">
+        <div className="rounded-[10px] border border-border bg-surface p-3 xl:p-4">
           <div className="mb-[6px] text-[16px]">📅</div>
           <div className="font-mono text-[17px] font-extrabold">{stats.hariSejakTugasTerakhir ?? "—"}</div>
           <div className="mt-[2px] text-[9.5px] text-ink-2">Hari Sejak Tugas Terakhir</div>
         </div>
       </div>
 
-      <div className="text-[10px] font-extrabold uppercase tracking-wide text-ink-3">Notifikasi Terbaru</div>
-      {notifikasiTerbaru.length === 0 && (
-        <div className="text-[11.5px] text-ink-3">Belum ada notifikasi.</div>
-      )}
-      {notifikasiTerbaru.map((n) => (
-        <NotifCard key={n.id} notif={n} />
-      ))}
-    </>
+      <div className="flex flex-col gap-[14px]">
+        <div className="text-[10px] font-extrabold uppercase tracking-wide text-ink-3">Notifikasi Terbaru</div>
+        {notifikasiTerbaru.length === 0 ? (
+          <div className="text-[11.5px] text-ink-3">Belum ada notifikasi.</div>
+        ) : (
+          <div className="flex flex-col gap-[14px] xl:grid xl:grid-cols-2 xl:gap-[10px]">
+            {notifikasiTerbaru.map((n) => (
+              <NotifCard key={n.id} notif={n} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

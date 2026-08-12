@@ -22,7 +22,7 @@ export function RiwayatView({ profil }: { profil: SelfProfil }) {
   const [tab, setTab] = useState<Tab>("pelatihan");
 
   return (
-    <>
+    <div className="flex flex-col gap-[14px] xl:gap-6">
       <div>
         <div className="text-[15px] font-extrabold">Riwayat Saya</div>
         <div className="text-[11px] text-ink-2">Pelatihan & penugasan yang pernah diikuti</div>
@@ -83,6 +83,6 @@ export function RiwayatView({ profil }: { profil: SelfProfil }) {
           </div>
         ))}
       </div>
-    </>
+    </div>
   );
 }

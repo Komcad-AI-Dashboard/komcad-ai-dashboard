@@ -10,7 +10,7 @@ export default async function MemberNotifikasiPage() {
   const notifikasi = await getSelfNotifikasi(self.anggotaId);
 
   return (
-    <>
+    <div className="flex flex-col gap-[14px] xl:gap-6">
       <div>
         <div className="text-[15px] font-extrabold">Notifikasi</div>
         <div className="text-[11px] text-ink-2">Riwayat notifikasi mobilisasi & sistem</div>
@@ -21,6 +21,6 @@ export default async function MemberNotifikasiPage() {
           <NotifCard key={n.id} notif={n} />
         ))}
       </div>
-    </>
+    </div>
   );
 }

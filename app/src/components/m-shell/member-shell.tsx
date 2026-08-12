@@ -105,7 +105,7 @@ export function MemberShell({ children, unreadCount }: { children: React.ReactNo
           </div>
         </aside>
 
-        <main className="flex flex-1 flex-col gap-[14px] px-4 pb-[calc(90px+env(safe-area-inset-bottom))] pt-[14px] xl:mx-auto xl:w-full xl:max-w-[880px] xl:px-8 xl:pb-8 xl:pt-8">
+        <main className="flex flex-1 flex-col gap-[14px] px-4 pb-[calc(90px+env(safe-area-inset-bottom))] pt-[14px] xl:mx-auto xl:w-full xl:max-w-[880px] xl:px-8 xl:pb-10 xl:pt-10">
           {children}
         </main>
 
