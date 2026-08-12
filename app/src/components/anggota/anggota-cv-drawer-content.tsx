@@ -140,16 +140,26 @@ export function AnggotaCvDrawerContent({
           </a>
         )}
         {anggota.instagram && (
-          <span className="flex items-center gap-[6px] rounded-[6px] border border-border bg-elevated px-[11px] py-[7px] text-[11px] font-bold text-ink-2">
+          <a
+            href={`https://instagram.com/${anggota.instagram.replace(/^@/, "")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-[6px] rounded-[6px] border border-border bg-elevated px-[11px] py-[7px] text-[11px] font-bold hover:border-gold hover:text-gold"
+          >
             <AtSign className="size-3.5" strokeWidth={1.5} />
             {anggota.instagram}
-          </span>
+          </a>
         )}
         {anggota.linkedin && (
-          <span className="flex items-center gap-[6px] rounded-[6px] border border-border bg-elevated px-[11px] py-[7px] text-[11px] font-bold text-ink-2">
+          <a
+            href={anggota.linkedin.startsWith("http") ? anggota.linkedin : `https://linkedin.com/in/${anggota.linkedin}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-[6px] rounded-[6px] border border-border bg-elevated px-[11px] py-[7px] text-[11px] font-bold hover:border-cyan hover:text-cyan"
+          >
             <Link2 className="size-3.5" strokeWidth={1.5} />
             LinkedIn
-          </span>
+          </a>
         )}
       </div>
 

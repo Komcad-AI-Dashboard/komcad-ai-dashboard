@@ -65,8 +65,9 @@ export function Topbar({
       </div>
 
       <div className="ml-auto flex shrink-0 items-center gap-2">
-        <div className="hidden items-center gap-2 rounded-[6px] border border-border bg-elevated px-[10px] py-[6px] text-[12px] text-ink-2 xl:flex">
-          Nasional
+        <div className="hidden items-center gap-2 rounded-[6px] border border-border bg-elevated px-[10px] py-[6px] xl:flex">
+          <span className="text-[9.5px] font-extrabold tracking-widest text-ink-3">CAKUPAN</span>
+          <span className="text-[12px] font-bold text-ink-2">Nasional</span>
         </div>
 
         {bisaBuatMisi && (
@@ -88,12 +89,15 @@ export function Topbar({
         </div>
 
         {/* Misi aktif tetap tampil di HP: ini satu-satunya angka di topbar yang menuntut tindakan. */}
-        <button className="flex shrink-0 items-center gap-[6px] rounded-[6px] border border-red bg-red/15 px-[9px] py-[6px] text-[12px] font-bold text-[#F5A9A5] xl:px-3">
+        <Link
+          href="/misi?status=aktif"
+          className="flex shrink-0 items-center gap-[6px] rounded-[6px] border border-red bg-red/15 px-[9px] py-[6px] text-[12px] font-bold text-[#F5A9A5] xl:px-3"
+        >
           <span className="hidden xl:inline">MISI AKTIF</span>
           <span className="rounded-[4px] bg-red px-[5px] font-mono text-white">
             {kpi.misiAktifCount}
           </span>
-        </button>
+        </Link>
 
         <button
           onClick={() => setSearchOpen(true)}

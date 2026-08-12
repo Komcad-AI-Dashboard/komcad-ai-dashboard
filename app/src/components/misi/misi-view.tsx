@@ -12,7 +12,7 @@ import type { MisiListItem, MisiKpi } from "@/lib/misi-data";
 import { formatEta } from "@/lib/geo";
 import { MisiDetailDrawerContent } from "./misi-detail-drawer-content";
 
-const FILTERS = ["Semua", "Kritis", "Tinggi", "Selesai"] as const;
+const FILTERS = ["Semua", "Aktif", "Kritis", "Tinggi", "Selesai"] as const;
 
 function KpiCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
@@ -33,10 +33,6 @@ export function MisiView({
   kpi: MisiKpi;
   role: Role | undefined;
 }) {
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]>("Semua");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-
   // Dibuka lewat hasil pencarian global topbar (?openId=<id>) — lihat GlobalSearchModal.
   // Diturunkan langsung dari URL (bukan disinkronkan ke state lewat effect/ref) supaya tidak
   // melanggar aturan purity render; ditutup dengan membersihkan query-nya, lihat closeDrawer().
@@ -45,15 +41,25 @@ export function MisiView({
   const searchParams = useSearchParams();
   const openIdParam = searchParams.get("openId");
 
+  const [query, setQuery] = useState("");
+  // Baca ?status=aktif sekali di render pertama (lazy initializer) — dipakai tombol "MISI AKTIF"
+  // di topbar buat lompat langsung ke filter yang sesuai.
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]>(() =>
+    searchParams.get("status") === "aktif" ? "Aktif" : "Semua"
+  );
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return misiList.filter((m) => {
       const matchFilter =
         filter === "Semua"
           ? true
-          : filter === "Selesai"
-            ? m.status === STATUS_MISI.SELESAI
-            : m.urgensi === filter;
+          : filter === "Aktif"
+            ? m.status === STATUS_MISI.DRAFT || m.status === STATUS_MISI.DIMOBILISASI
+            : filter === "Selesai"
+              ? m.status === STATUS_MISI.SELESAI
+              : m.urgensi === filter;
       const matchQuery =
         !q ||
         m.kodeMisi.toLowerCase().includes(q) ||
