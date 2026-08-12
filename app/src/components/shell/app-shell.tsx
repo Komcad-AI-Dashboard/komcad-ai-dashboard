@@ -27,6 +27,7 @@ export function AppShell({
   ticker: React.ReactNode;
 }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [buatMisiOpen, setBuatMisiOpen] = useState(false);
 
   useEffect(() => {
@@ -39,12 +40,22 @@ export function AppShell({
     }
   }, []);
 
+  /**
+   * Satu tombol hamburger, dua perilaku: di desktop menciutkan kolom sidebar (preferensinya
+   * disimpan), di HP membuka drawer melayang. Mode dicek saat KLIK lewat matchMedia, bukan saat
+   * render — kalau dicek saat render, server (yang tidak punya viewport) dan client bisa
+   * menyimpulkan mode berbeda dan itu memicu hydration mismatch.
+   */
   function toggle() {
-    setCollapsed((prev) => {
-      const next = !prev;
-      window.localStorage.setItem(STORAGE_KEY, next ? "1" : "0");
-      return next;
-    });
+    if (window.matchMedia("(min-width: 1280px)").matches) {
+      setCollapsed((prev) => {
+        const next = !prev;
+        window.localStorage.setItem(STORAGE_KEY, next ? "1" : "0");
+        return next;
+      });
+      return;
+    }
+    setMobileNavOpen((prev) => !prev);
   }
 
   return (
@@ -54,7 +65,21 @@ export function AppShell({
           jadi kalau dipaksa h-screen konten cuma ngisi sebagian wrapper dan sisanya jadi
           celah hitam di bawah — sudah kejadian, dilaporkan user, ini fix-nya. */}
       <div className="flex h-full bg-base">
-        <Sidebar collapsed={collapsed} user={user} kpi={kpi} />
+        <Sidebar
+          collapsed={collapsed}
+          mobileOpen={mobileNavOpen}
+          onNavigate={() => setMobileNavOpen(false)}
+          user={user}
+          kpi={kpi}
+        />
+        {/* Backdrop drawer — hanya ada di bawah xl, tempat sidebar melayang di atas konten. */}
+        {mobileNavOpen && (
+          <button
+            aria-label="Tutup menu"
+            onClick={() => setMobileNavOpen(false)}
+            className="fixed inset-0 z-[1400] bg-black/60 backdrop-blur-[2px] xl:hidden"
+          />
+        )}
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar onToggleSidebar={toggle} onBuatMisi={() => setBuatMisiOpen(true)} user={user} kpi={kpi} />
           {ticker}

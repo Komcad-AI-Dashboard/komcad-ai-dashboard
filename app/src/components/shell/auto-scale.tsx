@@ -2,32 +2,36 @@
 
 import { useEffect, useRef, useState } from "react";
 
-/** Command Center HUD didesain dengan ukuran px tetap (bukan responsive), pas dilihat di kanvas
- * selebar ini. Di layar yang lebih sempit, hasilnya kepotong/sesak kecuali user zoom-out manual
- * (Ctrl-). AutoScale menghitung skala itu otomatis dari lebar viewport asli, jadi user tidak perlu
- * zoom manual — efeknya sama seperti Ctrl- tapi otomatis menyesuaikan ke ukuran layar tiap orang. */
 const DESIGN_WIDTH = 1600;
+
+/**
+ * Lebar minimum untuk memakai mode "kecilkan desain 1600px". Di bawah ini layout
+ * beralih ke mode responsif 1x (tanpa transform sama sekali).
+ *
+ * Angkanya SENGAJA sama persis dengan breakpoint `xl` Tailwind (1280px), dan itu yang
+ * bikin seluruh pendekatan ini jalan: media query di dalam AutoScale selalu diukur dari
+ * viewport ASLI, bukan dari lebar wrapper yang sudah di-transform. Karena ambangnya
+ * disamakan, "viewport >= 1280" selalu berarti dua hal sekaligus — mode skala aktif DAN
+ * varian `xl:` menyala. Jadi komponen cukup ditulis mobile-first: kelas dasar = layout HP,
+ * varian `xl:` = layout Command Center 1600px. Kalau ambang ini diubah tanpa mengubah
+ * breakpoint yang dipakai komponen, layout HP bakal bocor ke desktop (atau sebaliknya).
+ */
+const SCALE_MIN_WIDTH = 1280;
 
 export function AutoScale({ children }: { children: React.ReactNode }) {
   const outerRef = useRef<HTMLDivElement>(null);
-  // Default 1 (bukan null) — wrapper SELALU dirender sama persis di server & client pertama kali
-  // (scale(1) di lebar viewport berapa pun = visual identik dengan tanpa wrapper), jadi tidak ada
-  // celah hydration mismatch, dan tidak ada lagi cabang "kadang ada wrapper, kadang tidak".
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
     const el = outerRef.current;
     if (!el) return;
-
-    // ResizeObserver, BUKAN window "resize" — window resize di sebagian kasus tidak menembak
-    // secepat/sesering perubahan browser zoom sungguhan (beda dari resize jendela biasa), jadi
-    // skalanya bisa nyangkut di nilai lama. ResizeObserver melacak ukuran KOTAK yang dirender
-    // (bukan event dari OS/browser), jadi ikut berubah persis mengikuti zoom, resize window,
-    // maupun perubahan sidebar DevTools sekalipun.
     const ro = new ResizeObserver((entries) => {
       const width = entries[0]?.contentRect.width;
       if (!width) return;
-      setScale(Math.min(1, width / DESIGN_WIDTH));
+      // Di bawah ambang, JANGAN dikecilkan: di HP 390px faktornya jadi ~0.24 dan teks 15px
+      // ikut mengecil ke ~3.7px (dilaporkan user: "gak terbaca sama sekali"). Layout responsif
+      // 1x jauh lebih terbaca daripada Command Center utuh yang diperkecil seperempatnya.
+      setScale(width < SCALE_MIN_WIDTH ? 1 : Math.min(1, width / DESIGN_WIDTH));
     });
     ro.observe(el);
     return () => ro.disconnect();
@@ -37,12 +41,9 @@ export function AutoScale({ children }: { children: React.ReactNode }) {
     <div ref={outerRef} style={{ width: "100vw", height: "100vh", overflow: "hidden" }}>
       <div
         style={{
-          // Rumus relatif (vw/vh), BUKAN px tetap — lebar/tinggi-setelah-transform selalu
-          // = (100/scale) * scale = 100vw/100vh, PERSIS, berapa pun nilai scale saat itu
-          // (termasuk kalau kebetulan sesaat belum sempat ke-update ke nilai terbaru).
           width: `${100 / scale}vw`,
           height: `${100 / scale}vh`,
-          transform: `scale(${scale})`,
+          transform: scale === 1 ? undefined : `scale(${scale})`,
           transformOrigin: "top left",
         }}
       >

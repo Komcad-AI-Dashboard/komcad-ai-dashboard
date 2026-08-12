@@ -10,10 +10,16 @@ import type { TopbarKpi } from "./app-shell";
 
 export function Sidebar({
   collapsed,
+  mobileOpen,
+  onNavigate,
   user,
   kpi,
 }: {
   collapsed: boolean;
+  /** Hanya berlaku di bawah breakpoint xl, tempat sidebar jadi drawer melayang. */
+  mobileOpen: boolean;
+  /** Dipanggil saat menu diklik — di HP dipakai untuk menutup drawer setelah pindah halaman. */
+  onNavigate: () => void;
   user: Session["user"] | null;
   kpi: TopbarKpi;
 }) {
@@ -23,8 +29,12 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "hud-rule-y relative flex h-full shrink-0 flex-col overflow-hidden border-r border-border-soft bg-gradient-to-b from-[#070a0b] to-black transition-[width,opacity] duration-[180ms] ease-out",
-        collapsed ? "w-0 border-r-0 opacity-0" : "w-[236px] opacity-100"
+        // Mobile-first: sidebar = drawer melayang di atas konten, default tersembunyi di kiri.
+        // Mulai xl (samakan dengan ambang AutoScale) balik jadi kolom inline seperti semula.
+        "hud-rule-y fixed inset-y-0 left-0 z-[1500] flex w-[264px] max-w-[85vw] flex-col overflow-hidden border-r border-border-soft bg-gradient-to-b from-[#070a0b] to-black transition-transform duration-200 ease-out",
+        mobileOpen ? "translate-x-0" : "-translate-x-full",
+        "xl:relative xl:z-auto xl:h-full xl:max-w-none xl:shrink-0 xl:translate-x-0 xl:transition-[width,opacity] xl:duration-[180ms]",
+        collapsed ? "xl:w-0 xl:border-r-0 xl:opacity-0" : "xl:w-[236px] xl:opacity-100"
       )}
     >
       <div className="border-b border-border-soft p-4">
@@ -55,6 +65,7 @@ export function Sidebar({
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={onNavigate}
                   className={cn(
                     "relative mb-0.5 flex items-center gap-[10px] rounded-[7px] px-[10px] py-[9px] text-[12.5px] font-semibold text-ink-2 transition-colors hover:bg-surface-hover hover:text-ink",
                     active &&

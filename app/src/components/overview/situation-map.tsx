@@ -87,7 +87,42 @@ function ResizeHandler() {
   const map = useMap();
   useEffect(() => {
     const container = map.getContainer();
-    const ro = new ResizeObserver(() => map.invalidateSize());
+
+    // Peta di-fit ulang sekali saja, saat container SUDAH punya ukuran nyata. Waktu efek ini
+    // pertama jalan, MapContainer baru saja dibuat (dynamic import, ssr:false) dan ukurannya masih
+    // 0 — fitBounds di titik itu menghitung zoom dari ukuran kosong dan hasilnya salah.
+    let sudahFit = false;
+
+    const sync = () => {
+      map.invalidateSize();
+      const { x, y } = map.getSize();
+      if (!x || !y) return;
+
+      // minZoom TIDAK boleh tetap di 5: di layar HP (~390px) seluruh Indonesia butuh sekitar zoom 3
+      // untuk muat, jadi batas 5 memaksa peta terpotong — cuma Kalimantan/Sulawesi yang kelihatan
+      // (dilaporkan user). getBoundsZoom() memberi zoom terbesar yang masih memuat bounds pada
+      // ukuran container saat ini, jadi batasnya ikut lebar layar, bukan angka tetap ala desktop.
+      //
+      // Turunkan minZoom dulu sebelum mengukur: getBoundsZoom() menutup hasilnya dengan
+      // `Math.max(getMinZoom(), ...)`, jadi selama minZoom masih 5 ia MUSTAHIL mengembalikan 3 dan
+      // ukurannya cuma memantulkan balik batas yang sedang berlaku (sempat bikin fix ini kelihatan
+      // tidak berefek sama sekali).
+      map.setMinZoom(0);
+      const minZoom = Math.min(5, Math.floor(map.getBoundsZoom(INDONESIA_BOUNDS)));
+      map.setMinZoom(minZoom);
+
+      if (!sudahFit) {
+        sudahFit = true;
+        map.fitBounds(INDONESIA_BOUNDS);
+      } else if (map.getZoom() < minZoom) {
+        // Layar mengecil sampai zoom sekarang jadi di bawah batas baru — tarik balik ke batas,
+        // bukan fitBounds, supaya panning/zoom yang sudah dilakukan user tidak direset tiap resize.
+        map.setZoom(minZoom);
+      }
+    };
+
+    sync();
+    const ro = new ResizeObserver(sync);
     ro.observe(container);
     return () => ro.disconnect();
   }, [map]);

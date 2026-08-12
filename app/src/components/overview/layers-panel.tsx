@@ -16,14 +16,25 @@ const LAYER_ITEMS: { key: keyof LayerVisibility; label: string; color: string }[
 export function LayersPanel({
   layers,
   onToggle,
+  className,
+  defaultCollapsed = false,
 }: {
   layers: LayerVisibility;
   onToggle: (key: keyof LayerVisibility) => void;
+  /** Posisi & lebar sengaja diserahkan ke pemanggil: di desktop panel ini melayang di atas peta,
+   * di HP ia jadi kartu biasa di bawah peta (melayang di layar 390px cuma saling tumpang tindih). */
+  className?: string;
+  defaultCollapsed?: boolean;
 }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
   return (
-    <div className="hud-brk absolute left-[14px] top-[14px] z-[500] w-[250px] rounded-[10px] border border-border bg-black/[0.86] shadow-[0_12px_40px_rgba(0,0,0,0.85)] backdrop-blur-[10px]">
+    <div
+      className={cn(
+        "hud-brk rounded-[10px] border border-border bg-black/[0.86] shadow-[0_12px_40px_rgba(0,0,0,0.85)] backdrop-blur-[10px]",
+        className
+      )}
+    >
       <div className="hud-label flex items-center gap-[10px] border-b border-border-soft px-[13px] py-[11px]">
         <div className="size-4 rounded-full border-2 border-accent-bright shadow-[0_0_10px_rgba(60,242,154,0.45)]" />
         <span className="text-[9.5px] font-black tracking-[0.2em] text-ink-2">LAYERS</span>

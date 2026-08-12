@@ -10,17 +10,25 @@ type Aktivitas = Awaited<ReturnType<typeof getAktivitasPelatihanTerbaru>>[number
 export function TrainingPanel({
   items,
   onSelect,
+  className,
+  collapsedMaxHeight = "max-h-[min(268px,calc(100%-28px))]",
+  defaultCollapsed = false,
 }: {
   items: Aktivitas[];
   onSelect: (item: Aktivitas) => void;
+  /** Lihat catatan yang sama di LayersPanel: melayang di desktop, jadi kartu biasa di HP. */
+  className?: string;
+  collapsedMaxHeight?: string;
+  defaultCollapsed?: boolean;
 }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
   return (
     <div
       className={cn(
-        "hud-brk absolute right-[58px] top-[14px] z-[500] flex w-[250px] flex-col overflow-hidden rounded-[10px] border border-border bg-black/[0.88] shadow-[0_12px_40px_rgba(0,0,0,0.85)] backdrop-blur-[10px]",
-        !collapsed && "max-h-[min(268px,calc(100%-28px))]"
+        "hud-brk flex flex-col overflow-hidden rounded-[10px] border border-border bg-black/[0.88] shadow-[0_12px_40px_rgba(0,0,0,0.85)] backdrop-blur-[10px]",
+        !collapsed && collapsedMaxHeight,
+        className
       )}
     >
       <div className="hud-label flex shrink-0 items-center gap-[10px] border-b border-border-soft px-[13px] py-[11px]">

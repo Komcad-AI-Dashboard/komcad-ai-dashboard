@@ -255,13 +255,15 @@ export function OverviewView({
   }
 
   return (
-    <div ref={shellRef} className="flex flex-1 flex-col overflow-hidden">
-      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border-soft px-[18px] py-[9px]">
+    <div ref={shellRef} className="flex flex-1 flex-col overflow-y-auto xl:overflow-hidden">
+      <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-border-soft px-3 py-[9px] xl:flex-nowrap xl:justify-between xl:px-[18px]">
         <h2 className="text-[12px] font-extrabold tracking-widest">SITUASI KESIAPSIAGAAN NASIONAL</h2>
         <SituationClock />
+        {/* Tombol sembunyikan panel tidak berguna di HP: panel-panelnya sudah jadi kartu bertumpuk
+            yang tinggal di-scroll, bukan baris yang berebut ruang dengan peta. */}
         <button
           onClick={toggleAllPanels}
-          className="ml-[10px] rounded-[6px] border border-accent px-3 py-[6px] text-[12px] font-bold text-accent-bright hover:bg-accent-bright/10"
+          className="ml-[10px] hidden rounded-[6px] border border-accent px-3 py-[6px] text-[12px] font-bold text-accent-bright hover:bg-accent-bright/10 xl:block"
         >
           {allHidden ? "Tampilkan Semua Panel ▸" : "Sembunyikan Semua Panel ▾"}
         </button>
@@ -269,8 +271,9 @@ export function OverviewView({
 
       <div
         className={cn(
-          "relative min-h-0 flex-1 bg-base",
-          fullscreen && "fixed inset-0 z-[3000]"
+          // Di HP peta dapat tinggi tetap dan sisanya di-scroll; di desktop ia mengisi sisa ruang.
+          "relative h-[46vh] shrink-0 bg-base xl:h-auto xl:min-h-0 xl:flex-1",
+          fullscreen && "fixed inset-0 z-[3000] h-auto"
         )}
       >
         <SituationMap
@@ -282,7 +285,11 @@ export function OverviewView({
           onSelectMisi={(m) => setSelection({ type: "misi", data: m })}
         />
 
-        <LayersPanel layers={layers} onToggle={toggleLayer} />
+        <LayersPanel
+          layers={layers}
+          onToggle={toggleLayer}
+          className="absolute left-[14px] top-[14px] z-[500] hidden w-[250px] xl:block"
+        />
 
         <button
           onClick={() => setFullscreen((v) => !v)}
@@ -295,13 +302,32 @@ export function OverviewView({
         <TrainingPanel
           items={aktivitasPelatihan}
           onSelect={(t) => setSelection({ type: "training", data: t })}
+          className="absolute right-[58px] top-[14px] z-[500] hidden w-[250px] xl:flex"
         />
 
         <Legend />
       </div>
 
+      {/* Versi HP dari dua panel yang di desktop melayang di atas peta. Di 390px keduanya plus
+          legend saling tumpang tindih sampai peta tidak kelihatan sama sekali — dilaporkan user —
+          jadi di sini mereka turun jadi kartu biasa di bawah peta. */}
+      <div className="flex shrink-0 flex-col gap-[9px] bg-[#010202] px-[9px] pt-[9px] xl:hidden">
+        <LayersPanel
+          layers={layers}
+          onToggle={toggleLayer}
+          className="w-full"
+          defaultCollapsed
+        />
+        <TrainingPanel
+          items={aktivitasPelatihan}
+          onSelect={(t) => setSelection({ type: "training", data: t })}
+          className="w-full"
+          collapsedMaxHeight="max-h-[300px]"
+        />
+      </div>
+
       {hiddenPanels.size > 0 && (
-        <div className="flex shrink-0 gap-2 border-t border-border-soft bg-base px-[14px] py-[6px]">
+        <div className="hidden shrink-0 gap-2 border-t border-border-soft bg-base px-[14px] py-[6px] xl:flex">
           {Array.from(hiddenPanels).map((key) => (
             <button
               key={key}
@@ -317,6 +343,8 @@ export function OverviewView({
 
       {/* Pegangan geser tinggi baris panel bawah. Disembunyikan saat ketiga panel disembunyikan —
           tidak ada yang bisa diubah ukurannya di situ. */}
+      {/* Pegangan geser cuma ada di desktop: di HP baris panel sudah jadi tumpukan kartu yang
+          di-scroll, tidak ada tinggi baris yang perlu ditawar dengan peta. */}
       {!allHidden && (
         <div
           role="separator"
@@ -332,59 +360,61 @@ export function OverviewView({
           onPointerUp={handleGripPointerUp}
           onPointerCancel={handleGripPointerUp}
           onKeyDown={handleGripKeyDown}
-          className="hud-grip group flex h-[11px] shrink-0 items-center justify-center border-t border-border bg-base outline-none hover:bg-surface-hover"
+          className="hud-grip group hidden h-[11px] shrink-0 items-center justify-center border-t border-border bg-base outline-none hover:bg-surface-hover xl:flex"
         >
           <span className="hud-grip-bar h-[2px] w-[48px] rounded-full bg-border transition-colors" />
         </div>
       )}
 
+      {/* Tinggi hasil geser dilewatkan sebagai custom property, bukan style.height langsung, supaya
+          bisa dipakai HANYA mulai xl — di HP tinggi baris ini harus ikut isinya (kartu bertumpuk),
+          dan inline style tidak bisa dibatasi per breakpoint. */}
       <div
         className={cn(
-          "flex shrink-0 gap-[9px] bg-[#010202] p-[9px]",
-          allHidden && "hidden"
+          "flex shrink-0 flex-col gap-[9px] bg-[#010202] p-[9px] xl:h-[var(--bottom-h)] xl:flex-row",
+          allHidden && "xl:hidden"
         )}
-        style={{ height: bottomHeight }}
+        style={{ "--bottom-h": `${bottomHeight}px` } as React.CSSProperties}
       >
-        {!hiddenPanels.has("stats") && (
-          <BottomPanelShell
-            title="STATISTIK ANGGOTA"
-            flexGrow={1.1}
-            liveTag={
-              <span className="rounded-[10px] bg-cyan px-2 py-[2px] text-[9px] font-extrabold tracking-wide text-[#00131A]">
-                NASIONAL
-              </span>
-            }
-            onHide={() => hidePanel("stats")}
-          >
-            <StatsPanelContent stats={stats} />
-          </BottomPanelShell>
-        )}
-        {!hiddenPanels.has("feed") && (
-          <BottomPanelShell
-            title="MISI TERBARU"
-            flexGrow={1.3}
-            badge={
-              <span className="font-mono text-[11px] text-red">● {misi.length}</span>
-            }
-            onHide={() => hidePanel("feed")}
-          >
-            <FeedPanelContent items={feed} />
-          </BottomPanelShell>
-        )}
-        {!hiddenPanels.has("ai") && (
-          <BottomPanelShell
-            title="AI MOBILIZATION"
-            flexGrow={1.1}
-            liveTag={
-              <span className="rounded-[10px] bg-accent-bright px-2 py-[2px] text-[9px] font-extrabold tracking-wide text-[#00170C]">
-                ● LIVE
-              </span>
-            }
-            onHide={() => hidePanel("ai")}
-          >
-            <AiPanelContent data={aiSummary} />
-          </BottomPanelShell>
-        )}
+        {/* Sengaja selalu di-render, lalu disembunyikan lewat kelas HANYA di xl. Kalau pakai
+            conditional render, panel yang tadinya disembunyikan di desktop ikut hilang di HP —
+            padahal di HP chip "tampilkan lagi" dan tombol sembunyikannya memang tidak ada, jadi
+            user kehilangan panel itu tanpa cara mengembalikannya. */}
+        <BottomPanelShell
+          title="STATISTIK ANGGOTA"
+          flexGrow={1.1}
+          className={cn(hiddenPanels.has("stats") && "xl:hidden")}
+          liveTag={
+            <span className="rounded-[10px] bg-cyan px-2 py-[2px] text-[9px] font-extrabold tracking-wide text-[#00131A]">
+              NASIONAL
+            </span>
+          }
+          onHide={() => hidePanel("stats")}
+        >
+          <StatsPanelContent stats={stats} />
+        </BottomPanelShell>
+        <BottomPanelShell
+          title="MISI TERBARU"
+          flexGrow={1.3}
+          className={cn(hiddenPanels.has("feed") && "xl:hidden")}
+          badge={<span className="font-mono text-[11px] text-red">● {misi.length}</span>}
+          onHide={() => hidePanel("feed")}
+        >
+          <FeedPanelContent items={feed} />
+        </BottomPanelShell>
+        <BottomPanelShell
+          title="AI MOBILIZATION"
+          flexGrow={1.1}
+          className={cn(hiddenPanels.has("ai") && "xl:hidden")}
+          liveTag={
+            <span className="rounded-[10px] bg-accent-bright px-2 py-[2px] text-[9px] font-extrabold tracking-wide text-[#00170C]">
+              ● LIVE
+            </span>
+          }
+          onHide={() => hidePanel("ai")}
+        >
+          <AiPanelContent data={aiSummary} />
+        </BottomPanelShell>
       </div>
 
       <Drawer
