@@ -79,7 +79,7 @@ export function BerandaView({
 
   return (
     <div className="flex flex-col gap-[14px] xl:gap-6">
-      <div className="flex items-center gap-3 xl:gap-4">
+      <div className="mb-1 flex items-center gap-4">
         <div className="flex size-12 shrink-0 items-center justify-center rounded-[12px] border border-border bg-elevated xl:size-14">
           <AvatarPlaceholder />
         </div>
