@@ -13,7 +13,7 @@ export function MobileShell({ children, unreadCount }: { children: React.ReactNo
 
   return (
     <div className="flex justify-center bg-base">
-      <div className="flex min-h-screen w-full max-w-[430px] flex-col bg-base">
+      <div className="hud-mnav-shell flex min-h-screen w-full max-w-[430px] flex-col bg-base">
         <header className="sticky top-0 z-50 border-b border-border bg-base px-4 py-[11px]">
           <div className="flex items-center gap-[10px]">
             <div className="flex h-5 w-[26px] shrink-0 flex-col overflow-hidden rounded-[3px] border border-border">
@@ -39,9 +39,9 @@ export function MobileShell({ children, unreadCount }: { children: React.ReactNo
           <BrandTagline className="mt-[7px] border-t border-border-soft pt-[6px]" />
         </header>
 
-        <main className="flex flex-1 flex-col gap-[14px] px-4 pb-[90px] pt-[14px]">{children}</main>
+        <main className="flex flex-1 flex-col gap-[14px] px-4 pb-[calc(90px+env(safe-area-inset-bottom))] pt-[14px]">{children}</main>
 
-        <nav className="fixed bottom-0 left-1/2 z-[100] flex w-full max-w-[430px] -translate-x-1/2 gap-1 border-t border-border bg-base px-[6px] pb-[10px] pt-2">
+        <nav className="fixed bottom-0 left-1/2 z-[100] flex w-full max-w-[430px] -translate-x-1/2 gap-1 border-t border-border bg-base px-[6px] pb-[calc(10px+env(safe-area-inset-bottom))] pt-2">
           {MEMBER_NAV.map((item) => {
             const active = pathname === item.href;
             return (

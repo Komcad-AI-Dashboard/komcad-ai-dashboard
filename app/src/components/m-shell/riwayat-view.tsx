@@ -34,7 +34,7 @@ export function RiwayatView({ profil }: { profil: SelfProfil }) {
             key={t.key}
             onClick={() => setTab(t.key)}
             className={cn(
-              "flex-1 rounded-[7px] py-2 text-center text-[11.5px] font-bold",
+              "flex-1 rounded-[7px] py-[11px] text-center text-[11.5px] font-bold",
               tab === t.key ? "bg-accent-bright text-[#00170C]" : "text-ink-2"
             )}
           >

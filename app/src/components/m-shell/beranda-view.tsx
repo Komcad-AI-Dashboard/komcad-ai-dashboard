@@ -108,7 +108,7 @@ export function BerandaView({
                 key={s}
                 disabled={pending}
                 onClick={() => handleChangeStatus(s)}
-                className={`rounded-[8px] border px-1 py-[9px] text-center text-[11px] font-bold disabled:opacity-50 ${
+                className={`rounded-[8px] border px-1 py-[13px] text-center text-[11px] font-bold disabled:opacity-50 ${
                   active ? `${optStyle.border} ${optStyle.text} ${optStyle.bg}` : "border-border bg-elevated text-ink-2"
                 }`}
               >

@@ -63,14 +63,14 @@ export function NotifCard({ notif }: { notif: SelfNotifikasiItem }) {
           <button
             onClick={() => respond("Konfirmasi")}
             disabled={pending}
-            className="flex-1 rounded-[7px] border-none bg-accent-bright py-2 text-[11px] font-bold text-[#00170C] disabled:opacity-50"
+            className="flex-1 rounded-[7px] border-none bg-accent-bright py-[11px] text-[11px] font-bold text-[#00170C] disabled:opacity-50"
           >
             ✓ Konfirmasi
           </button>
           <button
             onClick={() => respond("Tolak")}
             disabled={pending}
-            className="flex-1 rounded-[7px] border border-border bg-transparent py-2 text-[11px] font-bold text-ink-2 disabled:opacity-50"
+            className="flex-1 rounded-[7px] border border-border bg-transparent py-[11px] text-[11px] font-bold text-ink-2 disabled:opacity-50"
           >
             Tolak
           </button>

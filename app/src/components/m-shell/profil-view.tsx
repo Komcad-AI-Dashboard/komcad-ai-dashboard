@@ -259,7 +259,7 @@ export function ProfilView({ profil }: { profil: SelfProfil }) {
       {error && <div className="rounded-[8px] border border-red bg-red/10 px-3 py-2 text-[11.5px] text-[#F5A9A5]">{error}</div>}
       {status && <div className="rounded-[8px] border border-accent-bright/30 bg-accent-bright/10 px-3 py-2 text-[11.5px] text-accent-bright">{status}</div>}
 
-      <div className="sticky bottom-[66px] flex gap-[10px] pt-1">
+      <div className="sticky bottom-[var(--mnav-h)] flex gap-[10px] pt-1">
         <button
           type="button"
           onClick={() => window.location.reload()}

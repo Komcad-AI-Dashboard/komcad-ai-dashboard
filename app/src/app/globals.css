@@ -376,5 +376,15 @@ body::after {
   }
 }
 
+/* Sisi Anggota (mobile-shell, dipakai di lapangan lewat HP) — satu sumber kebenaran untuk
+ * tinggi bottom nav, dipakai bareng oleh nav itu sendiri & action bar sticky di ProfilView,
+ * supaya keduanya tidak pernah drift lagi (bug lama: sticky bottom dihardcode 66px padahal
+ * tinggi asli nav 68.25px — ketimpang tipis, diukur langsung lewat getBoundingClientRect,
+ * bukan tebakan visual). env(safe-area-inset-bottom) ditambahkan supaya di iPhone berponi
+ * (home indicator) nav & area sticky tidak kepotong gesture bar. */
+.hud-mnav-shell {
+  --mnav-h: calc(68px + env(safe-area-inset-bottom));
+}
+
 }
 /* ^ tutup @layer components — jangan tambahkan kelas HUD di luar kurung ini. */
