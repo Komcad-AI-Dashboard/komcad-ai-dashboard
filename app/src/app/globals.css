@@ -366,8 +366,8 @@ body::after {
 .hud-marker-breathe.hud-delay-2 { animation-delay: -1.3s; }
 .hud-marker-breathe.hud-delay-3 { animation-delay: -1.95s; }
 @keyframes hud-marker-breathe {
-  0%, 100% { opacity: 0.55; filter: brightness(1); transform: scale(0.88); }
-  50% { opacity: 1; filter: brightness(1.5); transform: scale(1.12); }
+  0%, 100% { opacity: 0.5; filter: brightness(1); transform: scale(0.85); }
+  50% { opacity: 1; filter: brightness(1.65); transform: scale(1.16); }
 }
 @media (prefers-reduced-motion: reduce) {
   .hud-marker-breathe {
