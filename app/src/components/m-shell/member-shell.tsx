@@ -35,15 +35,26 @@ export function MemberShell({ children, unreadCount }: { children: React.ReactNo
               <div className="text-[8px] font-bold tracking-[0.28em] text-accent-bright">SISI ANGGOTA</div>
             </div>
             <div className="flex-1" />
-            <Link
-              href="/m/notifikasi"
-              className="relative flex size-8 items-center justify-center rounded-[8px] border border-border bg-elevated text-ink-2"
-            >
-              <Bell className="size-4" strokeWidth={1.5} />
-              {unreadCount > 0 && (
-                <span className="absolute -right-[3px] -top-[3px] size-[9px] rounded-full border-2 border-base bg-red" />
-              )}
-            </Link>
+            <div className="flex items-center gap-[6px]">
+              <Link
+                href="/m/notifikasi"
+                className="relative flex size-8 items-center justify-center rounded-[8px] border border-border bg-elevated text-ink-2"
+              >
+                <Bell className="size-4" strokeWidth={1.5} />
+                {unreadCount > 0 && (
+                  <span className="absolute -right-[3px] -top-[3px] size-[9px] rounded-full border-2 border-base bg-red" />
+                )}
+              </Link>
+              <form action={signOutAction}>
+                <button
+                  type="submit"
+                  aria-label="Keluar"
+                  className="flex size-8 items-center justify-center rounded-[8px] border border-border bg-elevated text-ink-2"
+                >
+                  <LogOut className="size-4" strokeWidth={1.5} />
+                </button>
+              </form>
+            </div>
           </div>
           {/* Layar 430px cukup lebar untuk menampung kepanjangan dalam satu baris di 8px. */}
           <BrandTagline className="mt-[7px] border-t border-border-soft pt-[6px]" />
