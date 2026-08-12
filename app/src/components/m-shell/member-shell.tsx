@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell } from "lucide-react";
-import { MEMBER_NAV, PRODUK_NAMA } from "@/lib/constants";
+import { Bell, LogOut } from "lucide-react";
+import { MEMBER_NAV } from "@/lib/constants";
 import { NavIcon } from "@/components/shell/nav-icon";
 import { BrandTagline } from "@/components/shell/brand-tagline";
+import { signOutAction } from "@/lib/auth-actions";
 import { cn } from "@/lib/utils";
 
 /**
@@ -20,7 +21,7 @@ export function MemberShell({ children, unreadCount }: { children: React.ReactNo
 
   return (
     <div className="flex justify-center bg-base xl:block">
-      <div className="hud-mnav-shell flex min-h-screen w-full max-w-[430px] flex-col bg-base xl:mx-auto xl:max-w-[1280px] xl:flex-row">
+      <div className="hud-mnav-shell flex min-h-screen w-full max-w-[430px] flex-col bg-base xl:max-w-none xl:flex-row">
         {/* Header mobile: brand ringkas + lonceng notifikasi. Disembunyikan di desktop — brand
             pindah ke sidebar, lonceng digantikan badge unread di item nav "Notifikasi". */}
         <header className="sticky top-0 z-50 border-b border-border bg-base px-4 py-[11px] xl:hidden">
@@ -30,7 +31,7 @@ export function MemberShell({ children, unreadCount }: { children: React.ReactNo
               <div className="flex-1 bg-[#F2F2F2]" />
             </div>
             <div>
-              <div className="text-[14px] font-black tracking-[0.13em]">{PRODUK_NAMA}</div>
+              <div className="text-[14px] font-black tracking-[0.13em]">KOMCAD</div>
               <div className="text-[8px] font-bold tracking-[0.28em] text-accent-bright">SISI ANGGOTA</div>
             </div>
             <div className="flex-1" />
@@ -58,7 +59,7 @@ export function MemberShell({ children, unreadCount }: { children: React.ReactNo
               <div className="flex-1 bg-[#F2F2F2]" />
             </div>
             <div>
-              <div className="text-[15px] font-black tracking-[0.13em]">{PRODUK_NAMA}</div>
+              <div className="text-[15px] font-black tracking-[0.13em]">KOMCAD</div>
               <div className="mt-px text-[8.5px] font-bold tracking-[0.28em] text-accent-bright">
                 SISI ANGGOTA
               </div>
@@ -90,6 +91,18 @@ export function MemberShell({ children, unreadCount }: { children: React.ReactNo
               );
             })}
           </nav>
+
+          <div className="border-t border-border-soft p-[10px]">
+            <form action={signOutAction}>
+              <button
+                type="submit"
+                className="flex w-full items-center gap-[10px] rounded-[7px] px-[10px] py-[9px] text-[12.5px] font-semibold text-ink-2 transition-colors hover:bg-surface-hover hover:text-ink"
+              >
+                <LogOut className="size-4 shrink-0" strokeWidth={1.5} />
+                Keluar
+              </button>
+            </form>
+          </div>
         </aside>
 
         <main className="flex flex-1 flex-col gap-[14px] px-4 pb-[calc(90px+env(safe-area-inset-bottom))] pt-[14px] xl:mx-auto xl:w-full xl:max-w-[880px] xl:px-8 xl:pb-8 xl:pt-8">
