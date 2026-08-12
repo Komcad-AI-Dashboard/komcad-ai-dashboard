@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Badge, statusMisiColor, urgensiColor } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Chip } from "@/components/ui/chip";
@@ -36,6 +37,14 @@ export function MisiView({
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("Semua");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  // Dibuka lewat hasil pencarian global topbar (?openId=<id>) — lihat GlobalSearchModal.
+  // Diturunkan langsung dari URL (bukan disinkronkan ke state lewat effect/ref) supaya tidak
+  // melanggar aturan purity render; ditutup dengan membersihkan query-nya, lihat closeDrawer().
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const openIdParam = searchParams.get("openId");
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return misiList.filter((m) => {
@@ -54,7 +63,13 @@ export function MisiView({
     });
   }, [misiList, query, filter]);
 
-  const selected = selectedId ? (misiList.find((m) => m.id === selectedId) ?? null) : null;
+  const effectiveSelectedId = selectedId ?? openIdParam;
+  const selected = effectiveSelectedId ? (misiList.find((m) => m.id === effectiveSelectedId) ?? null) : null;
+
+  function closeDrawer() {
+    setSelectedId(null);
+    if (openIdParam) router.replace(pathname);
+  }
 
   return (
     <div className="flex-1 overflow-y-auto p-5">
@@ -130,7 +145,7 @@ export function MisiView({
 
       <Drawer
         open={selected !== null}
-        onOpenChange={(o) => !o && setSelectedId(null)}
+        onOpenChange={(o) => !o && closeDrawer()}
         title={selected ? `${selected.kodeMisi} · ${selected.jenisKejadian}` : "Detail Misi"}
       >
         {selected && <MisiDetailDrawerContent misi={selected} role={role} />}

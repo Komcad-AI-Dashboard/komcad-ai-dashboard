@@ -1,12 +1,15 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import type { Session } from "next-auth";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Menu, Search, Settings, PlusCircle, LogOut, MoreVertical } from "lucide-react";
 import { COMMAND_NAV, ROLES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { signOutAction } from "@/lib/auth-actions";
+import { GlobalSearchModal } from "./global-search-modal";
 import type { TopbarKpi } from "./app-shell";
 
 const ALL_ITEMS = COMMAND_NAV.flatMap((g) => g.items);
@@ -27,6 +30,8 @@ export function Topbar({
   kpi: TopbarKpi;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [searchOpen, setSearchOpen] = useState(false);
   const current = ALL_ITEMS.find(
     (item) => pathname === item.href || pathname?.startsWith(item.href + "/")
   );
@@ -90,18 +95,21 @@ export function Topbar({
           </span>
         </button>
 
-        <div
-          className={cn(
-            "hidden items-center gap-2 rounded-[6px] border border-border bg-elevated px-3 py-[6px] text-[12px] text-ink-2 xl:flex"
-          )}
+        <button
+          onClick={() => setSearchOpen(true)}
+          className="hidden items-center gap-2 rounded-[6px] border border-border bg-elevated px-3 py-[6px] text-[12px] text-ink-2 hover:text-ink xl:flex"
         >
           <Search className="size-3.5" strokeWidth={1.5} />
           Cari...
-        </div>
-
-        <button className="hidden size-[30px] items-center justify-center rounded-[6px] border border-border bg-elevated text-ink-2 hover:text-ink xl:flex">
-          <Settings className="size-4" strokeWidth={1.5} />
         </button>
+
+        <Link
+          href="/pengaturan"
+          aria-label="Pengaturan"
+          className="hidden size-[30px] items-center justify-center rounded-[6px] border border-border bg-elevated text-ink-2 hover:text-ink xl:flex"
+        >
+          <Settings className="size-4" strokeWidth={1.5} />
+        </Link>
 
         {user ? (
           <form action={signOutAction} className="hidden xl:block">
@@ -154,11 +162,11 @@ export function Topbar({
                 <span className="text-[12px] text-ink-2">Nasional</span>
               </div>
               <DropdownMenu.Separator className="my-[4px] h-px bg-border-soft" />
-              <DropdownMenu.Item className={menuItemClass}>
+              <DropdownMenu.Item className={menuItemClass} onSelect={() => setSearchOpen(true)}>
                 <Search className="size-4 shrink-0" strokeWidth={1.5} />
                 Cari...
               </DropdownMenu.Item>
-              <DropdownMenu.Item className={menuItemClass}>
+              <DropdownMenu.Item className={menuItemClass} onSelect={() => router.push("/pengaturan")}>
                 <Settings className="size-4 shrink-0" strokeWidth={1.5} />
                 Pengaturan
               </DropdownMenu.Item>
@@ -185,6 +193,8 @@ export function Topbar({
           </DropdownMenu.Portal>
         </DropdownMenu.Root>
       </div>
+
+      <GlobalSearchModal open={searchOpen} onOpenChange={setSearchOpen} />
     </header>
   );
 }

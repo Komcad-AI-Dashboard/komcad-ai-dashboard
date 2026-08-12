@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Badge, statusSiagaColor } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,14 @@ export function AnggotaDirectory({
   const [formOpen, setFormOpen] = useState(false);
   const [formTarget, setFormTarget] = useState<AnggotaFull | null>(null);
 
+  // Dibuka lewat hasil pencarian global topbar (?openId=<id>) — lihat GlobalSearchModal.
+  // Diturunkan langsung dari URL (bukan disinkronkan ke state lewat effect/ref) supaya tidak
+  // melanggar aturan purity render; ditutup dengan membersihkan query-nya, lihat closeDrawer().
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const openIdParam = searchParams.get("openId");
+
   const canManage = role === ROLES.SUPER_ADMIN || role === ROLES.OPERATOR;
 
   const filtered = useMemo(() => {
@@ -44,7 +53,13 @@ export function AnggotaDirectory({
     });
   }, [anggotaList, query, filter]);
 
-  const selected = selectedId ? anggotaList.find((a) => a.id === selectedId) ?? null : null;
+  const effectiveSelectedId = selectedId ?? openIdParam;
+  const selected = effectiveSelectedId ? anggotaList.find((a) => a.id === effectiveSelectedId) ?? null : null;
+
+  function closeDrawer() {
+    setSelectedId(null);
+    if (openIdParam) router.replace(pathname);
+  }
 
   function openCreate() {
     setFormTarget(null);
@@ -131,7 +146,7 @@ export function AnggotaDirectory({
         </table>
       </div>
 
-      <Drawer open={selected !== null} onOpenChange={(o) => !o && setSelectedId(null)} title={selected?.nama ?? "Detail"}>
+      <Drawer open={selected !== null} onOpenChange={(o) => !o && closeDrawer()} title={selected?.nama ?? "Detail"}>
         {selected && (
           <AnggotaCvDrawerContent
             anggota={selected}
