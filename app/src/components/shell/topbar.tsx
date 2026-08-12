@@ -164,14 +164,15 @@ export function Topbar({
               </DropdownMenu.Item>
               <DropdownMenu.Separator className="my-[4px] h-px bg-border-soft" />
               {user ? (
-                <form action={signOutAction}>
-                  <DropdownMenu.Item asChild>
-                    <button type="submit" className={cn(menuItemClass, "text-[#F5A9A5]")}>
-                      <LogOut className="size-4 shrink-0" strokeWidth={2} />
-                      Keluar
-                    </button>
-                  </DropdownMenu.Item>
-                </form>
+                <DropdownMenu.Item
+                  className={cn(menuItemClass, "text-[#F5A9A5]")}
+                  onSelect={() => {
+                    void signOutAction();
+                  }}
+                >
+                  <LogOut className="size-4 shrink-0" strokeWidth={2} />
+                  Keluar
+                </DropdownMenu.Item>
               ) : (
                 <DropdownMenu.Item asChild>
                   <a href="/login" className={menuItemClass}>
