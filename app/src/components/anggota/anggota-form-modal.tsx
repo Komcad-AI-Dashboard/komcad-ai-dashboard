@@ -42,7 +42,7 @@ export function AnggotaFormModal({
       }
     >
       <form action={formAction} className="flex flex-col gap-3">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
           <div>
             <Label htmlFor="nik">NIK (16 digit)</Label>
             <Input id="nik" name="nik" defaultValue={anggota?.nik} maxLength={16} required />
@@ -52,7 +52,7 @@ export function AnggotaFormModal({
             <Input id="nama" name="nama" defaultValue={anggota?.nama} required />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
           <div>
             <Label htmlFor="unitAsal">Unit Asal</Label>
             <Input id="unitAsal" name="unitAsal" defaultValue={anggota?.unitAsal} required />
@@ -69,7 +69,7 @@ export function AnggotaFormModal({
             </Select>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
           <div>
             <Label htmlFor="telepon">Telepon</Label>
             <Input id="telepon" name="telepon" defaultValue={anggota?.telepon ?? ""} />
@@ -79,7 +79,7 @@ export function AnggotaFormModal({
             <Input id="whatsapp" name="whatsapp" defaultValue={anggota?.whatsapp ?? ""} />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
           <div>
             <Label htmlFor="email">Email</Label>
             <Input id="email" name="email" type="email" defaultValue={anggota?.email ?? ""} />

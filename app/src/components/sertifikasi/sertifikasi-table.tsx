@@ -24,10 +24,10 @@ export function SertifikasiTable({ rows }: { rows: Row[] }) {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Cari jenis sertifikasi atau nama anggota..."
-        className="mb-4 max-w-[360px]"
+        className="mb-4 w-full xl:max-w-[360px]"
       />
       <div className="hud-brk hud-panel overflow-hidden rounded-[10px] border border-border">
-        <table className="w-full border-collapse text-left">
+        <table className="hud-table-responsive w-full border-collapse text-left">
           <thead>
             <tr className="hud-head">
               {["ANGGOTA", "JENIS SERTIFIKASI", "TANGGAL TERBIT", "MASA BERLAKU", "STATUS"].map((h) => (
@@ -47,15 +47,15 @@ export function SertifikasiTable({ rows }: { rows: Row[] }) {
             )}
             {filtered.map((r) => (
               <tr key={r.id} className="border-b border-border-soft last:border-b-0 hover:bg-surface-hover">
-                <td className="px-3 py-[10px] text-[12px]">{r.anggotaLabel}</td>
-                <td className="px-3 py-[10px] text-[12px]">{r.jenisSertifikasi}</td>
-                <td className="px-3 py-[10px] text-[12px] text-ink-2">
+                <td data-label="Anggota" className="px-3 py-[10px] text-[12px]">{r.anggotaLabel}</td>
+                <td data-label="Jenis Sertifikasi" className="px-3 py-[10px] text-[12px]">{r.jenisSertifikasi}</td>
+                <td data-label="Tanggal Terbit" className="px-3 py-[10px] text-[12px] text-ink-2">
                   {r.tanggalTerbit.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
                 </td>
-                <td className="px-3 py-[10px] text-[12px] text-ink-2">
+                <td data-label="Masa Berlaku" className="px-3 py-[10px] text-[12px] text-ink-2">
                   {r.tanggalBerlaku.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
                 </td>
-                <td className="px-3 py-[10px]">
+                <td data-label="Status" className="px-3 py-[10px]">
                   <Badge color={statusSertifikasiColor(r.status)}>{r.status}</Badge>
                 </td>
               </tr>

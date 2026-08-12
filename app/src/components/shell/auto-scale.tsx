@@ -38,11 +38,20 @@ export function AutoScale({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div ref={outerRef} style={{ width: "100vw", height: "100vh", overflow: "hidden" }}>
+    // Lebar pakai 100% (bukan 100vw) dan tinggi 100dvh:
+    // - 100vw ikut menghitung palang gulir. globals.css mengecilkan scrollbar jadi 8px, jadi di
+    //   setiap halaman wrapper ini jadi ~9px lebih lebar dari kotak isi <html> dan seluruh dashboard
+    //   bisa digeser ke samping sedikit — terukur ovf=9 di SEMUA halaman. 100% mengikuti kotak isi,
+    //   jadi selisih itu hilang.
+    // - 100dvh, bukan 100vh, supaya di browser HP tinggi mengikuti area yang benar-benar terlihat
+    //   dan bagian bawah aplikasi tidak tertutup bilah URL. Di desktop dvh sama dengan vh.
+    <div ref={outerRef} style={{ width: "100%", height: "100dvh", overflow: "hidden" }}>
       <div
+        // Persen dari wrapper di atas, bukan satuan viewport: setelah di-scale hasilnya persis
+        // sebesar wrapper, dan tidak ada lagi satuan yang diam-diam diukur dari viewport asli.
         style={{
-          width: `${100 / scale}vw`,
-          height: `${100 / scale}vh`,
+          width: `${100 / scale}%`,
+          height: `${100 / scale}%`,
           transform: scale === 1 ? undefined : `scale(${scale})`,
           transformOrigin: "top left",
         }}

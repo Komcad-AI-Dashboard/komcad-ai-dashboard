@@ -122,7 +122,7 @@ export function PengaturanView({ pengaturan }: { pengaturan: PengaturanSistem })
             Mengatur nilai ini langsung berlaku untuk Misi berikutnya yang dibuat lewat tombol BUAT MISI — dipakai
             baik oleh formula fallback deterministik maupun sebagai panduan bobot ke OpenAI (FR-09 s.d. FR-11).
           </p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
             <div>
               <Label htmlFor="aiRadiusKm">Radius pencarian default (km)</Label>
               <Input

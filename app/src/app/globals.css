@@ -376,6 +376,59 @@ body::after {
   }
 }
 
+/* Tabel padat Command Center di layar HP.
+ *
+ * Tabel-tabel ini punya 5-7 kolom dan dibungkus panel `overflow-hidden`, jadi di 390px kolom
+ * kanannya bukan cuma sempit tapi TERPOTONG dan tidak bisa dijangkau sama sekali (terukur: tabel
+ * selebar 443-657px di viewport 390px). Di bawah xl tiap baris diubah jadi kartu bertumpuk dan
+ * header kolomnya dipindah jadi label per sel lewat atribut data-label, sehingga semua kolom tetap
+ * terbaca tanpa geser ke samping.
+ *
+ * Ambang 1279.98px sengaja mengikuti breakpoint xl Tailwind — sama dengan ambang AutoScale, lihat
+ * catatan di auto-scale.tsx. Tidak ada !important di sini: sel-selnya memang tidak memakai utility
+ * display apa pun, jadi aturan di layer components ini tidak bertabrakan dengan utility Tailwind
+ * (yang layer-nya menang), dan padding/border dari utility sengaja dibiarkan apa adanya. */
+@media (max-width: 1279.98px) {
+  .hud-table-responsive,
+  .hud-table-responsive tbody,
+  .hud-table-responsive tr,
+  .hud-table-responsive td {
+    display: block;
+    width: 100%;
+  }
+  .hud-table-responsive thead {
+    display: none;
+  }
+  /* Jarak antar "kartu" — tanpa ini baris-baris menyatu dan sulit dibedakan satu sama lain. */
+  .hud-table-responsive tr {
+    padding: 4px 2px;
+  }
+  /* Sel tanpa data-label (mis. baris kosong "tidak ada data" yang pakai colSpan) dibiarkan
+   * mengalir biasa — memberinya label kolom justru menyesatkan.
+   *
+   * Flex, BUKAN grid: sebagian sel berisi lebih dari satu elemen (kolom Readiness = bar + angka,
+   * kolom aksi = beberapa tombol). Dengan grid 2 kolom, tiap elemen jadi grid item terpisah dan
+   * elemen kedua terlempar ke baris berikutnya di kolom label — angka readiness sempat nyasar ke
+   * bawah label. Flex membuat label lebar tetap lalu sisanya mengalir normal apa adanya. */
+  .hud-table-responsive td[data-label] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+  }
+  .hud-table-responsive td[data-label]::before {
+    flex: 0 0 92px;
+  }
+  .hud-table-responsive td[data-label]::before {
+    content: attr(data-label);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+}
+
 /* Sisi Anggota (mobile-shell, dipakai di lapangan lewat HP) — satu sumber kebenaran untuk
  * tinggi bottom nav, dipakai bareng oleh nav itu sendiri & action bar sticky di ProfilView,
  * supaya keduanya tidak pernah drift lagi (bug lama: sticky bottom dihardcode 66px padahal

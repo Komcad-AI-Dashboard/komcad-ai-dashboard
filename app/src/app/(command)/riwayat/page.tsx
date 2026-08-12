@@ -6,7 +6,7 @@ export default async function RiwayatPage() {
   return (
     <div className="flex-1 overflow-y-auto p-5">
       <div className="hud-brk hud-panel overflow-hidden rounded-[10px] border border-border">
-        <table className="w-full border-collapse text-left">
+        <table className="hud-table-responsive w-full border-collapse text-left">
           <thead>
             <tr className="hud-head">
               {["ID MISI", "JENIS", "LOKASI", "TANGGAL SELESAI", "PERSONEL", "EVALUASI"].map((h) => (
@@ -29,14 +29,14 @@ export default async function RiwayatPage() {
             )}
             {riwayat.map((r) => (
               <tr key={r.id} className="border-b border-border-soft last:border-b-0">
-                <td className="px-3 py-[10px] font-mono text-[12px]">{r.kodeMisi}</td>
-                <td className="px-3 py-[10px] text-[12px]">{r.jenisKejadian}</td>
-                <td className="px-3 py-[10px] text-[12px] text-ink-2">{r.lokasi}</td>
-                <td className="px-3 py-[10px] text-[12px]">
+                <td data-label="ID Misi" className="px-3 py-[10px] font-mono text-[12px]">{r.kodeMisi}</td>
+                <td data-label="Jenis" className="px-3 py-[10px] text-[12px]">{r.jenisKejadian}</td>
+                <td data-label="Lokasi" className="px-3 py-[10px] text-[12px] text-ink-2">{r.lokasi}</td>
+                <td data-label="Tanggal Selesai" className="px-3 py-[10px] text-[12px]">
                   {r.selesaiAt?.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) ?? "—"}
                 </td>
-                <td className="px-3 py-[10px] text-[12px]">{r.personel}</td>
-                <td className="max-w-[280px] truncate px-3 py-[10px] text-[12px] text-ink-2" title={r.hasilEvaluasi ?? undefined}>
+                <td data-label="Personel" className="px-3 py-[10px] text-[12px]">{r.personel}</td>
+                <td data-label="Evaluasi" className="px-3 py-[10px] text-[12px] text-ink-2 xl:max-w-[280px] xl:truncate" title={r.hasilEvaluasi ?? undefined}>
                   {r.hasilEvaluasi ?? "—"}
                 </td>
               </tr>

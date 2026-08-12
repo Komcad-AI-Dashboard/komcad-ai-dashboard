@@ -58,7 +58,7 @@ export function MisiView({
 
   return (
     <div className="flex-1 overflow-y-auto p-5">
-      <div className="mb-4 grid grid-cols-4 gap-3">
+      <div className="mb-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
         <KpiCard label="MISI AKTIF" value={String(kpi.misiAktif)} sub={`${kpi.kritisAktif} kritis`} />
         <KpiCard label="SELESAI BULAN INI" value={String(kpi.selesaiBulanIni)} />
         <KpiCard
@@ -68,14 +68,14 @@ export function MisiView({
         <KpiCard label="PERSONEL TERMOBILISASI" value={String(kpi.personelTermobilisasi)} />
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      <div className="mb-4 flex flex-col items-stretch gap-3 xl:flex-row xl:flex-wrap xl:items-center">
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Cari Misi (ID, lokasi, jenis kejadian)..."
-          className="max-w-[320px] flex-1"
+          className="w-full xl:max-w-[320px] xl:flex-1"
         />
-        <div className="flex gap-[6px]">
+        <div className="flex flex-wrap gap-[6px]">
           {FILTERS.map((f) => (
             <Chip key={f} active={filter === f} onClick={() => setFilter(f)}>
               {f}
@@ -85,7 +85,7 @@ export function MisiView({
       </div>
 
       <div className="hud-brk hud-panel overflow-hidden rounded-[10px] border border-border">
-        <table className="w-full border-collapse text-left">
+        <table className="hud-table-responsive w-full border-collapse text-left">
           <thead>
             <tr className="hud-head">
               {["ID MISI", "JENIS KEJADIAN", "LOKASI", "URGENSI", "STATUS", "PERSONEL"].map((h) => (
@@ -112,16 +112,16 @@ export function MisiView({
                 onClick={() => setSelectedId(m.id)}
                 className="cursor-pointer border-b border-border-soft last:border-b-0 hover:bg-surface-hover"
               >
-                <td className="px-3 py-[10px] font-mono text-[12px]">{m.kodeMisi}</td>
-                <td className="px-3 py-[10px] text-[12px]">{m.jenisKejadian}</td>
-                <td className="px-3 py-[10px] text-[12px] text-ink-2">{m.lokasi}</td>
-                <td className="px-3 py-[10px]">
+                <td data-label="ID Misi" className="px-3 py-[10px] font-mono text-[12px]">{m.kodeMisi}</td>
+                <td data-label="Jenis Kejadian" className="px-3 py-[10px] text-[12px]">{m.jenisKejadian}</td>
+                <td data-label="Lokasi" className="px-3 py-[10px] text-[12px] text-ink-2">{m.lokasi}</td>
+                <td data-label="Urgensi" className="px-3 py-[10px]">
                   <Badge color={urgensiColor(m.urgensi)}>{m.urgensi}</Badge>
                 </td>
-                <td className="px-3 py-[10px]">
+                <td data-label="Status" className="px-3 py-[10px]">
                   <Badge color={statusMisiColor(m.status)}>{m.status}</Badge>
                 </td>
-                <td className="px-3 py-[10px] text-[12px]">{m.penugasan.length}</td>
+                <td data-label="Personel" className="px-3 py-[10px] text-[12px]">{m.penugasan.length}</td>
               </tr>
             ))}
           </tbody>

@@ -17,7 +17,7 @@ export default async function AnalitikPage() {
 
   return (
     <div className="flex-1 overflow-y-auto p-5">
-      <div className="mb-4 grid grid-cols-4 gap-3">
+      <div className="mb-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
         <KpiCard label="READINESS NASIONAL" value={String(kpi.readinessNasional)} valueClassName="text-accent-bright" />
         <KpiCard label="MISI SELESAI (30 HARI)" value={String(kpi.misiSelesai30Hari)} />
         <KpiCard

@@ -66,7 +66,7 @@ export function PenggunaView({
             Tambah Pengguna
           </Button>
         </div>
-        <table className="w-full border-collapse text-left">
+        <table className="hud-table-responsive w-full border-collapse text-left">
           <thead>
             <tr>
               {["NAMA", "EMAIL", "ROLE", "STATUS", ""].map((h) => (
@@ -79,16 +79,16 @@ export function PenggunaView({
           <tbody>
             {users.map((u) => (
               <tr key={u.id} className="border-b border-border-soft last:border-b-0">
-                <td className="px-3 py-[10px] text-[12px] font-semibold">
+                <td data-label="Nama" className="px-3 py-[10px] text-[12px] font-semibold">
                   {u.name} {u.id === currentUserId && <span className="text-ink-3">(Anda)</span>}
                 </td>
-                <td className="px-3 py-[10px] text-[12px] text-ink-2">{u.email}</td>
-                <td className="px-3 py-[10px] text-[12px]">{ROLE_LABELS[u.role as keyof typeof ROLE_LABELS]}</td>
-                <td className="px-3 py-[10px]">
+                <td data-label="Email" className="px-3 py-[10px] text-[12px] text-ink-2">{u.email}</td>
+                <td data-label="Role" className="px-3 py-[10px] text-[12px]">{ROLE_LABELS[u.role as keyof typeof ROLE_LABELS]}</td>
+                <td data-label="Status" className="px-3 py-[10px]">
                   <Badge color={u.status === "Aktif" ? "green" : "gray"}>{u.status}</Badge>
                 </td>
                 <td className="px-3 py-[10px] text-right">
-                  <div className="flex justify-end gap-2">
+                  <div className="flex flex-wrap justify-end gap-2">
                     <Button variant="default" size="sm" onClick={() => openEdit(u)}>
                       Edit
                     </Button>

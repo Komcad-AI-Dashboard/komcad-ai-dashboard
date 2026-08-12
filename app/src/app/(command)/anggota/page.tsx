@@ -19,7 +19,7 @@ export default async function AnggotaPage() {
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      <div className="grid grid-cols-4 gap-3 p-5 pb-0">
+      <div className="grid grid-cols-2 gap-3 p-5 pb-0 xl:grid-cols-4">
         {cards.map((c) => (
           <Card key={c.label} className="p-[14px]">
             <div className="mb-2 text-[10px] font-extrabold tracking-wide text-ink-2">{c.label}</div>
