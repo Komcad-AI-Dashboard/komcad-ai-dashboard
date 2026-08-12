@@ -43,7 +43,7 @@ export function RiwayatView({ profil }: { profil: SelfProfil }) {
         ))}
       </div>
 
-      <div className={cn("flex flex-col gap-[10px]", tab !== "pelatihan" && "hidden")}>
+      <div className={cn("flex flex-col gap-[10px]", tab === "pelatihan" ? "xl:grid xl:grid-cols-2" : "hidden")}>
         {profil.pelatihan.length === 0 && <div className="text-[11.5px] text-ink-3">Belum ada riwayat pelatihan.</div>}
         {profil.pelatihan.map((p) => (
           <div key={p.id} className="rounded-[10px] border border-border bg-surface p-3">
@@ -56,7 +56,7 @@ export function RiwayatView({ profil }: { profil: SelfProfil }) {
         ))}
       </div>
 
-      <div className={cn("flex flex-col gap-[10px]", tab !== "penugasan" && "hidden")}>
+      <div className={cn("flex flex-col gap-[10px]", tab === "penugasan" ? "xl:grid xl:grid-cols-2" : "hidden")}>
         {profil.penugasan.length === 0 && <div className="text-[11.5px] text-ink-3">Belum ada riwayat penugasan.</div>}
         {profil.penugasan.map((p) => (
           <div key={p.id} className="rounded-[10px] border border-border bg-surface p-3">
@@ -71,7 +71,7 @@ export function RiwayatView({ profil }: { profil: SelfProfil }) {
         ))}
       </div>
 
-      <div className={cn("flex flex-col gap-[10px]", tab !== "sertifikasi" && "hidden")}>
+      <div className={cn("flex flex-col gap-[10px]", tab === "sertifikasi" ? "xl:grid xl:grid-cols-2" : "hidden")}>
         {profil.sertifikasi.length === 0 && <div className="text-[11.5px] text-ink-3">Belum ada data sertifikasi.</div>}
         {profil.sertifikasi.map((s) => (
           <div key={s.id} className="rounded-[10px] border border-border bg-surface p-3">

@@ -16,9 +16,11 @@ export default async function MemberNotifikasiPage() {
         <div className="text-[11px] text-ink-2">Riwayat notifikasi mobilisasi & sistem</div>
       </div>
       {notifikasi.length === 0 && <div className="text-[11.5px] text-ink-3">Belum ada notifikasi.</div>}
-      {notifikasi.map((n) => (
-        <NotifCard key={n.id} notif={n} />
-      ))}
+      <div className="flex flex-col gap-[14px] xl:grid xl:grid-cols-2 xl:gap-[10px]">
+        {notifikasi.map((n) => (
+          <NotifCard key={n.id} notif={n} />
+        ))}
+      </div>
     </>
   );
 }

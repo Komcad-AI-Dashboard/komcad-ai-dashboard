@@ -133,7 +133,7 @@ export function BerandaView({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-[10px]">
+      <div className="grid grid-cols-2 gap-[10px] xl:grid-cols-4">
         <div className="rounded-[10px] border border-border bg-surface p-3">
           <div className="mb-[6px] text-[16px]">🏅</div>
           <div className="font-mono text-[17px] font-extrabold">{stats.sertifikasiAktif}</div>

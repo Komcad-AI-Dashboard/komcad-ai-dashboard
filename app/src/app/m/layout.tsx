@@ -1,7 +1,7 @@
 import { after } from "next/server";
 import { requireSelfAnggotaId, getSelfUnreadNotifikasiCount } from "@/lib/anggota-mobile-data";
 import { ensureReminderSertifikasi } from "@/lib/reminder-sertifikasi";
-import { MobileShell } from "@/components/m-shell/mobile-shell";
+import { MemberShell } from "@/components/m-shell/member-shell";
 
 export default async function MemberLayout({ children }: { children: React.ReactNode }) {
   const self = await requireSelfAnggotaId();
@@ -12,5 +12,5 @@ export default async function MemberLayout({ children }: { children: React.React
   }
   const unreadCount = "error" in self ? 0 : await getSelfUnreadNotifikasiCount(self.anggotaId);
 
-  return <MobileShell unreadCount={unreadCount}>{children}</MobileShell>;
+  return <MemberShell unreadCount={unreadCount}>{children}</MemberShell>;
 }

@@ -176,60 +176,64 @@ export function ProfilView({ profil }: { profil: SelfProfil }) {
       </div>
 
       <div className="text-[10px] font-extrabold uppercase tracking-wide text-ink-3">Kontak & Sosial Media</div>
-      <div className="mb-[10px] flex items-center gap-2">
-        <div className="flex size-[34px] shrink-0 items-center justify-center rounded-[8px] border border-border bg-elevated">
-          <Phone className="size-4" strokeWidth={1.5} />
+      {/* Grid 2 kolom cuma di desktop (xl:) — di HP tetap tumpuk 1 kolom seperti semula, tiap
+          baris tetap pakai mb-[10px]-nya sendiri di situ (xl:mb-0 batalin biar gak dobel sama gap grid). */}
+      <div className="xl:grid xl:grid-cols-2 xl:gap-[10px]">
+        <div className="mb-[10px] flex items-center gap-2 xl:mb-0">
+          <div className="flex size-[34px] shrink-0 items-center justify-center rounded-[8px] border border-border bg-elevated">
+            <Phone className="size-4" strokeWidth={1.5} />
+          </div>
+          <input
+            placeholder="Nomor Telepon"
+            value={form.telepon}
+            onChange={(e) => set("telepon", e.target.value)}
+            className="flex-1 rounded-[8px] border border-border bg-elevated px-3 py-[11px] text-[13px] focus:border-accent-bright focus:outline-none"
+          />
         </div>
-        <input
-          placeholder="Nomor Telepon"
-          value={form.telepon}
-          onChange={(e) => set("telepon", e.target.value)}
-          className="flex-1 rounded-[8px] border border-border bg-elevated px-3 py-[11px] text-[13px] focus:border-accent-bright focus:outline-none"
-        />
-      </div>
-      <div className="mb-[10px] flex items-center gap-2">
-        <div className="flex size-[34px] shrink-0 items-center justify-center rounded-[8px] border border-border bg-elevated">
-          <Mail className="size-4" strokeWidth={1.5} />
+        <div className="mb-[10px] flex items-center gap-2 xl:mb-0">
+          <div className="flex size-[34px] shrink-0 items-center justify-center rounded-[8px] border border-border bg-elevated">
+            <Mail className="size-4" strokeWidth={1.5} />
+          </div>
+          <input
+            placeholder="Email"
+            value={form.email}
+            onChange={(e) => set("email", e.target.value)}
+            className="flex-1 rounded-[8px] border border-border bg-elevated px-3 py-[11px] text-[13px] focus:border-accent-bright focus:outline-none"
+          />
         </div>
-        <input
-          placeholder="Email"
-          value={form.email}
-          onChange={(e) => set("email", e.target.value)}
-          className="flex-1 rounded-[8px] border border-border bg-elevated px-3 py-[11px] text-[13px] focus:border-accent-bright focus:outline-none"
-        />
-      </div>
-      <div className="mb-[10px] flex items-center gap-2">
-        <div className="flex size-[34px] shrink-0 items-center justify-center rounded-[8px] border border-border bg-elevated">
-          <MessageCircle className="size-4" strokeWidth={1.5} />
+        <div className="mb-[10px] flex items-center gap-2 xl:mb-0">
+          <div className="flex size-[34px] shrink-0 items-center justify-center rounded-[8px] border border-border bg-elevated">
+            <MessageCircle className="size-4" strokeWidth={1.5} />
+          </div>
+          <input
+            placeholder="Nomor WhatsApp"
+            value={form.whatsapp}
+            onChange={(e) => set("whatsapp", e.target.value)}
+            className="flex-1 rounded-[8px] border border-border bg-elevated px-3 py-[11px] text-[13px] focus:border-accent-bright focus:outline-none"
+          />
         </div>
-        <input
-          placeholder="Nomor WhatsApp"
-          value={form.whatsapp}
-          onChange={(e) => set("whatsapp", e.target.value)}
-          className="flex-1 rounded-[8px] border border-border bg-elevated px-3 py-[11px] text-[13px] focus:border-accent-bright focus:outline-none"
-        />
-      </div>
-      <div className="mb-[10px] flex items-center gap-2">
-        <div className="flex size-[34px] shrink-0 items-center justify-center rounded-[8px] border border-border bg-elevated">
-          <AtSign className="size-4" strokeWidth={1.5} />
+        <div className="mb-[10px] flex items-center gap-2 xl:mb-0">
+          <div className="flex size-[34px] shrink-0 items-center justify-center rounded-[8px] border border-border bg-elevated">
+            <AtSign className="size-4" strokeWidth={1.5} />
+          </div>
+          <input
+            placeholder="Username Instagram"
+            value={form.instagram}
+            onChange={(e) => set("instagram", e.target.value)}
+            className="flex-1 rounded-[8px] border border-border bg-elevated px-3 py-[11px] text-[13px] focus:border-accent-bright focus:outline-none"
+          />
         </div>
-        <input
-          placeholder="Username Instagram"
-          value={form.instagram}
-          onChange={(e) => set("instagram", e.target.value)}
-          className="flex-1 rounded-[8px] border border-border bg-elevated px-3 py-[11px] text-[13px] focus:border-accent-bright focus:outline-none"
-        />
-      </div>
-      <div className="mb-[10px] flex items-center gap-2">
-        <div className="flex size-[34px] shrink-0 items-center justify-center rounded-[8px] border border-border bg-elevated">
-          <Link2 className="size-4" strokeWidth={1.5} />
+        <div className="mb-[10px] flex items-center gap-2 xl:mb-0">
+          <div className="flex size-[34px] shrink-0 items-center justify-center rounded-[8px] border border-border bg-elevated">
+            <Link2 className="size-4" strokeWidth={1.5} />
+          </div>
+          <input
+            placeholder="Profil LinkedIn"
+            value={form.linkedin}
+            onChange={(e) => set("linkedin", e.target.value)}
+            className="flex-1 rounded-[8px] border border-border bg-elevated px-3 py-[11px] text-[13px] focus:border-accent-bright focus:outline-none"
+          />
         </div>
-        <input
-          placeholder="Profil LinkedIn"
-          value={form.linkedin}
-          onChange={(e) => set("linkedin", e.target.value)}
-          className="flex-1 rounded-[8px] border border-border bg-elevated px-3 py-[11px] text-[13px] focus:border-accent-bright focus:outline-none"
-        />
       </div>
       <Field
         label="Kontak Darurat"
@@ -259,7 +263,7 @@ export function ProfilView({ profil }: { profil: SelfProfil }) {
       {error && <div className="rounded-[8px] border border-red bg-red/10 px-3 py-2 text-[11.5px] text-[#F5A9A5]">{error}</div>}
       {status && <div className="rounded-[8px] border border-accent-bright/30 bg-accent-bright/10 px-3 py-2 text-[11.5px] text-accent-bright">{status}</div>}
 
-      <div className="sticky bottom-[var(--mnav-h)] flex gap-[10px] pt-1">
+      <div className="sticky bottom-[var(--mnav-h)] flex gap-[10px] pt-1 xl:bottom-0">
         <button
           type="button"
           onClick={() => window.location.reload()}
