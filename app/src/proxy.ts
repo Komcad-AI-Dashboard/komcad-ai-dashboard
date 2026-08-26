@@ -35,6 +35,9 @@ export default auth((req) => {
   return NextResponse.next();
 });
 
+// `brand` WAJIB ikut dikecualikan: aset di public/brand dipakai halaman login (belum ada sesi),
+// dan optimizer _next/image mengambilnya lewat fetch server-side tanpa cookie — tanpa pengecualian
+// ini semua gambar dibalas 307 ke /login lalu gagal dioptimasi ("isn't a valid image").
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|brand).*)"],
 };

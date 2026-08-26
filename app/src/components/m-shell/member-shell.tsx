@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, LogOut } from "lucide-react";
@@ -26,10 +27,13 @@ export function MemberShell({ children, unreadCount }: { children: React.ReactNo
             pindah ke sidebar, lonceng digantikan badge unread di item nav "Notifikasi". */}
         <header className="sticky top-0 z-50 border-b border-border bg-base px-4 py-[11px] xl:hidden">
           <div className="flex items-center gap-[10px]">
-            <div className="flex h-5 w-[26px] shrink-0 flex-col overflow-hidden rounded-[3px] border border-border">
-              <div className="flex-1 bg-[#D8302A]" />
-              <div className="flex-1 bg-[#F2F2F2]" />
-            </div>
+            <Image
+              src="/brand/logo-komcad.png"
+              alt="Lambang Komponen Cadangan"
+              width={30}
+              height={30}
+              className="size-[30px] shrink-0 object-contain"
+            />
             <div>
               <div className="text-[14px] font-black tracking-[0.13em]">KOMCAD</div>
               <div className="text-[8px] font-bold tracking-[0.28em] text-accent-bright">SISI ANGGOTA</div>
@@ -65,10 +69,13 @@ export function MemberShell({ children, unreadCount }: { children: React.ReactNo
             satu produk konsisten, bukan bikin paradigma nav ketiga (tab atas). */}
         <aside className="hidden shrink-0 flex-col border-r border-border-soft bg-gradient-to-b from-[#070a0b] to-black xl:flex xl:w-[220px]">
           <div className="flex items-center gap-[9px] border-b border-border-soft p-4">
-            <div className="flex h-[22px] w-[28px] shrink-0 flex-col overflow-hidden rounded-[3px] shadow-[0_0_0_1px_rgba(255,255,255,0.1),0_2px_10px_rgba(225,76,69,0.35)]">
-              <div className="flex-1 bg-[#D8302A]" />
-              <div className="flex-1 bg-[#F2F2F2]" />
-            </div>
+            <Image
+              src="/brand/logo-komcad.png"
+              alt="Lambang Komponen Cadangan"
+              width={32}
+              height={32}
+              className="size-8 shrink-0 object-contain"
+            />
             <div>
               <div className="text-[15px] font-black tracking-[0.13em]">KOMCAD</div>
               <div className="mt-px text-[8.5px] font-bold tracking-[0.28em] text-accent-bright">

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Session } from "next-auth";
@@ -39,10 +40,13 @@ export function Sidebar({
     >
       <div className="border-b border-border-soft p-4">
         <div className="flex items-center gap-[9px]">
-          <div className="flex h-[22px] w-[28px] shrink-0 flex-col overflow-hidden rounded-[3px] shadow-[0_0_0_1px_rgba(255,255,255,0.1),0_2px_10px_rgba(225,76,69,0.35)]">
-            <div className="flex-1 bg-[#D8302A]" />
-            <div className="flex-1 bg-[#F2F2F2]" />
-          </div>
+          <Image
+            src="/brand/logo-komcad.png"
+            alt="Lambang Komponen Cadangan"
+            width={32}
+            height={32}
+            className="size-8 shrink-0 object-contain"
+          />
           <div>
             <div className="text-[15px] font-black tracking-[0.13em]">KOMCAD</div>
             <div className="mt-px text-[8.5px] font-bold tracking-[0.28em] text-accent-bright">
