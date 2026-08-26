@@ -13,6 +13,8 @@ declare module "next-auth" {
   interface User {
     role: Role;
     anggotaId: string | null;
+    /** Centang "Ingat saya" di form login — menentukan panjang masa sesi, lihat lib/auth.ts. */
+    remember?: boolean;
   }
 }
 
@@ -20,5 +22,7 @@ declare module "@auth/core/jwt" {
   interface JWT {
     role?: Role;
     anggotaId?: string | null;
+    /** Epoch ms kapan sesi ini harus dianggap kedaluwarsa (lihat callback jwt di lib/auth.ts). */
+    expiresAt?: number;
   }
 }
