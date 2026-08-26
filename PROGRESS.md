@@ -285,11 +285,58 @@ Satu bug kecil: push pertama branch `staging` tidak langsung memicu Preview Depl
 
 Satu batasan verifikasi yang jujur dicatat: Vercel otomatis memasang Deployment Protection (SSO) di semua Preview deployment — bagus sesuai maksud staging (bukan publik), tapi berarti agent tidak bisa lagi verifikasi mandiri lewat curl/Playwright (kena redirect ke halaman login Vercel). Untuk bagian staging ini, laporan user diterima apa adanya — beda dari verifikasi Production yang selalu dicek ulang independen.
 
-## Status: Semua 13 Fase Rencana Awal + Fase 14, 15 (Penyempurnaan) & 16 (Deployment + Staging) Selesai — Live
+## Fase 17 — Responsif Menyeluruh, Redesain Login, Audit Tombol Mati & Data Bencana Nyata
+
+Satu sesi panjang berisi permintaan user berturut-turut setelah demo live. Semua sudah di-push ke `staging` **dan** `main` (produksi), diverifikasi ulang oleh agent di domain publik, bukan cuma laporan user.
+
+### Responsif
+
+- **Command Center di HP** — sebelumnya praktis tidak terpakai di 390px. Sidebar jadi drawer melayang di bawah `xl`, topbar dapat menu luapan (Radix DropdownMenu), tabel padat berubah jadi kartu lewat kelas `.hud-table-responsive` (pola `data-label` + `::before`), grid KPI/form turun jadi 1-2 kolom, `minZoom` peta diadaptasi ke lebar layar. Ambang `xl` (1280px) dipakai konsisten sebagai batas "desktop" di seluruh app.
+- **Sisi Anggota di desktop** — kebalikannya: `/m` selalu merender kartu simulator HP sempit walau dibuka di layar lebar. Ditambah sidebar kiri bergaya sama dengan Command Center + konten reading-width, tanpa mengubah satu pun kelas dasar (tampilan HP identik seperti sebelumnya). `mobile-shell.tsx` diganti nama jadi `member-shell.tsx` karena sekarang merender keduanya.
+
+### Redesain halaman login
+
+Dua kolom: panel hero (foto prajurit, peta Indonesia bercahaya, statistik wilayah, 7 kartu fitur) di kiri untuk desktop, kartu form di kanan; hero disembunyikan di HP. Bendera merah-putih diganti lambang Komcad di 5 tempat (kartu login, wordmark hero, sidebar Command Center, header HP & sidebar desktop Sisi Anggota).
+
+Tiga elemen baru yang **benar-benar berfungsi**, bukan hiasan: toggle lihat kata sandi, "Masuk sebagai tamu/observer" (sesi ANALIS yang memang sudah read-only), dan "Ingat saya" (30 hari vs 1 hari). "Lupa kata sandi?" ada di mockup tapi **sengaja tidak dipasang** — app belum punya kemampuan kirim email sama sekali (tidak ada nodemailer/Resend/SMTP; notifikasi semuanya tulis-ke-DB), jadi memasangnya berarti tombol mati. Keputusan user: tunda.
+
+Aset diturunkan dari komposit yang dikirim user: latar lambang dijadikan transparan lewat flood-fill dari tepi (supaya putih di dalam bendera tidak ikut terhapus), peta dipotong bersih dari teks lalu latarnya dijadikan hitam murni supaya `mix-blend-screen` tidak menyisakan kotak.
+
+### Audit tombol mati
+
+Beberapa elemen ternyata dirender tapi tanpa handler sama sekali. Diperbaiki:
+- **Cari** di topbar → modal pencarian global (anggota + Misi), klik hasil membuka drawer detail lewat `?openId=`
+- **Pengaturan** di topbar → link ke `/pengaturan`
+- **MISI AKTIF** → link ke `/misi?status=aktif`, plus chip filter "Aktif" baru
+- **Keluar** di menu luapan HP → pola `<form>` di dalam `DropdownMenu.Item asChild` rawan race dengan penutupan menu Radix (gagal diam-diam di sentuhan); diganti `onSelect` yang memanggil Server Action langsung
+- **Sisi Anggota belum punya tombol logout sama sekali** — ditambah di sidebar desktop & header HP
+- Pill **"Nasional"** bergaya sama persis dengan tombol Cari padahal statis — diubah jadi readout berlabel supaya jujur bukan tombol
+- Chip **Instagram/LinkedIn** di drawer CV → jadi link asli
+
+### Penukaran panel Overview & data bencana nyata
+
+Misi Terbaru naik ke posisi melayang di atas peta, Aktivitas Pelatihan turun ke baris panel bawah. Kerangka panel melayang dipisah jadi `FloatingPanel` supaya panel mana pun bisa menempatinya.
+
+17 Misi ditambahkan mengacu kejadian **nyata** Agustus 2026 (gempa M7,7 Flores NTT, karhutla Kalbar/Kalteng/Kalsel + Gunung Soputan & Bromo, kekeringan Malang/Gunungkidul/Grobogan, cuaca ekstrem Nias Barat & Agam), angka dampaknya mengikuti rilis BNPB/BPBD — personelnya tetap fiktif. Dua Misi demo lama (Banjir Bandung, Karhutla Berau) dihapus karena bukan kejadian terkini. Pemetaan wilayah dapat "Nusa Tenggara" berikut tabnya, karena tanpa itu semua Misi NTT jatuh ke "Lainnya" yang tidak punya tab.
+
+Data ditulis ke ketiga database Neon lewat skrip perawatan baru (`db:misi-bencana`, `db:hapus-misi-lama`) yang bisa disasarkan lewat `TARGET_DATABASE_URL`.
+
+### Tiga pelajaran yang mahal ditemukan
+
+1. **`proxy.ts` mencegat `public/brand/*`** — matcher-nya tidak mengecualikan folder itu, jadi semua gambar login dibalas 307 ke `/login` dan gagal dioptimasi `_next/image`. Halaman login tampak rusak total padahal kodenya benar. Kalau menambah aset publik baru yang dipakai halaman tanpa sesi, cek matcher ini dulu.
+2. **Tiga database Neon gampang tertukar** — branch bernama `main` justru dev lokal, produksi memakai branch `production`. Sempat 17 Misi ditulis ke database yang salah dan user melihat dashboard tidak berubah. Sekarang dipastikan empiris (jumlah anggota sebagai sidik jari), dan skrip perawatan wajib mencetak host tujuan sebelum bertindak. Peta lengkapnya di `HANDOVER.md` §5.
+3. **Verifikasi otomatis saja tidak cukup** — bug nyata (ketiga tab Riwayat terbuka bersamaan di desktop karena `xl:grid` menabrak `hidden`) lolos dari "nol error konsol, nol overflow" dan baru ketahuan saat benar-benar melihat screenshot lalu mengklik tabnya. Begitu juga Papua yang sempat terpotong dari peta login, dan cache gambar Next yang menyajikan aset basi sehingga verifikasi sempat menilai file yang salah.
+
+
+## Status: Semua 13 Fase Rencana Awal + Fase 14, 15 (Penyempurnaan), 16 (Deployment + Staging) & 17 (Responsif + Redesain Login + Data Bencana) Selesai — Live
 
 Platform sudah lengkap secara fungsional sesuai `TODO.md` dari Fase 0 sampai Fase 13, ditambah 7 item penyempurnaan gap teknis di Fase 14, rebrand + tema visual di Fase 15, dan deployment demo publik + alur staging di Fase 16 — semuanya dipilih/diminta langsung oleh user, bukan diasumsikan. **Demo publik live di https://komcad-ai-dashboard.vercel.app**, diverifikasi ulang oleh agent (bukan cuma laporan user). Perubahan sekarang lewat branch `staging` dulu (Preview, ter-review sebelum publik) sebelum di-merge ke `main` (Production). Selain itu, yang tersisa BUKAN fitur yang belum dibangun, tapi keputusan bisnis/skala yang sengaja tidak diasumsikan sepihak (lihat bagian "Backlog / Perlu Klarifikasi User" di `TODO.md`) dan simplifikasi minor yang masih terdokumentasi jujur per fase di atas (mis. drawer edit Anggota dari Overview mengarahkan ke `/anggota` alih-alih modal terpisah, reminder sertifikasi & heat-zone masih on-demand bukan cron/library heatmap sungguhan).
 
 ## Rekomendasi Kalau Sesi Berikutnya Melanjutkan
+
+> **Sesi di mesin baru:** baca [`HANDOVER.md`](HANDOVER.md) lebih dulu — isinya hal yang tidak ikut `git clone` (`.env`, akses akun, peta tiga database Neon, skrip perawatan data, alur push).
+
+0. **Utang keamanan belum dibereskan:** kredensial Neon (`neondb_owner`) ketiga branch memakai password yang sama dan sempat dibagikan lewat chat. Rotasi di dashboard Neon, lalu perbarui `DATABASE_URL` di Vercel (Production + Preview) dan `.env` lokal. Lihat `HANDOVER.md` §9.
 1. Kalau user memutuskan target hosting **untuk data personel sungguhan**/provider SMS-push/kebijakan retensi data — kerjakan sesuai keputusan itu, jangan diasumsikan sendiri (lihat Backlog di `TODO.md`). Ini beda dari keputusan hosting demo publik yang sudah selesai & live di Fase 16
 2. **Catatan teknis deploy**: kalau branch Neon baru dipakai pertama kali (belum pernah diakses), `prisma migrate deploy`/`migrate dev` bisa kena `P1002` (timeout advisory lock) karena compute-nya cold-start. Bukan bug schema — tinggal retry, lalu `prisma migrate status` untuk pastikan tidak ada state setengah-jadi sebelum lanjut
 3. **Ingat alur staging**: mulai sekarang JANGAN push perubahan app langsung ke `main` — push ke `staging` dulu, tunggu user konfirmasi oke di URL Preview, baru merge ke `main`. Perubahan dokumentasi murni (`.md` di root repo, di luar `app/`) boleh langsung ke `main` karena tidak masuk build Vercel (`Root Directory` = `app`) dan tidak memengaruhi apa yang tampil di domain publik

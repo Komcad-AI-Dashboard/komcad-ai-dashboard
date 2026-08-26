@@ -133,7 +133,8 @@ npm run build
 
 - **TODO.md** — rencana kerja lengkap per fase, dibuat sekali di awal, referensi FR-ID. Checkbox di-centang saat fase/tugas benar-benar selesai (bukan saat baru mulai).
 - **PROGRESS.md** — status hidup: Done / In Progress / Todo, diperbarui **setiap kali** sebuah fase/tugas berpindah status. Ini dokumen yang dibaca duluan untuk tahu "sekarang sampai mana".
-- Setiap kali membuka sesi kerja baru di repo ini: baca CLAUDE.md → PROGRESS.md → lanjutkan dari situ. Jangan re-derive keputusan yang sudah didokumentasikan di sini.
+- **HANDOVER.md** — hal yang tidak ikut `git clone`: cara menyiapkan `.env`, akses akun yang dibutuhkan, peta tiga database Neon (penamaannya menyesatkan — branch `main` itu dev, bukan produksi), skrip perawatan data, dan alur push staging→production. Baca ini kalau sesi berjalan di mesin yang belum pernah dipakai untuk repo ini.
+- Setiap kali membuka sesi kerja baru di repo ini: baca CLAUDE.md → PROGRESS.md → lanjutkan dari situ (di mesin baru: CLAUDE.md → HANDOVER.md → PROGRESS.md). Jangan re-derive keputusan yang sudah didokumentasikan di sini.
 
 ## 10. Batasan & Hal yang Sengaja Belum Dikerjakan (Out of Scope MVP)
 

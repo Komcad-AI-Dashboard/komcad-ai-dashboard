@@ -53,9 +53,22 @@ npm run lint          # ESLint
 npx tsc --noEmit      # typecheck (tidak ada script npm terpisah untuk ini)
 
 npm run db:push       # sync schema.prisma -> dev.db (non-destruktif kalau tidak ada breaking change)
-npm run db:seed       # isi ulang data dummy (idempotent lewat upsert untuk user, create untuk anggota)
+npm run db:seed       # isi data dummy — HANYA untuk database kosong, lihat catatan di bawah
 npm run db:studio     # buka Prisma Studio (browser UI ke isi database)
+
+npm run db:misi-bencana     # tambah Misi bencana ke database yang SUDAH terisi (aman diulang)
+npm run db:hapus-misi-lama  # hapus Misi demo lama (daftar kodenya eksplisit di skripnya)
 ```
+
+**`db:seed` hanya untuk database kosong.** Seed tidak menghapus apa pun, jadi menjalankannya ke database yang sudah terisi akan gagal menabrak constraint unik anggota/user. Untuk mengubah data di database terisi, pakai dua skrip perawatan di atas.
+
+**Menyasarkan skrip perawatan ke database lain** (mis. staging atau produksi yang berbeda dari `.env` lokal) — pakai `TARGET_DATABASE_URL`, **jangan** menimpa `DATABASE_URL`:
+
+```bash
+TARGET_DATABASE_URL="postgresql://..." npm run db:misi-bencana
+```
+
+Alasannya: Prisma memuat `.env` otomatis, jadi menimpa `DATABASE_URL` lewat shell mudah tertukar antara database lokal dan database deployment — berbahaya untuk skrip yang menghapus. Karena itu dipakai nama variabel terpisah yang tidak mungkin bentrok, dan skripnya selalu mencetak host tujuan sebelum bertindak. Baca baris itu dan pastikan benar sebelum membiarkannya lanjut.
 
 **Reset penuh database dev** (kalau schema berubah dengan cara yang butuh drop kolom/tabel, atau data uji perlu dibersihkan):
 
@@ -131,7 +144,9 @@ Schema (`prisma/schema.prisma`) sudah di-set ke provider `postgresql`. Dev lokal
 
 **2. Push kode ke GitHub**
 
-Repo ini sudah terhubung ke `https://github.com/arsyiadlani/komcad-ai-dashboard.git` — pastikan branch `main` sudah ter-push (lihat riwayat commit terakhir).
+Repo ini sudah terhubung ke `https://github.com/Komcad-AI-Dashboard/komcad-ai-dashboard.git` — pastikan branch `main` sudah ter-push (lihat riwayat commit terakhir).
+
+> Repo sempat dipindah dari akun pribadi `arsyiadlani` ke organization `Komcad-AI-Dashboard` supaya app **GitHub for Atlassian** bisa menyambungkannya ke Jira (app itu dibangun untuk organization, tidak mendukung repo di akun pribadi). GitHub membuat redirect otomatis dari URL lama, jadi clone/remote lama tetap jalan — tapi sebaiknya `git remote set-url` ke URL baru. Setelah transfer, koneksi Git di Vercel perlu disambungkan ulang dan **Vercel GitHub App harus diberi akses ke repo itu di organization-nya**, kalau tidak push tidak akan memicu deployment sama sekali.
 
 **3. Buat project di Vercel**
 - Buat akun di [vercel.com](https://vercel.com), **Add New Project**, import repo `komcad-ai-dashboard` dari GitHub
