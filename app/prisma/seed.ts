@@ -245,61 +245,6 @@ async function main() {
     });
   }
 
-  console.log("Seeding contoh Misi...");
-  await prisma.misi.create({
-    data: {
-      kodeMisi: "MISI-2026-001",
-      pemberiPerintah: "Kolonel Inf. Bambang Setiawan",
-      jenisKejadian: "Banjir",
-      urgensi: "Tinggi",
-      lokasi: "Kabupaten Bandung, Jawa Barat",
-      latitude: -7.0,
-      longitude: 107.6,
-      deskripsiMisi: "Banjir bandang merendam 3 kecamatan, dibutuhkan tim SAR & evakuasi warga.",
-      status: "Selesai",
-      kebutuhanPersonel: 5,
-      dimobilisasiAt: new Date(2026, 5, 10),
-      selesaiAt: new Date(2026, 5, 14),
-      hasilEvaluasi: "Evakuasi berhasil, seluruh personel kembali dengan aman.",
-      penugasan: {
-        create: anggotaList.slice(1, 4).map((a, idx) => ({
-          anggotaId: a.id,
-          skorRekomendasi: 82 - idx * 4,
-          alasan: JSON.stringify(["Jarak terdekat", "Sertifikasi SAR aktif", "Readiness Score tinggi"]),
-          etaMenit: 45 + idx * 15,
-          statusKehadiran: "Selesai",
-        })),
-      },
-    },
-  });
-
-  await prisma.misi.create({
-    data: {
-      kodeMisi: "MISI-2026-002",
-      pemberiPerintah: "Letkol Inf. Dian Purnama",
-      jenisKejadian: "Kebakaran Hutan",
-      urgensi: "Kritis",
-      lokasi: "Kabupaten Berau, Kalimantan Timur",
-      // Tanjung Redeb, ibu kota Kabupaten Berau — sebelumnya salah pakai koordinat sekitar
-      // Balikpapan (di laut), ratusan km di selatan lokasi sungguhan.
-      latitude: 2.15,
-      longitude: 117.48,
-      deskripsiMisi: "Kebakaran hutan meluas mendekati permukiman, perlu personel tambahan segera.",
-      status: "Dimobilisasi",
-      kebutuhanPersonel: 6,
-      dimobilisasiAt: new Date(),
-      penugasan: {
-        create: anggotaList.slice(9, 12).map((a, idx) => ({
-          anggotaId: a.id,
-          skorRekomendasi: 88 - idx * 5,
-          alasan: JSON.stringify(["Sertifikasi aktif", "Readiness Score tinggi", "ETA tercepat"]),
-          etaMenit: 30 + idx * 10,
-          statusKehadiran: "Menunggu Respons",
-        })),
-      },
-    },
-  });
-
   // Misi bencana nyata Agustus 2026 (gempa Flores NTT, karhutla, kekeringan, cuaca ekstrem).
   // Datanya di prisma/misi-bencana.ts supaya bisa juga dijalankan sendiri ke database yang
   // sudah terisi lewat prisma/tambah-misi-bencana.ts, tanpa menyentuh anggota/user.

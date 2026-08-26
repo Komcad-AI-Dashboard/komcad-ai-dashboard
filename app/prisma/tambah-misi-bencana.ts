@@ -5,10 +5,12 @@
 // Jalankan: npm run db:misi-bencana
 // Aman diulang: Misi yang kodenya sudah ada dilewati.
 
-import { PrismaClient } from "@prisma/client";
 import { seedMisiBencana, MISI_BENCANA } from "./misi-bencana";
+import { bukaTargetDb } from "./target-db";
 
-const prisma = new PrismaClient();
+// Bisa disasarkan ke database lain lewat TARGET_DATABASE_URL, mis. database yang dipakai
+// deployment staging/produksi yang berbeda dari .env lokal.
+const prisma = bukaTargetDb();
 
 async function main() {
   const anggota = await prisma.anggota.findMany({
