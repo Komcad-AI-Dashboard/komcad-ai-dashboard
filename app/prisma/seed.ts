@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import { computeSertifikasiStatus } from "../src/lib/sertifikasi";
 import { encryptSensitive, hashSensitive } from "../src/lib/crypto";
 import { computeReadinessScore } from "../src/lib/readiness";
+import { seedMisiBencana } from "./misi-bencana";
 
 const prisma = new PrismaClient();
 
@@ -298,6 +299,15 @@ async function main() {
       },
     },
   });
+
+  // Misi bencana nyata Agustus 2026 (gempa Flores NTT, karhutla, kekeringan, cuaca ekstrem).
+  // Datanya di prisma/misi-bencana.ts supaya bisa juga dijalankan sendiri ke database yang
+  // sudah terisi lewat prisma/tambah-misi-bencana.ts, tanpa menyentuh anggota/user.
+  const jumlahMisiBencana = await seedMisiBencana(
+    prisma,
+    anggotaList.map((a) => a.id)
+  );
+  console.log(`Dibuat ${jumlahMisiBencana} Misi bencana.`);
 
   // Readiness Score dihitung sungguhan (bukan angka acak) dari sertifikasi/pelatihan/penugasan
   // yang baru saja di-seed — lihat src/lib/readiness.ts untuk formula & catatan asumsinya.

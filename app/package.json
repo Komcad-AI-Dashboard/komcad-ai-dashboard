@@ -12,6 +12,7 @@
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
+    "db:misi-bencana": "tsx prisma/tambah-misi-bencana.ts",
     "db:studio": "prisma studio"
   },
   "prisma": {
