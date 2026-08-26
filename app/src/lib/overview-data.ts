@@ -112,11 +112,18 @@ export async function getStatistikAnggota() {
   return { total, aktif, laki, perempuan, provinsi };
 }
 
+// Urutan penting: dicek dari atas ke bawah, yang pertama cocok menang. "Nusa Tenggara" ditaruh
+// sebelum Jawa karena beberapa kabupatennya (mis. "Manggarai, Nusa Tenggara Timur") tidak memuat
+// kata provinsi yang lain, tapi kabupaten seperti "Sumbawa" jangan sampai tertangkap "jawa".
 const WILAYAH_KEYWORDS: Record<string, string[]> = {
-  Jawa: ["jawa", "jakarta", "bandung", "semarang", "surabaya", "yogyakarta", "banten"],
-  Sumatera: ["sumatera", "medan", "palembang", "lampung", "aceh", "riau", "jambi"],
-  Kalimantan: ["kalimantan", "balikpapan", "pontianak", "banjarmasin", "samarinda"],
-  Sulawesi: ["sulawesi", "makassar", "manado", "kendari", "palu", "gorontalo"],
+  "Nusa Tenggara": [
+    "nusa tenggara", "ntt", "ntb", "flores", "kupang", "manggarai", "ngada", "nagekeo",
+    "ende", "sikka", "sumba", "lombok", "mataram", "bima", "sumbawa", "alor", "timor",
+  ],
+  Jawa: ["jawa", "jakarta", "bandung", "semarang", "surabaya", "yogyakarta", "banten", "malang", "probolinggo"],
+  Sumatera: ["sumatera", "medan", "palembang", "lampung", "aceh", "riau", "jambi", "nias", "padang", "bengkulu"],
+  Kalimantan: ["kalimantan", "balikpapan", "pontianak", "banjarmasin", "samarinda", "ketapang", "palangka", "banjarbaru", "berau"],
+  Sulawesi: ["sulawesi", "makassar", "manado", "kendari", "palu", "gorontalo", "minahasa"],
 };
 
 export function wilayahFromLokasi(lokasi: string): string {
@@ -141,7 +148,9 @@ export type FeedItem = {
 export async function getMisiTerbaruFeed(): Promise<FeedItem[]> {
   const misi = await prisma.misi.findMany({
     orderBy: { updatedAt: "desc" },
-    take: 8,
+    // Panelnya bisa di-scroll dan disaring per wilayah — batas 8 membuat tab wilayah sering
+    // kosong padahal Misi-nya ada, karena terpotong sebelum sempat disaring.
+    take: 24,
     include: { _count: { select: { penugasan: true } } },
   });
 

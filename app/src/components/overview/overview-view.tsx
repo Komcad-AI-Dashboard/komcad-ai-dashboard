@@ -9,7 +9,8 @@ import { cn } from "@/lib/utils";
 import type { LayerVisibility } from "./situation-map";
 import { LayersPanel } from "./layers-panel";
 import { Legend } from "./legend";
-import { TrainingPanel } from "./training-panel";
+import { TrainingPanelContent } from "./training-panel";
+import { FloatingPanel } from "./floating-panel";
 import { BottomPanelShell } from "./bottom-panel-shell";
 import { StatsPanelContent } from "./stats-panel-content";
 import { FeedPanelContent } from "./feed-panel-content";
@@ -43,10 +44,10 @@ type Aktivitas = Awaited<ReturnType<typeof getAktivitasPelatihanTerbaru>>[number
 type Statistik = Awaited<ReturnType<typeof getStatistikAnggota>>;
 type AiSummary = Awaited<ReturnType<typeof getAiMobilizationSummary>>;
 
-type PanelKey = "stats" | "feed" | "ai";
+type PanelKey = "stats" | "training" | "ai";
 const PANEL_TITLES: Record<PanelKey, string> = {
   stats: "Statistik Anggota",
-  feed: "Misi Terbaru",
+  training: "Aktivitas Pelatihan",
   ai: "AI Mobilization",
 };
 
@@ -213,7 +214,7 @@ export function OverviewView({
 
   const allHidden = hiddenPanels.size === 3;
   function toggleAllPanels() {
-    setHiddenPanels(allHidden ? new Set() : new Set(["stats", "feed", "ai"]));
+    setHiddenPanels(allHidden ? new Set() : new Set(["stats", "training", "ai"]));
   }
 
   function clampBottomHeight(value: number) {
@@ -299,11 +300,16 @@ export function OverviewView({
           {fullscreen ? <X className="size-4" strokeWidth={1.5} /> : <Maximize2 className="size-4" strokeWidth={1.5} />}
         </button>
 
-        <TrainingPanel
-          items={aktivitasPelatihan}
-          onSelect={(t) => setSelection({ type: "training", data: t })}
-          className="absolute right-[58px] top-[14px] z-[500] hidden w-[250px] xl:flex"
-        />
+        {/* Lebih tinggi dari panel melayang sebelumnya: sejak Misi Terbaru yang menempati posisi
+            ini, isinya daftar panjang + baris tab wilayah, bukan 2-3 entri pelatihan. */}
+        <FloatingPanel
+          title="MISI TERBARU"
+          dot="red"
+          collapsedMaxHeight="max-h-[min(420px,calc(100%-28px))]"
+          className="absolute right-[58px] top-[14px] z-[500] hidden w-[330px] xl:flex"
+        >
+          <FeedPanelContent items={feed} />
+        </FloatingPanel>
 
         <Legend />
       </div>
@@ -318,12 +324,14 @@ export function OverviewView({
           className="w-full"
           defaultCollapsed
         />
-        <TrainingPanel
-          items={aktivitasPelatihan}
-          onSelect={(t) => setSelection({ type: "training", data: t })}
+        <FloatingPanel
+          title="MISI TERBARU"
+          dot="red"
           className="w-full"
           collapsedMaxHeight="max-h-[300px]"
-        />
+        >
+          <FeedPanelContent items={feed} />
+        </FloatingPanel>
       </div>
 
       {hiddenPanels.size > 0 && (
@@ -394,13 +402,16 @@ export function OverviewView({
           <StatsPanelContent stats={stats} />
         </BottomPanelShell>
         <BottomPanelShell
-          title="MISI TERBARU"
+          title="AKTIVITAS PELATIHAN"
           flexGrow={1.3}
-          className={cn(hiddenPanels.has("feed") && "xl:hidden")}
-          badge={<span className="font-mono text-[11px] text-red">● {misi.length}</span>}
-          onHide={() => hidePanel("feed")}
+          className={cn(hiddenPanels.has("training") && "xl:hidden")}
+          badge={<span className="font-mono text-[11px] text-amber">◆ {aktivitasPelatihan.length}</span>}
+          onHide={() => hidePanel("training")}
         >
-          <FeedPanelContent items={feed} />
+          <TrainingPanelContent
+            items={aktivitasPelatihan}
+            onSelect={(t) => setSelection({ type: "training", data: t })}
+          />
         </BottomPanelShell>
         <BottomPanelShell
           title="AI MOBILIZATION"
