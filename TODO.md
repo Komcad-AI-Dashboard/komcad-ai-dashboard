@@ -11,7 +11,7 @@ Centang `[x]` hanya kalau sudah benar-benar selesai & sudah dicoba jalan. Status
 - [ ] `create-next-app` (TypeScript, App Router, Tailwind, ESLint) di folder `app/`
 - [ ] Setup Prisma + SQLite dev, `.env` / `.env.example` (`OPENAI_API_KEY`, `DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`)
 - [ ] `.gitignore` mencakup `.env`, `node_modules`, `prisma/dev.db`, `.next`
-- [ ] `git init`, remote `origin` → `https://github.com/arsyiadlani/komcad-ai-dashboard.git`, commit awal, push
+- [ ] `git init`, remote `origin` → `https://github.com/Komcad-AI-Dashboard/komcad-ai-dashboard.git` (sempat di akun pribadi `arsyiadlani`, dipindah ke organization demi integrasi Jira), commit awal, push
 - [ ] Setup Tailwind theme = token warna & font di CLAUDE.md §5
 - [ ] Install dependency inti: `@prisma/client`, `prisma`, `next-auth`, `zod`, `openai`, `react-leaflet`, `leaflet`, `@radix-ui/*` yang dipakai (dialog, tabs, dropdown-menu), `clsx`
 - [ ] `npm run dev` jalan tanpa error, halaman default tampil
