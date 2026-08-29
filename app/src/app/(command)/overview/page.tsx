@@ -1,6 +1,7 @@
 import { after } from "next/server";
 import { OverviewView } from "@/components/overview/overview-view";
 import { POS_KOMANDO } from "@/lib/pos-komando";
+import { KODAM, KODIM } from "@/lib/komando-teritorial";
 import {
   getMapAnggota,
   getMapMisi,
@@ -34,6 +35,8 @@ export default async function OverviewPage() {
       anggota={anggota}
       misi={misi}
       posKomando={POS_KOMANDO}
+      kodam={KODAM}
+      kodim={KODIM}
       aktivitasPelatihan={aktivitasPelatihan}
       stats={stats}
       feed={feed}

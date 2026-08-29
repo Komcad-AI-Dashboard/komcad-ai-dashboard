@@ -78,6 +78,32 @@ export const JENIS_KEJADIAN_OPTIONS = [
   "Lainnya",
 ] as const;
 
+/** Taksonomi kompetensi anggota (dipakai sertifikasi seed & scoring AI Mobilization). Satu sumber
+ * kebenaran — prisma/data-pools.ts mengimpor ini, jangan duplikasi daftar terpisah di seed. */
+export const KOMPETENSI_OPTIONS = [
+  "Medis Lapangan",
+  "Komunikasi Radio",
+  "SAR & Evakuasi",
+  "Logistik",
+  "Teknik Bangunan",
+  "Navigasi Darat",
+] as const;
+
+/** Kompetensi yang relevan per Jenis Kejadian (Fase 18, "Simulasi Bencana" terintegrasi Buat
+ * Misi) — dipakai untuk menyarankan kebutuhan personel di modal Buat Misi DAN memprioritaskan
+ * skor kandidat di AI Mobilization (lib/ai-mobilization.ts). ASUMSI (FRD §11), belum divalidasi
+ * doktrin militer resmi — sama statusnya dengan bobot AI Mobilization sebelum Fase 10. "Lainnya"
+ * sengaja kosong (tidak ada persyaratan spesifik, scoring kembali ke perilaku lama).
+ */
+export const JENIS_KEJADIAN_KOMPETENSI: Record<(typeof JENIS_KEJADIAN_OPTIONS)[number], string[]> = {
+  "Gempa Bumi": ["SAR & Evakuasi", "Medis Lapangan", "Teknik Bangunan"],
+  Banjir: ["SAR & Evakuasi", "Logistik", "Medis Lapangan"],
+  Longsor: ["SAR & Evakuasi", "Teknik Bangunan", "Medis Lapangan"],
+  "Kebakaran Hutan": ["SAR & Evakuasi", "Logistik", "Komunikasi Radio"],
+  "Angin Puting Beliung": ["Teknik Bangunan", "Medis Lapangan", "Logistik"],
+  Lainnya: [],
+};
+
 export type NavItem = {
   label: string;
   href: string;

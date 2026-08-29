@@ -35,6 +35,7 @@ import type {
   getAiMobilizationSummary,
 } from "@/lib/overview-data";
 import type { PosKomando } from "@/lib/pos-komando";
+import type { UnitTeritorial } from "@/lib/komando-teritorial";
 
 const SituationMap = dynamic(() => import("./situation-map").then((m) => m.SituationMap), {
   ssr: false,
@@ -70,6 +71,8 @@ export function OverviewView({
   anggota: initialAnggota,
   misi: initialMisi,
   posKomando,
+  kodam,
+  kodim,
   aktivitasPelatihan: initialAktivitasPelatihan,
   stats: initialStats,
   feed: initialFeed,
@@ -81,6 +84,8 @@ export function OverviewView({
   anggota: MapAnggota[];
   misi: MapMisi[];
   posKomando: PosKomando[];
+  kodam: UnitTeritorial[];
+  kodim: UnitTeritorial[];
   aktivitasPelatihan: Aktivitas[];
   stats: Statistik;
   feed: FeedItem[];
@@ -104,6 +109,8 @@ export function OverviewView({
     siaga: true,
     misi: true,
     pos: true,
+    kodam: false,
+    kodim: false,
     heatzone: heatzoneDefault,
   });
   const [fullscreen, setFullscreen] = useState(false);
@@ -281,6 +288,8 @@ export function OverviewView({
           anggota={anggota}
           misi={misi}
           posKomando={posKomando}
+          kodam={kodam}
+          kodim={kodim}
           layers={layers}
           onSelectAnggota={(a) => setSelection({ type: "anggota", data: a })}
           onSelectMisi={(m) => setSelection({ type: "misi", data: m })}

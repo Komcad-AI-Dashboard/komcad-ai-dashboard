@@ -5,7 +5,7 @@ import { Sparkles, CheckCircle2, Search, MapPin } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
-import { JENIS_KEJADIAN_OPTIONS, URGENSI_MISI } from "@/lib/constants";
+import { JENIS_KEJADIAN_OPTIONS, JENIS_KEJADIAN_KOMPETENSI, URGENSI_MISI } from "@/lib/constants";
 import { LOKASI_REFERENSI } from "@/lib/wilayah";
 import { generateMisiAction, approveMisiAction, geocodeLokasiAction, type GenerateMisiResult } from "@/lib/misi-actions";
 
@@ -138,6 +138,24 @@ export function BuatMisiModal({ open, onOpenChange }: { open: boolean; onOpenCha
                   <option key={j}>{j}</option>
                 ))}
               </Select>
+              {(() => {
+                const kompetensi =
+                  JENIS_KEJADIAN_KOMPETENSI[form.jenisKejadian as keyof typeof JENIS_KEJADIAN_KOMPETENSI] ?? [];
+                if (kompetensi.length === 0) return null;
+                return (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                    <span className="text-[10.5px] text-ink-3">Kompetensi dibutuhkan:</span>
+                    {kompetensi.map((k) => (
+                      <span
+                        key={k}
+                        className="rounded-full border border-cyan/30 bg-cyan/10 px-2 py-[1px] text-[10px] font-medium text-cyan"
+                      >
+                        {k}
+                      </span>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
             <div>
               <Label htmlFor="urgensi">Urgensi</Label>

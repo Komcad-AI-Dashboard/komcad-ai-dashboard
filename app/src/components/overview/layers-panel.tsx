@@ -10,6 +10,8 @@ const LAYER_ITEMS: { key: keyof LayerVisibility; label: string; color: string }[
   { key: "siaga", label: "Anggota Siaga", color: "#E0A83E" },
   { key: "misi", label: "Zona Misi", color: "#E14C45" },
   { key: "pos", label: "Pos Komando", color: "#B08D4F" },
+  { key: "kodam", label: "Kodam", color: "#1F6B4A" },
+  { key: "kodim", label: "Kodim", color: "#1F6B4A" },
   { key: "heatzone", label: "Kepadatan Wilayah", color: "#E0A83E" },
 ];
 

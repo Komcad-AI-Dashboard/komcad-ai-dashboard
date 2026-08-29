@@ -15,6 +15,7 @@ import {
 import { divIcon, latLngBounds, type LeafletEvent, type Path } from "leaflet";
 import type { MapAnggota, MapMisi } from "@/lib/overview-data";
 import type { PosKomando } from "@/lib/pos-komando";
+import type { UnitTeritorial } from "@/lib/komando-teritorial";
 
 const INDONESIA_BOUNDS = latLngBounds([-11.5, 93.5], [7, 141.5]);
 
@@ -23,6 +24,8 @@ export type LayerVisibility = {
   siaga: boolean;
   misi: boolean;
   pos: boolean;
+  kodam: boolean;
+  kodim: boolean;
   heatzone: boolean;
 };
 
@@ -135,10 +138,28 @@ const posIcon = divIcon({
   iconSize: [14, 14],
 });
 
+// Kodam: persegi hijau tua (beda bentuk & warna dari Pos Komando yang belah-ketupat emas, biar
+// kedua layer tetap bisa dibedakan sekilas kalau sama-sama aktif).
+const kodamIcon = divIcon({
+  className: "",
+  html: `<div style="width:12px;height:12px;border:2px solid #1F6B4A;background:rgba(31,107,74,0.4);"></div>`,
+  iconSize: [12, 12],
+});
+
+// Kodim: segitiga kecil, warna sama (satu keluarga "komando teritorial") tapi lebih kecil dari
+// Kodam — mencerminkan hierarki (Kodam membawahi Kodim).
+const kodimIcon = divIcon({
+  className: "",
+  html: `<div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:9px solid #1F6B4A;opacity:0.85;"></div>`,
+  iconSize: [10, 9],
+});
+
 export function SituationMap({
   anggota,
   misi,
   posKomando,
+  kodam,
+  kodim,
   layers,
   onSelectAnggota,
   onSelectMisi,
@@ -146,6 +167,8 @@ export function SituationMap({
   anggota: MapAnggota[];
   misi: MapMisi[];
   posKomando: PosKomando[];
+  kodam: UnitTeritorial[];
+  kodim: UnitTeritorial[];
   layers: LayerVisibility;
   onSelectAnggota: (a: MapAnggota) => void;
   onSelectMisi: (m: MapMisi) => void;
@@ -260,6 +283,24 @@ export function SituationMap({
           <Marker key={p.nama} position={[p.lat, p.lng]} icon={posIcon}>
             <Popup>
               <b>{p.nama}</b>
+            </Popup>
+          </Marker>
+        ))}
+
+      {layers.kodam &&
+        kodam.map((u) => (
+          <Marker key={u.nama} position={[u.lat, u.lng]} icon={kodamIcon}>
+            <Popup>
+              <b>{u.nama}</b>
+            </Popup>
+          </Marker>
+        ))}
+
+      {layers.kodim &&
+        kodim.map((u) => (
+          <Marker key={u.nama} position={[u.lat, u.lng]} icon={kodimIcon}>
+            <Popup>
+              <b>{u.nama}</b>
             </Popup>
           </Marker>
         ))}

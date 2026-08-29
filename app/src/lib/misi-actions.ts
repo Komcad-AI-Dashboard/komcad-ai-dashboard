@@ -5,7 +5,14 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/audit-log";
-import { ROLES, STATUS_KEHADIRAN, STATUS_MISI, URGENSI_MISI, JENIS_KEJADIAN_OPTIONS } from "@/lib/constants";
+import {
+  ROLES,
+  STATUS_KEHADIRAN,
+  STATUS_MISI,
+  URGENSI_MISI,
+  JENIS_KEJADIAN_OPTIONS,
+  JENIS_KEJADIAN_KOMPETENSI,
+} from "@/lib/constants";
 import { getKandidatPool } from "@/lib/misi-data";
 import { generateAiMobilizationRecommendation, type AiRecommendation } from "@/lib/ai-mobilization";
 import { getPengaturanSistem } from "@/lib/pengaturan-data";
@@ -22,11 +29,22 @@ async function requireOperatorPermission() {
   return { session, error: null };
 }
 
+/** Nomor urut dihitung dari kode TERTINGGI yang sudah ada, bukan dari count() — count() salah
+ * kalau ada gap (mis. Misi lama dihapus lewat prisma/hapus-misi-lama.ts, atau nomor tidak
+ * kontinu seperti di prisma/misi-bencana.ts), karena bisa menghasilkan kode yang sudah dipakai
+ * dan menabrak constraint unik `kodeMisi` (ditemukan nyata saat verifikasi Fase 18). */
 async function nextKodeMisi(): Promise<string> {
   const tahun = new Date().getFullYear();
   const prefix = `MISI-${tahun}-`;
-  const count = await prisma.misi.count({ where: { kodeMisi: { startsWith: prefix } } });
-  return `${prefix}${String(count + 1).padStart(3, "0")}`;
+  const existing = await prisma.misi.findMany({
+    where: { kodeMisi: { startsWith: prefix } },
+    select: { kodeMisi: true },
+  });
+  const maxN = existing.reduce((max, m) => {
+    const n = Number(m.kodeMisi.slice(prefix.length));
+    return Number.isFinite(n) && n > max ? n : max;
+  }, 0);
+  return `${prefix}${String(maxN + 1).padStart(3, "0")}`;
 }
 
 /** Lokasi bisa dari dropdown Lokasi Referensi (`lib/wilayah.ts`) atau hasil pencarian alamat
@@ -100,6 +118,7 @@ export async function generateMisiAction(input: unknown): Promise<GenerateMisiRe
       jarak: pengaturan.aiBobotJarak,
       kompetensi: pengaturan.aiBobotKompetensi,
     },
+    kompetensiDibutuhkan: JENIS_KEJADIAN_KOMPETENSI[data.jenisKejadian] ?? [],
   });
 
   const poolById = new Map(kandidatPool.map((k) => [k.anggotaId, k]));

@@ -143,6 +143,20 @@ export const MISI_BENCANA: MisiBencana[] = [
     personel: 7, slice: [81, 86], hari: 20, status: "Dimobilisasi",
     deskripsi: "Banjir dan cuaca ekstrem merendam permukiman di kaki Gunung Marapi. Evakuasi warga dan pengamanan jalur logistik.",
   },
+
+  // — Fase 18: kejadian tambahan (permintaan partner, "misi sesuai bencana terbaru") —
+  {
+    kode: "MISI-2026-022", komandan: "Mayor Inf. Andi Baso Rahman", jenis: "Kebakaran Hutan", urgensi: "Sedang",
+    lokasi: "Kecamatan Pitu Riawa, Kabupaten Sidenreng Rappang, Sulawesi Selatan", lat: -3.85, lng: 119.85,
+    personel: 5, slice: [86, 91], hari: 20, status: "Dimobilisasi",
+    deskripsi: "Karhutla di Kecamatan Pitu Riawa sejak 9 Agustus 2026 (sumber BNPB). Dukungan pemadaman darat dan pendinginan lahan gambut.",
+  },
+  {
+    kode: "MISI-2026-023", komandan: "Letkol Inf. Hendri Putra Wijaya", jenis: "Banjir", urgensi: "Sedang",
+    lokasi: "Kepulauan Riau", lat: 0.917, lng: 104.45,
+    personel: 4, slice: [91, 95], hari: 5, status: "Dimobilisasi",
+    deskripsi: "Banjir akibat curah hujan tinggi (24 Agustus 2026, sumber BNPB): sungai meluap 30-90 cm, ±22 keluarga (65 jiwa) terdampak, 20 unit rumah terendam, nihil korban jiwa. Dukungan evakuasi & distribusi bantuan.",
+  },
 ];
 
 const hariLalu = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
