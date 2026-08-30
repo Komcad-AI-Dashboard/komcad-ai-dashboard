@@ -5,7 +5,7 @@
 
 import { KOMPETENSI_OPTIONS } from "../src/lib/constants";
 
-export const PROVINSI = [
+export const PROVINSI_UTAMA = [
   { nama: "DKI Jakarta", kab: "Jakarta Selatan", lat: -6.2615, lng: 106.781 },
   { nama: "Jawa Barat", kab: "Bandung", lat: -6.9175, lng: 107.6191 },
   { nama: "Jawa Tengah", kab: "Semarang", lat: -6.9932, lng: 110.4203 },
@@ -19,6 +19,19 @@ export const PROVINSI = [
   { nama: "Kalimantan Barat", kab: "Pontianak", lat: -0.0263, lng: 109.3425 },
   { nama: "Sulawesi Utara", kab: "Manado", lat: 1.4748, lng: 124.8421 },
 ];
+
+// Fase 18 susulan: seed 12 provinsi awal nol representasi di Indonesia Timur (partner nyadar
+// gak ada titik sama sekali di Maluku/Malut/Papua di peta). Ditambah 3 provinsi representatif
+// (bukan mekar penuh 6 provinsi Papua pasca-2022 — proporsional dengan pola 1 kota per provinsi
+// yang sudah dipakai di atas), dipakai `prisma/tambah-anggota-timur.ts` untuk ngisi kekosongan
+// secara eksplisit (bukan cuma nunggu kebagian giliran cycling `pick(PROVINSI, i)` biasa).
+export const PROVINSI_TIMUR = [
+  { nama: "Maluku", kab: "Kota Ambon", lat: -3.6954, lng: 128.1814 },
+  { nama: "Maluku Utara", kab: "Kota Ternate", lat: 0.7833, lng: 127.38 },
+  { nama: "Papua", kab: "Kota Jayapura", lat: -2.5337, lng: 140.7181 },
+];
+
+export const PROVINSI = [...PROVINSI_UTAMA, ...PROVINSI_TIMUR];
 
 export const NAMA_DEPAN = [
   "Ahmad", "Budi", "Citra", "Dewi", "Eko", "Fajar", "Gita", "Hendra",

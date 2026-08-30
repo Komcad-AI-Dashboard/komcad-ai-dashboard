@@ -13,6 +13,7 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "db:tambah-anggota": "tsx prisma/tambah-anggota.ts",
+    "db:tambah-anggota-timur": "tsx prisma/tambah-anggota-timur.ts",
     "db:misi-bencana": "tsx prisma/tambah-misi-bencana.ts",
     "db:hapus-misi-lama": "tsx prisma/hapus-misi-lama.ts",
     "db:studio": "prisma studio"
