@@ -27,7 +27,12 @@ export const PROVINSI_UTAMA = [
 // secara eksplisit (bukan cuma nunggu kebagian giliran cycling `pick(PROVINSI, i)` biasa).
 export const PROVINSI_TIMUR = [
   { nama: "Maluku", kab: "Kota Ambon", lat: -3.6954, lng: 128.1814 },
-  { nama: "Maluku Utara", kab: "Kota Ternate", lat: 0.7833, lng: 127.38 },
+  // Kota Ternate ada di pulau vulkanik kecil (~10km) — koordinat awal (127.38) plus jitter
+  // standar ternyata cukup ke arah timur/laut untuk jatuh di Selat Ternate (ditemukan user,
+  // ANG-00165 muncul di laut). Digeser ~1.7km ke barat (lebih ke tengah kota/darat), DAN jitter
+  // untuk provinsi timur ini dikecilkan terpisah di script (lihat tambah-anggota-timur.ts) — sama
+  // kelas bug dengan Surabaya Fase 14, kali ini spesifik ke pulau kecil bukan cuma pesisir.
+  { nama: "Maluku Utara", kab: "Kota Ternate", lat: 0.79, lng: 127.365 },
   { nama: "Papua", kab: "Kota Jayapura", lat: -2.5337, lng: 140.7181 },
 ];
 

@@ -83,8 +83,13 @@ async function main() {
         },
         lokasiHistori: {
           create: {
-            latitude: prov.lat + (i % 5) * 0.003,
-            longitude: prov.lng + (i % 5) * 0.003,
+            // Jitter dikecilkan dari 0.003 (dipakai provinsi lain) ke 0.0008 (maks ~350m, bukan
+            // ~1.3km) — Ternate itu pulau vulkanik kecil (~10km), jitter sebesar provinsi lain
+            // sempat mendorong satu anggota ke laut (ANG-00165, ditemukan user). Provinsi timur
+            // lain (Ambon, Jayapura) ikut dikecilkan juga untuk margin aman yang sama, bukan cuma
+            // Ternate — belum ada verifikasi peta presisi untuk memastikan lebar darat masing-masing.
+            latitude: prov.lat + (i % 5) * 0.0008,
+            longitude: prov.lng + (i % 5) * 0.0008,
             provinsi: prov.nama,
             kabupatenKota: prov.kab,
           },
