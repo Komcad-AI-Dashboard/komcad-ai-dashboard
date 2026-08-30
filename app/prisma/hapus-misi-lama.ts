@@ -15,6 +15,7 @@ const KODE_DIHAPUS = [
   "MISI-2026-002", // Kebakaran Hutan Kabupaten Berau — data seed lama
   "MISI-2026-003", // Longsor Jakarta Selatan — artefak uji coba
   "MISI-2026-004", // Banjir Jakarta Selatan — artefak uji coba
+  "MISI-2026-023", // Banjir Kepulauan Riau — di-drop atas permintaan user (Fase 18 susulan)
 ];
 
 const prisma = bukaTargetDb();

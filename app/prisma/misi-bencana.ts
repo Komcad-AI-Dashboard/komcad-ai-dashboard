@@ -151,12 +151,8 @@ export const MISI_BENCANA: MisiBencana[] = [
     personel: 5, slice: [86, 91], hari: 20, status: "Dimobilisasi",
     deskripsi: "Karhutla di Kecamatan Pitu Riawa sejak 9 Agustus 2026 (sumber BNPB). Dukungan pemadaman darat dan pendinginan lahan gambut.",
   },
-  {
-    kode: "MISI-2026-023", komandan: "Letkol Inf. Hendri Putra Wijaya", jenis: "Banjir", urgensi: "Sedang",
-    lokasi: "Kepulauan Riau", lat: 0.917, lng: 104.45,
-    personel: 4, slice: [91, 95], hari: 5, status: "Dimobilisasi",
-    deskripsi: "Banjir akibat curah hujan tinggi (24 Agustus 2026, sumber BNPB): sungai meluap 30-90 cm, ±22 keluarga (65 jiwa) terdampak, 20 unit rumah terendam, nihil korban jiwa. Dukungan evakuasi & distribusi bantuan.",
-  },
+  // MISI-2026-023 (Banjir Kepulauan Riau) di-drop atas permintaan user — lihat
+  // prisma/hapus-misi-lama.ts. Kode sengaja tidak dipakai ulang untuk Misi lain.
 ];
 
 const hariLalu = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
