@@ -197,12 +197,22 @@ export function BuatMisiModal({ open, onOpenChange }: { open: boolean; onOpenCha
               </Button>
             </div>
             {geocodeError && <p className="mt-1 text-[11px] text-[#F5A9A5]">{geocodeError}</p>}
+            {/* Readout berlabel, BUKAN kartu berbingkai. Versi lama memakai gaya yang sama dengan
+                panel ringkasan AI di bawah (border + bg accent) — di sana artinya "permukaan
+                konfirmasi", tapi di sini, tepat di bawah tombol Cari Lokasi, bentuk itu terbaca
+                sebagai hasil pencarian yang harus dipilih, lalu tidak merespons klik (temuan
+                QA-02). Lokasinya memang sudah ter-set; yang menyesatkan cuma gayanya.
+                Pola yang diikuti sama dengan pill "Nasional" di Fase 17: kalau elemen bukan
+                tombol, ia harus terlihat bukan tombol dan menyebut dirinya apa. */}
             {lokasi && (
-              <div className="mt-2 flex items-start gap-[6px] rounded-[6px] border border-accent-bright/30 bg-accent-bright/5 px-3 py-2 text-[11.5px] text-accent-bright">
-                <MapPin className="mt-[1px] size-3.5 shrink-0" strokeWidth={1.5} />
-                <span>
+              <div className="mt-2 flex items-start gap-[8px] px-1 text-[11.5px]">
+                <span className="mt-[2px] shrink-0 text-[9px] font-black tracking-[0.16em] text-ink-3">
+                  TERPILIH
+                </span>
+                <MapPin className="mt-[1px] size-3.5 shrink-0 text-accent-bright" strokeWidth={1.5} />
+                <span className="text-ink-2">
                   {lokasi.label}
-                  <span className="ml-2 font-mono text-[10.5px] text-ink-3">
+                  <span className="ml-2 whitespace-nowrap font-mono text-[10.5px] text-ink-3">
                     {lokasi.lat.toFixed(4)}, {lokasi.lng.toFixed(4)}
                   </span>
                 </span>
