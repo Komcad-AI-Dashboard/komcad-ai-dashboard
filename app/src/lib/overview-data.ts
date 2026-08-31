@@ -3,6 +3,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { STATUS_MISI, STATUS_MISI_AKTIF, STATUS_SIAGA } from "@/lib/constants";
+import { lokasiCocokProvinsi } from "@/lib/cakupan";
+import { wilayahFromLokasi } from "@/lib/wilayah-region";
 
 export type MapAnggota = {
   id: string;
@@ -16,9 +18,12 @@ export type MapAnggota = {
   kompetensi: string;
 };
 
-export async function getMapAnggota(): Promise<MapAnggota[]> {
+export async function getMapAnggota(provinsi?: string | null): Promise<MapAnggota[]> {
   const anggota = await prisma.anggota.findMany({
-    where: { statusSiaga: { in: [STATUS_SIAGA.AKTIF, STATUS_SIAGA.SIAGA] } },
+    where: {
+      statusSiaga: { in: [STATUS_SIAGA.AKTIF, STATUS_SIAGA.SIAGA] },
+      ...(provinsi ? { profilDemografi: { provinsi } } : {}),
+    },
     include: {
       lokasiHistori: { orderBy: { recordedAt: "desc" }, take: 1 },
       sertifikasi: { take: 2 },
@@ -52,7 +57,7 @@ export type MapMisi = {
   personel: number;
 };
 
-export async function getMapMisi(): Promise<MapMisi[]> {
+export async function getMapMisi(provinsi?: string | null): Promise<MapMisi[]> {
   const misi = await prisma.misi.findMany({
     where: {
       status: { notIn: [STATUS_MISI.SELESAI, STATUS_MISI.DIBATALKAN] },
@@ -62,7 +67,9 @@ export async function getMapMisi(): Promise<MapMisi[]> {
     include: { _count: { select: { penugasan: true } } },
   });
 
-  return misi.map((m) => ({
+  return misi
+    .filter((m) => !provinsi || lokasiCocokProvinsi(m.lokasi, provinsi))
+    .map((m) => ({
     id: m.id,
     kodeMisi: m.kodeMisi,
     jenisKejadian: m.jenisKejadian,
@@ -89,15 +96,20 @@ export async function getAktivitasPelatihanTerbaru() {
   }));
 }
 
-export async function getStatistikAnggota() {
+export async function getStatistikAnggota(filterProvinsi?: string | null) {
+  // Namanya sengaja bukan `provinsi`: fungsi ini SUDAH punya const `provinsi` (5 provinsi
+  // terbanyak) yang ikut dikembalikan, dan menamai parameternya sama membuat nilai kembaliannya
+  // diam-diam berubah jadi string filter.
+  const scopeAnggota = filterProvinsi ? { profilDemografi: { provinsi: filterProvinsi } } : {};
+  const scopeProfil = filterProvinsi ? { provinsi: filterProvinsi } : {};
   const [total, aktif, byGender, provinsiGroups] = await Promise.all([
-    prisma.anggota.count(),
-    prisma.anggota.count({ where: { statusSiaga: STATUS_SIAGA.AKTIF } }),
-    prisma.profilDemografi.groupBy({ by: ["jenisKelamin"], _count: true }),
+    prisma.anggota.count({ where: scopeAnggota }),
+    prisma.anggota.count({ where: { statusSiaga: STATUS_SIAGA.AKTIF, ...scopeAnggota } }),
+    prisma.profilDemografi.groupBy({ by: ["jenisKelamin"], _count: true, where: scopeProfil }),
     prisma.profilDemografi.groupBy({
       by: ["provinsi"],
       _count: true,
-      where: { provinsi: { not: null } },
+      where: { provinsi: { not: null }, ...scopeProfil },
     }),
   ]);
 
@@ -112,28 +124,6 @@ export async function getStatistikAnggota() {
   return { total, aktif, laki, perempuan, provinsi };
 }
 
-// Urutan penting: dicek dari atas ke bawah, yang pertama cocok menang. "Nusa Tenggara" ditaruh
-// sebelum Jawa karena beberapa kabupatennya (mis. "Manggarai, Nusa Tenggara Timur") tidak memuat
-// kata provinsi yang lain, tapi kabupaten seperti "Sumbawa" jangan sampai tertangkap "jawa".
-const WILAYAH_KEYWORDS: Record<string, string[]> = {
-  "Nusa Tenggara": [
-    "nusa tenggara", "ntt", "ntb", "flores", "kupang", "manggarai", "ngada", "nagekeo",
-    "ende", "sikka", "sumba", "lombok", "mataram", "bima", "sumbawa", "alor", "timor",
-  ],
-  Jawa: ["jawa", "jakarta", "bandung", "semarang", "surabaya", "yogyakarta", "banten", "malang", "probolinggo"],
-  Sumatera: ["sumatera", "medan", "palembang", "lampung", "aceh", "riau", "jambi", "nias", "padang", "bengkulu"],
-  Kalimantan: ["kalimantan", "balikpapan", "pontianak", "banjarmasin", "samarinda", "ketapang", "palangka", "banjarbaru", "berau"],
-  Sulawesi: ["sulawesi", "makassar", "manado", "kendari", "palu", "gorontalo", "minahasa"],
-};
-
-export function wilayahFromLokasi(lokasi: string): string {
-  const lower = lokasi.toLowerCase();
-  for (const [wilayah, keywords] of Object.entries(WILAYAH_KEYWORDS)) {
-    if (keywords.some((k) => lower.includes(k))) return wilayah;
-  }
-  return "Lainnya";
-}
-
 export type FeedItem = {
   id: string;
   color: "red" | "amber" | "green";
@@ -145,7 +135,7 @@ export type FeedItem = {
 
 // description dirakit sebagai plain text (bukan HTML string) — dirender lewat JSX di komponen,
 // bukan dangerouslySetInnerHTML, supaya field bebas-teks seperti Lokasi tidak jadi celah XSS.
-export async function getMisiTerbaruFeed(): Promise<FeedItem[]> {
+export async function getMisiTerbaruFeed(provinsi?: string | null): Promise<FeedItem[]> {
   const misi = await prisma.misi.findMany({
     orderBy: { updatedAt: "desc" },
     // Panelnya bisa di-scroll dan disaring per wilayah — batas 8 membuat tab wilayah sering
@@ -154,7 +144,9 @@ export async function getMisiTerbaruFeed(): Promise<FeedItem[]> {
     include: { _count: { select: { penugasan: true } } },
   });
 
-  return misi.map((m) => {
+  return misi
+    .filter((m) => !provinsi || lokasiCocokProvinsi(m.lokasi, provinsi))
+    .map((m) => {
     const color = m.status === STATUS_MISI.SELESAI ? "green" : m.urgensi === "Kritis" ? "red" : "amber";
     let description: string;
     if (m.status === STATUS_MISI.SELESAI) {
@@ -175,10 +167,14 @@ export async function getMisiTerbaruFeed(): Promise<FeedItem[]> {
   });
 }
 
-export async function getAiMobilizationSummary() {
+export async function getAiMobilizationSummary(provinsi?: string | null) {
+  // `contains` dipakai di sini (bukan saring setelah fetch seperti di getMapMisi) karena yang
+  // diambil cuma SATU baris terbaru — menyaring sesudahnya bisa mengembalikan null padahal ada
+  // Misi lain di provinsi itu yang lebih lama.
+  const scopeLokasi = provinsi ? { lokasi: { contains: provinsi } } : {};
   const [misi, misiAktifCount, misiSevenDaysCount] = await Promise.all([
     prisma.misi.findFirst({
-      where: { status: STATUS_MISI.DIMOBILISASI },
+      where: { status: STATUS_MISI.DIMOBILISASI, ...scopeLokasi },
       orderBy: { dimobilisasiAt: "desc" },
       include: {
         penugasan: {
@@ -187,9 +183,9 @@ export async function getAiMobilizationSummary() {
         },
       },
     }),
-    prisma.misi.count({ where: { status: { in: STATUS_MISI_AKTIF } } }),
+    prisma.misi.count({ where: { status: { in: STATUS_MISI_AKTIF }, ...scopeLokasi } }),
     prisma.misi.count({
-      where: { dimobilisasiAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
+      where: { dimobilisasiAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }, ...scopeLokasi },
     }),
   ]);
 
@@ -207,11 +203,19 @@ export async function getAiMobilizationSummary() {
   };
 }
 
-export async function getTopbarKpi() {
-  const [misiAktifCount, agg] = await Promise.all([
-    prisma.misi.count({ where: { status: { in: STATUS_MISI_AKTIF } } }),
-    prisma.anggota.aggregate({ _avg: { readinessScore: true } }),
+export async function getTopbarKpi(provinsi?: string | null) {
+  const [misiSemuaAktif, agg] = await Promise.all([
+    // Misi tidak punya kolom provinsi, jadi penyaringannya lewat teks lokasi — tidak bisa
+    // dilakukan di query, ambil dulu lalu saring.
+    prisma.misi.findMany({ where: { status: { in: STATUS_MISI_AKTIF } }, select: { lokasi: true } }),
+    prisma.anggota.aggregate({
+      _avg: { readinessScore: true },
+      ...(provinsi ? { where: { profilDemografi: { provinsi } } } : {}),
+    }),
   ]);
+  const misiAktifCount = provinsi
+    ? misiSemuaAktif.filter((m) => lokasiCocokProvinsi(m.lokasi, provinsi)).length
+    : misiSemuaAktif.length;
   return {
     misiAktifCount,
     readinessNasional: Math.round(agg._avg.readinessScore ?? 0),

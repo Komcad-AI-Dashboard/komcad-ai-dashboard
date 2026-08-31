@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { CAKUPAN_NASIONAL } from "@/lib/cakupan";
+import { getScopedTopbarKpiAction } from "@/lib/overview-actions";
 import type { Session } from "next-auth";
 import type { getTopbarKpi } from "@/lib/overview-data";
 import { BuatMisiModal } from "@/components/misi/buat-misi-modal";
 import { AutoScale } from "./auto-scale";
 import { Sidebar } from "./sidebar";
+import type { CakupanOption } from "@/lib/cakupan";
 import { Topbar } from "./topbar";
 
 const STORAGE_KEY = "siaga.sidebarCollapsed";
@@ -16,11 +20,13 @@ export function AppShell({
   children,
   user,
   kpi,
+  cakupanOptions,
   ticker,
 }: {
   children: React.ReactNode;
   user: Session["user"] | null;
   kpi: TopbarKpi;
+  cakupanOptions: CakupanOption[];
   /** Diterima sebagai ReactNode (bukan data mentah lalu di-render di sini) supaya NewsTicker
    * tetap Server Component: waktu terbitnya diformat di server dengan zona Asia/Jakarta, dan
    * daftar berita tidak ikut terkirim ke bundle client. */
@@ -29,6 +35,30 @@ export function AppShell({
   const [collapsed, setCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [buatMisiOpen, setBuatMisiOpen] = useState(false);
+
+  // KPI cakupan dihitung DI SINI, bukan di Topbar, supaya badge sidebar dan angka topbar membaca
+  // sumber yang sama. Sempat hanya di Topbar: hasilnya sidebar memajang "11" (nasional) persis di
+  // sebelah topbar yang memajang "1" (Jawa Timur) — dua angka berbeda untuk hal yang sama, yaitu
+  // ketidakkonsistenan yang justru mau dihilangkan fitur ini.
+  //
+  // Cakupannya disimpan bersama angkanya supaya angka provinsi lama tidak sempat terpajang saat
+  // berpindah provinsi; sebelum hasilnya sampai, tampilkan angka nasional dari server.
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const cakupanAktif = searchParams.get("cakupan") || CAKUPAN_NASIONAL;
+  const diOverview = pathname === "/overview";
+  const [kpiCakupan, setKpiCakupan] = useState<{ cakupan: string; kpi: TopbarKpi } | null>(null);
+  useEffect(() => {
+    if (cakupanAktif === CAKUPAN_NASIONAL || !diOverview) return;
+    let batal = false;
+    getScopedTopbarKpiAction(cakupanAktif).then((k) => {
+      if (!batal && k) setKpiCakupan({ cakupan: cakupanAktif, kpi: k });
+    });
+    return () => {
+      batal = true;
+    };
+  }, [cakupanAktif, diOverview]);
+  const kpiTampil = kpiCakupan?.cakupan === cakupanAktif && diOverview ? kpiCakupan.kpi : kpi;
 
   useEffect(() => {
     // Baca preferensi tersimpan sekali setelah mount — localStorage tidak tersedia saat SSR,
@@ -70,7 +100,7 @@ export function AppShell({
           mobileOpen={mobileNavOpen}
           onNavigate={() => setMobileNavOpen(false)}
           user={user}
-          kpi={kpi}
+          kpi={kpiTampil}
         />
         {/* Backdrop drawer — hanya ada di bawah xl, tempat sidebar melayang di atas konten. */}
         {mobileNavOpen && (
@@ -81,7 +111,7 @@ export function AppShell({
           />
         )}
         <div className="flex min-w-0 flex-1 flex-col">
-          <Topbar onToggleSidebar={toggle} onBuatMisi={() => setBuatMisiOpen(true)} user={user} kpi={kpi} />
+          <Topbar onToggleSidebar={toggle} onBuatMisi={() => setBuatMisiOpen(true)} user={user} kpi={kpiTampil} cakupanOptions={cakupanOptions} />
           {ticker}
           <main className="flex min-h-0 flex-1 flex-col overflow-auto">{children}</main>
         </div>

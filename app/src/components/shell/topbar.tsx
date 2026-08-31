@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Session } from "next-auth";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { Menu, Search, Settings, PlusCircle, LogOut, MoreVertical } from "lucide-react";
+import { CAKUPAN_NASIONAL, type CakupanOption } from "@/lib/cakupan";
+import { ChevronDown, LogOut, Menu, MoreVertical, PlusCircle, Search, Settings } from "lucide-react";
 import { COMMAND_NAV, ROLES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { signOutAction } from "@/lib/auth-actions";
@@ -23,14 +24,31 @@ export function Topbar({
   onBuatMisi,
   user,
   kpi,
+  cakupanOptions,
 }: {
   onToggleSidebar: () => void;
   onBuatMisi?: () => void;
   user: Session["user"] | null;
   kpi: TopbarKpi;
+  cakupanOptions: CakupanOption[];
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
+
+  // Cakupan hidup di URL, jadi topbar (yang ada di Layout) tetap bisa membacanya walau Layout
+  // sendiri tidak menerima searchParams.
+  const cakupanAktif = searchParams.get("cakupan") || CAKUPAN_NASIONAL;
+
+  function pilihCakupan(nilai: string) {
+    const next = new URLSearchParams(searchParams.toString());
+    if (nilai === CAKUPAN_NASIONAL) next.delete("cakupan");
+    else next.set("cakupan", nilai);
+    const qs = next.toString();
+    // Selalu ke /overview: cakupan cuma menyaring dashboard itu, dan memilih provinsi dari
+    // halaman lain paling masuk akal diartikan "bawa saya ke situ dengan cakupan ini".
+    router.push(qs ? `/overview?${qs}` : "/overview");
+  }
   const [searchOpen, setSearchOpen] = useState(false);
   const current = ALL_ITEMS.find(
     (item) => pathname === item.href || pathname?.startsWith(item.href + "/")
@@ -65,10 +83,55 @@ export function Topbar({
       </div>
 
       <div className="ml-auto flex shrink-0 items-center gap-2">
-        <div className="hidden items-center gap-2 rounded-[6px] border border-border bg-elevated px-[10px] py-[6px] xl:flex">
-          <span className="text-[9.5px] font-extrabold tracking-widest text-ink-3">CAKUPAN</span>
-          <span className="text-[12px] font-bold text-ink-2">Nasional</span>
-        </div>
+        {/* Filter cakupan (QA-05). Sebelumnya readout statis — sekarang benar-benar bisa diklik,
+            dan penampilannya (kursor, chevron, hover) memang menandakan itu.
+            Opsi "per-Pangdam" dari laporan QA sengaja tidak ada: lib/komando-teritorial.ts cuma
+            memuat 11 Kodam perwakilan, bukan struktur lengkap, jadi menyaring per Pangdam akan
+            mengembalikan hasil kosong/salah untuk wilayah yang belum tercakup. Lihat lib/cakupan.ts. */}
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger asChild>
+            <button
+              aria-label={`Cakupan: ${cakupanAktif}. Klik untuk mengganti.`}
+              className="hidden items-center gap-2 rounded-[6px] border border-border bg-elevated px-[10px] py-[6px] hover:border-accent-bright/50 hover:bg-surface-hover xl:flex"
+            >
+              <span className="text-[9.5px] font-extrabold tracking-widest text-ink-3">CAKUPAN</span>
+              <span className="max-w-[130px] truncate text-[12px] font-bold text-ink-2">{cakupanAktif}</span>
+              <ChevronDown className="size-3.5 shrink-0 text-ink-3" strokeWidth={2} />
+            </button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content
+              align="end"
+              sideOffset={6}
+              className="z-50 max-h-[320px] min-w-[220px] overflow-y-auto rounded-[8px] border border-border bg-elevated py-1 shadow-[0_12px_40px_rgba(0,0,0,0.85)]"
+            >
+              <DropdownMenu.Item
+                onSelect={() => pilihCakupan(CAKUPAN_NASIONAL)}
+                className={cn(
+                  "flex cursor-pointer items-center justify-between px-3 py-[7px] text-[12px] text-ink-2 outline-none data-[highlighted]:bg-surface-hover data-[highlighted]:text-ink",
+                  cakupanAktif === CAKUPAN_NASIONAL && "font-bold text-accent-bright"
+                )}
+              >
+                Nasional
+                <span className="ml-3 font-mono text-[10px] text-ink-3">semua</span>
+              </DropdownMenu.Item>
+              <div className="my-1 border-t border-border-soft" />
+              {cakupanOptions.map((o) => (
+                <DropdownMenu.Item
+                  key={o.value}
+                  onSelect={() => pilihCakupan(o.value)}
+                  className={cn(
+                    "flex cursor-pointer items-center justify-between px-3 py-[7px] text-[12px] text-ink-2 outline-none data-[highlighted]:bg-surface-hover data-[highlighted]:text-ink",
+                    cakupanAktif === o.value && "font-bold text-accent-bright"
+                  )}
+                >
+                  <span className="truncate">{o.label}</span>
+                  <span className="ml-3 shrink-0 font-mono text-[10px] text-ink-3">{o.jumlahAnggota}</span>
+                </DropdownMenu.Item>
+              ))}
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
 
         {bisaBuatMisi && (
           <button

@@ -4,8 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { FeedItem } from "@/lib/overview-data";
+import { WILAYAH_TABS } from "@/lib/wilayah-region";
 
-const WILAYAH_TABS = ["SEMUA", "NUSA TENGGARA", "JAWA", "SUMATERA", "KALIMANTAN", "SULAWESI"];
+
 
 const DOT_CLASS: Record<FeedItem["color"], string> = {
   red: "bg-red text-red",

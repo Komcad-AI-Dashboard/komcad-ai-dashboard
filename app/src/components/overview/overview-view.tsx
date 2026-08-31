@@ -80,6 +80,8 @@ export function OverviewView({
   autoRefresh,
   heatzoneDefault,
   role,
+  cakupan,
+  pelatihanNasional,
 }: {
   anggota: MapAnggota[];
   misi: MapMisi[];
@@ -93,6 +95,8 @@ export function OverviewView({
   autoRefresh: boolean;
   heatzoneDefault: boolean;
   role: Role | undefined;
+  cakupan: string | null;
+  pelatihanNasional: boolean;
 }) {
   const router = useRouter();
   // State (bukan langsung dipakai dari props) — auto-refresh 5 detik di bawah update ini via
@@ -188,7 +192,7 @@ export function OverviewView({
     if (!autoRefresh) return;
     let cancelled = false;
     const interval = setInterval(async () => {
-      const data = await getOverviewLiveDataAction();
+      const data = await getOverviewLiveDataAction(cakupan);
       if (cancelled || !data) return;
       setAnggota(data.anggota);
       setMisi(data.misi);
@@ -201,7 +205,7 @@ export function OverviewView({
       cancelled = true;
       clearInterval(interval);
     };
-  }, [autoRefresh]);
+  }, [autoRefresh, cakupan]);
 
   function toggleLayer(key: keyof LayerVisibility) {
     setLayers((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -265,7 +269,9 @@ export function OverviewView({
   return (
     <div ref={shellRef} className="flex flex-1 flex-col overflow-y-auto xl:overflow-hidden">
       <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-border-soft px-3 py-[9px] xl:flex-nowrap xl:justify-between xl:px-[18px]">
-        <h2 className="text-[12px] font-extrabold tracking-widest">SITUASI KESIAPSIAGAAN NASIONAL</h2>
+        <h2 className="text-[12px] font-extrabold tracking-widest">
+          SITUASI KESIAPSIAGAAN {cakupan ? cakupan.toUpperCase() : "NASIONAL"}
+        </h2>
         <SituationClock />
         {/* Tombol sembunyikan panel tidak berguna di HP: panel-panelnya sudah jadi kartu bertumpuk
             yang tinggal di-scroll, bukan baris yang berebut ruang dengan peta. */}
@@ -402,8 +408,10 @@ export function OverviewView({
           flexGrow={1.1}
           className={cn(hiddenPanels.has("stats") && "xl:hidden")}
           liveTag={
-            <span className="rounded-[10px] bg-cyan px-2 py-[2px] text-[9px] font-extrabold tracking-wide text-[#00131A]">
-              NASIONAL
+            // Tag ini dulu hardcoded "NASIONAL". Begitu cakupan bisa dipilih, ia jadi berbohong:
+            // panelnya menampilkan angka provinsi sambil mengaku nasional.
+            <span className="max-w-[130px] truncate rounded-[10px] bg-cyan px-2 py-[2px] text-[9px] font-extrabold tracking-wide text-[#00131A]">
+              {cakupan ? cakupan.toUpperCase() : "NASIONAL"}
             </span>
           }
           onHide={() => hidePanel("stats")}
@@ -414,7 +422,19 @@ export function OverviewView({
           title="AKTIVITAS PELATIHAN"
           flexGrow={1.3}
           className={cn(hiddenPanels.has("training") && "xl:hidden")}
-          badge={<span className="font-mono text-[11px] text-amber">◆ {aktivitasPelatihan.length}</span>}
+          badge={
+            <span className="flex items-center gap-[6px]">
+              {/* Panel ini TIDAK ikut cakupan: kolom lokasi pelatihan berisi nama pusdiklat
+                  ("Pusdiklat Komcad Surabaya"), bukan alamat berprovinsi, jadi tidak ada yang bisa
+                  dicocokkan. Ditandai terang-terangan supaya tidak terbaca seolah sudah tersaring. */}
+              {pelatihanNasional && (
+                <span className="rounded-[4px] border border-border px-[5px] py-[1px] font-mono text-[9px] tracking-wider text-ink-3">
+                  NASIONAL
+                </span>
+              )}
+              <span className="font-mono text-[11px] text-amber">◆ {aktivitasPelatihan.length}</span>
+            </span>
+          }
           onHide={() => hidePanel("training")}
         >
           <TrainingPanelContent
