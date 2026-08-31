@@ -153,6 +153,43 @@ export const MISI_BENCANA: MisiBencana[] = [
   },
   // MISI-2026-023 (Banjir Kepulauan Riau) di-drop atas permintaan user — lihat
   // prisma/hapus-misi-lama.ts. Kode sengaja tidak dipakai ulang untuk Misi lain.
+
+  // — Fase 18 susulan kedua: puncak kemarau/El Nino akhir Agustus 2026 (sumber BNPB/media resmi,
+  // 27-31 Agustus 2026). Ditambahkan supaya panel Misi Terbaru (diurutkan updatedAt terbaru) tidak
+  // didominasi Misi uji coba banjir Lampung (023-027, dibuat manual saat QA fitur Buat Misi,
+  // salah satunya sengaja jadi bukti dokumentasi QA — lihat docs/qc_qa/komentar-untuk-slide.md,
+  // jadi TIDAK dihapus) — bukan mengganti data itu, cuma menambah kejadian nyata yang lebih baru
+  // supaya representasinya proporsional dengan kondisi kemarau yang sedang berlangsung.
+  {
+    kode: "MISI-2026-028", komandan: "Kolonel Inf. Bambang Setiaji", jenis: "Kebakaran Hutan", urgensi: "Tinggi",
+    lokasi: "Provinsi Riau", lat: -0.5071, lng: 101.4478,
+    personel: 6, slice: [95, 101], hari: 2, status: "Dimobilisasi",
+    deskripsi: "265 titik panas terdeteksi 29 Agustus 2026 (sumber BNPB), turun jadi 62 titik + 12 titik api per 31 Agustus, jarak pandang turun ke 5 km. Status siaga darurat karhutla provinsi.",
+  },
+  {
+    kode: "MISI-2026-029", komandan: "Kolonel Inf. Rahmat Hidayatullah", jenis: "Kebakaran Hutan", urgensi: "Kritis",
+    lokasi: "Sumatera Selatan", lat: -2.9909, lng: 104.7566,
+    personel: 7, slice: [101, 108], hari: 1, status: "Dimobilisasi",
+    deskripsi: "Titik panas naik 209 mencapai 1.013 (31 Agustus 2026, sumber BNPB), 11 titik api aktif, jarak pandang di bawah 5 km. Status siaga darurat karhutla provinsi.",
+  },
+  {
+    kode: "MISI-2026-030", komandan: "Letkol Inf. Fajar Ramadhan", jenis: "Kebakaran Hutan", urgensi: "Sedang",
+    lokasi: "Provinsi Jambi", lat: -1.6101, lng: 103.6131,
+    personel: 4, slice: [108, 112], hari: 1, status: "Dimobilisasi",
+    deskripsi: "49 titik panas (turun 86 dari periode sebelumnya), 4 titik api aktif, jarak pandang 7 km (31 Agustus 2026, sumber BNPB).",
+  },
+  {
+    kode: "MISI-2026-031", komandan: "Kolonel Inf. Yusuf Kartanegara", jenis: "Kebakaran Hutan", urgensi: "Kritis",
+    lokasi: "Kalimantan Tengah", lat: -2.21, lng: 113.92,
+    personel: 8, slice: [112, 120], hari: 1, status: "Dimobilisasi",
+    deskripsi: "Eskalasi lanjutan dari MISI-2026-011: titik panas melonjak tembus 5.391 per 31 Agustus 2026 (sumber BNPB), jauh meningkat dari kondisi awal bulan.",
+  },
+  {
+    kode: "MISI-2026-032", komandan: "Mayor Inf. Nurul Huda", jenis: "Lainnya", urgensi: "Sedang",
+    lokasi: "Kabupaten Lamongan, Jawa Timur", lat: -7.1225, lng: 112.4169,
+    personel: 4, slice: [120, 124], hari: 3, status: "Dimobilisasi",
+    deskripsi: "Kekeringan puncak kemarau: BNPB salurkan 40.000 liter air bersih ke Kabupaten Lamongan. Salah satu dari 6 provinsi & 47 kabupaten/kota berstatus siaga darurat kekeringan.",
+  },
 ];
 
 const hariLalu = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
