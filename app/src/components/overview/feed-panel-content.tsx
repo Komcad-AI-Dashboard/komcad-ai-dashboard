@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { FeedItem } from "@/lib/overview-data";
 
@@ -38,8 +39,14 @@ export function FeedPanelContent({ items }: { items: FeedItem[] }) {
         {filtered.length === 0 && (
           <div className="p-[14px] text-[11px] text-ink-3">Tidak ada aktivitas Misi di wilayah ini.</div>
         )}
+        {/* Tiap item membuka drawer detail Misi lewat ?openId= — jalur yang sama dipakai modal
+            pencarian global (lib/search-actions.ts), jadi tidak ada drawer kedua yang dibangun. */}
         {filtered.map((f) => (
-          <div key={f.id} className="flex gap-[10px] border-b border-border-soft px-[14px] py-[9px]">
+          <Link
+            key={f.id}
+            href={`/misi?openId=${f.id}`}
+            className="flex gap-[10px] border-b border-border-soft px-[14px] py-[9px] hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none"
+          >
             <span
               className={cn("mt-[5px] size-[7px] shrink-0 rounded-full shadow-[0_0_6px_currentColor]", DOT_CLASS[f.color])}
             />
@@ -49,7 +56,7 @@ export function FeedPanelContent({ items }: { items: FeedItem[] }) {
             <span className="mt-[2px] shrink-0 whitespace-nowrap font-mono text-[10px] text-ink-3">
               {f.time}
             </span>
-          </div>
+          </Link>
         ))}
       </div>
     </>
