@@ -18,7 +18,7 @@ import { generateAiMobilizationRecommendation, type AiRecommendation } from "@/l
 import { getPengaturanSistem } from "@/lib/pengaturan-data";
 import { deliverNotifikasiBatch } from "@/lib/notifikasi-delivery";
 import { recalculateReadinessScore } from "@/lib/readiness";
-import { geocodeAlamat, type GeocodeResult } from "@/lib/geocoding";
+import { geocodeAlamat, suggestAlamat, type GeocodeResult } from "@/lib/geocoding";
 
 async function requireOperatorPermission() {
   const session = await auth();
@@ -308,9 +308,19 @@ export async function updateKehadiranAction(penugasanId: string, status: string)
 
 /** Cari koordinat dari alamat/nama lokasi bebas teks (Nominatim) untuk field Lokasi di form Buat
  * Misi — alternatif dari dropdown Lokasi Referensi. Dipanggil per klik tombol "Cari Lokasi", bukan
- * per-keystroke. */
-export async function geocodeLokasiAction(query: string): Promise<{ result: GeocodeResult | null; error: string | null }> {
+ * per-keystroke. Mengembalikan beberapa kandidat supaya operator yang memilih; sebelumnya hasil
+ * teratas dipakai diam-diam padahal nama tempat di Indonesia banyak yang kembar. */
+export async function geocodeLokasiAction(query: string): Promise<{ results: GeocodeResult[]; error: string | null }> {
   const { error } = await requireOperatorPermission();
-  if (error) return { result: null, error };
+  if (error) return { results: [], error };
   return geocodeAlamat(query);
+}
+
+/** Saran lokasi sambil mengetik (Photon, jatuh ke Nominatim kalau Photon mati). Penjaga aksesnya
+ * sama persis dengan geocodeLokasiAction — ini tetap memanggil layanan eksternal atas nama sesi
+ * yang login, jadi tidak boleh lebih longgar. */
+export async function suggestLokasiAction(query: string): Promise<{ results: GeocodeResult[]; error: string | null }> {
+  const { error } = await requireOperatorPermission();
+  if (error) return { results: [], error };
+  return suggestAlamat(query);
 }

@@ -1,16 +1,30 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { Sparkles, CheckCircle2, Search, MapPin } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { JENIS_KEJADIAN_OPTIONS, JENIS_KEJADIAN_KOMPETENSI, URGENSI_MISI } from "@/lib/constants";
 import { LOKASI_REFERENSI } from "@/lib/wilayah";
-import { generateMisiAction, approveMisiAction, geocodeLokasiAction, type GenerateMisiResult } from "@/lib/misi-actions";
+import { cn } from "@/lib/utils";
+import {
+  generateMisiAction,
+  approveMisiAction,
+  geocodeLokasiAction,
+  suggestLokasiAction,
+  type GenerateMisiResult,
+} from "@/lib/misi-actions";
+import type { GeocodeResult } from "@/lib/geocoding";
 
 type Step = "form" | "loading" | "result" | "done";
 type Lokasi = { label: string; lat: number; lng: number };
+
+/** Lebih longgar dari GlobalSearchModal (250ms / 2 karakter) karena ini memukul layanan pihak
+ * ketiga, bukan database sendiri — tiap request yang tidak jadi dipakai itu beban ke instance
+ * publik Photon yang kita numpang gratis. */
+const SUGGEST_DEBOUNCE_MS = 300;
+const SUGGEST_MIN_CHARS = 3;
 
 const initialForm = {
   pemberiPerintah: "",
@@ -27,10 +41,53 @@ export function BuatMisiModal({ open, onOpenChange }: { open: boolean; onOpenCha
   const [alamatQuery, setAlamatQuery] = useState("");
   const [geocodeError, setGeocodeError] = useState<string | null>(null);
   const [geocodePending, startGeocodeTransition] = useTransition();
+  const [saran, setSaran] = useState<GeocodeResult[]>([]);
+  const [saranAktif, setSaranAktif] = useState(-1);
+  const [saranPending, startSaranTransition] = useTransition();
+  /** Menahan permintaan saran tepat setelah sebuah lokasi dipilih. Memilih saran mengisi input
+   * dengan label lokasi, dan tanpa penahan ini perubahan itu langsung memicu pencarian baru —
+   * daftarnya terbuka lagi sendiri padahal operator sudah selesai memilih. */
+  const lewatiSaranBerikutnya = useRef(false);
   const [result, setResult] = useState<Extract<GenerateMisiResult, { error: null }> | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [jumlahDinotifikasi, setJumlahDinotifikasi] = useState(0);
   const [pending, startTransition] = useTransition();
+
+  // Saran ketik. Pola sama dengan GlobalSearchModal: timeout + cleanup, useTransition untuk
+  // status menunggu. Cleanup-nya yang bikin ini debounce sungguhan — tiap ketikan membatalkan
+  // timer sebelumnya, jadi yang terkirim cuma satu request per jeda mengetik.
+  useEffect(() => {
+    if (lewatiSaranBerikutnya.current) {
+      lewatiSaranBerikutnya.current = false;
+      return;
+    }
+    const q = alamatQuery.trim();
+    // Kueri terlalu pendek: cukup tidak mengambil apa-apa. Membersihkan state di sini melanggar
+    // react-hooks/set-state-in-effect, dan tidak perlu — daftarnya sudah dijaga saat render lewat
+    // saranTampil, jadi sisa hasil lama tidak mungkin ikut tampil.
+    if (q.length < SUGGEST_MIN_CHARS) return;
+    const timeout = setTimeout(() => {
+      startSaranTransition(async () => {
+        const res = await suggestLokasiAction(q);
+        setSaran(res.results);
+        setSaranAktif(-1);
+      });
+    }, SUGGEST_DEBOUNCE_MS);
+    return () => clearTimeout(timeout);
+  }, [alamatQuery]);
+
+  /** Daftar saran dijaga di sini, bukan dibersihkan di dalam useEffect — supaya hasil lama tidak
+   * pernah tampil untuk kueri yang sudah dipendekkan lagi oleh operator. */
+  const saranTampil = alamatQuery.trim().length >= SUGGEST_MIN_CHARS && saran.length > 0;
+
+  function pilihLokasi(l: GeocodeResult) {
+    lewatiSaranBerikutnya.current = true;
+    setLokasi({ label: l.label, lat: l.lat, lng: l.lng });
+    setAlamatQuery(l.label);
+    setSaran([]);
+    setSaranAktif(-1);
+    setGeocodeError(null);
+  }
 
   function reset() {
     setStep("form");
@@ -38,6 +95,8 @@ export function BuatMisiModal({ open, onOpenChange }: { open: boolean; onOpenCha
     setLokasi(null);
     setAlamatQuery("");
     setGeocodeError(null);
+    setSaran([]);
+    setSaranAktif(-1);
     setResult(null);
     setErrorMsg(null);
   }
@@ -47,16 +106,47 @@ export function BuatMisiModal({ open, onOpenChange }: { open: boolean; onOpenCha
     onOpenChange(next);
   }
 
+  /** Tombol "Cari Lokasi" — jalur eksplisit lewat Nominatim, disimpan sebagai jalan keluar kalau
+   * saran ketik meleset atau layanannya mati. Hasilnya masuk ke daftar yang sama, bukan langsung
+   * dipakai: nama tempat di Indonesia banyak yang kembar, jadi memilih tetap tugas operator. */
   function handleCariLokasi() {
     setGeocodeError(null);
     startGeocodeTransition(async () => {
       const res = await geocodeLokasiAction(alamatQuery);
       if (res.error) {
+        setSaran([]);
         setGeocodeError(res.error);
         return;
       }
-      if (res.result) setLokasi(res.result);
+      setSaran(res.results);
+      setSaranAktif(-1);
     });
+  }
+
+  function handleLokasiKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "ArrowDown" && saran.length > 0) {
+      e.preventDefault();
+      setSaranAktif((i) => (i + 1) % saran.length);
+      return;
+    }
+    if (e.key === "ArrowUp" && saran.length > 0) {
+      e.preventDefault();
+      setSaranAktif((i) => (i <= 0 ? saran.length - 1 : i - 1));
+      return;
+    }
+    if (e.key === "Escape" && saran.length > 0) {
+      e.preventDefault();
+      setSaran([]);
+      setSaranAktif(-1);
+      return;
+    }
+    if (e.key === "Enter") {
+      // preventDefault WAJIB tetap ada: input ini di dalam <form>, jadi Enter tanpa penahan
+      // akan men-submit form sebelum lokasi sempat ditentukan.
+      e.preventDefault();
+      if (saranAktif >= 0 && saran[saranAktif]) pilihLokasi(saran[saranAktif]);
+      else handleCariLokasi();
+    }
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -173,18 +263,50 @@ export function BuatMisiModal({ open, onOpenChange }: { open: boolean; onOpenCha
           <div>
             <Label htmlFor="alamatQuery">Lokasi Misi</Label>
             <div className="flex gap-2">
-              <Input
-                id="alamatQuery"
-                placeholder="mis. Kecamatan Baleendah, Kabupaten Bandung"
-                value={alamatQuery}
-                onChange={(e) => setAlamatQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleCariLokasi();
-                  }
-                }}
-              />
+              <div className="relative flex-1">
+                <Input
+                  id="alamatQuery"
+                  placeholder="mis. Kecamatan Baleendah, Kabupaten Bandung"
+                  value={alamatQuery}
+                  onChange={(e) => setAlamatQuery(e.target.value)}
+                  onKeyDown={handleLokasiKeyDown}
+                  autoComplete="off"
+                  role="combobox"
+                  aria-expanded={saranTampil}
+                  aria-controls="saran-lokasi"
+                  aria-activedescendant={saranAktif >= 0 ? `saran-lokasi-${saranAktif}` : undefined}
+                />
+                {saranTampil && (
+                  <ul
+                    id="saran-lokasi"
+                    role="listbox"
+                    aria-label="Saran lokasi"
+                    className="absolute z-20 mt-1 max-h-[220px] w-full overflow-y-auto rounded-[8px] border border-border bg-elevated py-1 shadow-[0_12px_40px_rgba(0,0,0,0.85)]"
+                  >
+                    {saran.map((s, i) => (
+                      <li key={s.key} id={`saran-lokasi-${i}`} role="option" aria-selected={i === saranAktif}>
+                        <button
+                          type="button"
+                          // onMouseDown, bukan onClick: blur input mendahului click dan bisa
+                          // menutup daftar sebelum pilihannya terdaftar.
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            pilihLokasi(s);
+                          }}
+                          onMouseEnter={() => setSaranAktif(i)}
+                          className={cn(
+                            "flex w-full items-start gap-[7px] px-[10px] py-[7px] text-left text-[11.5px] text-ink-2",
+                            i === saranAktif && "bg-surface-hover text-ink"
+                          )}
+                        >
+                          <MapPin className="mt-[2px] size-3 shrink-0 text-ink-3" strokeWidth={1.5} />
+                          <span>{s.label}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
               <Button
                 type="button"
                 variant="outline"
@@ -196,6 +318,7 @@ export function BuatMisiModal({ open, onOpenChange }: { open: boolean; onOpenCha
                 {geocodePending ? "Mencari..." : "Cari Lokasi"}
               </Button>
             </div>
+            {saranPending && <p className="mt-1 px-1 text-[10.5px] text-ink-3">Mencari lokasi...</p>}
             {geocodeError && <p className="mt-1 text-[11px] text-[#F5A9A5]">{geocodeError}</p>}
             {/* Readout berlabel, BUKAN kartu berbingkai. Versi lama memakai gaya yang sama dengan
                 panel ringkasan AI di bawah (border + bg accent) — di sana artinya "permukaan
@@ -226,8 +349,11 @@ export function BuatMisiModal({ open, onOpenChange }: { open: boolean; onOpenCha
                 onChange={(e) => {
                   const l = LOKASI_REFERENSI.find((r) => r.key === e.target.value);
                   if (l) {
+                    lewatiSaranBerikutnya.current = true;
                     setLokasi({ label: l.label, lat: l.lat, lng: l.lng });
                     setAlamatQuery("");
+                    setSaran([]);
+                    setSaranAktif(-1);
                     setGeocodeError(null);
                   }
                 }}
