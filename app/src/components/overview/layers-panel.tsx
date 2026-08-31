@@ -12,18 +12,30 @@ import type { LayerVisibility } from "./situation-map";
  * salah untuk dua dari tiga keadaan, sekaligus menabrak layer lain (temuan QA-03). Sekarang
  * peta memakai satu hue dengan opacity bertingkat, dan legendanya ikut: bilah gradien yang
  * menunjukkan renggang → padat, bukan titik yang mengaku mewakili satu warna saja. */
+/** `nasional: true` menandai lapisan yang TIDAK ikut filter Cakupan.
+ *
+ * Pos Komando, Kodam, dan Kodim adalah data referensi tetap (lib/pos-komando.ts,
+ * lib/komando-teritorial.ts), bukan pengamatan tentang provinsi yang sedang dipilih — pos komando
+ * di Kalimantan tidak berhenti ada karena operator sedang melihat Bali. Sengaja tidak ikut
+ * disaring: dengan 5 pos se-nasional, hampir semua provinsi akan kosong dan peta justru kehilangan
+ * konteks komando yang jadi gunanya.
+ *
+ * Tapi tetap harus DIKATAKAN. Tanpa penanda, satu-satunya yang terlihat adalah "pill-nya bilang
+ * Bali tapi ada ikon di Kalimantan" — persis ketidakkonsistenan yang mau dihilangkan fitur ini.
+ * Perlakuannya sama dengan panel Aktivitas Pelatihan. */
 const LAYER_ITEMS: {
   key: keyof LayerVisibility;
   label: string;
   color: string;
   swatch?: "dot" | "ramp";
+  nasional?: boolean;
 }[] = [
   { key: "anggota", label: "Anggota Siap", color: "#3CF29A" },
   { key: "siaga", label: "Anggota Siaga", color: "#E0A83E" },
   { key: "misi", label: "Zona Misi", color: "#E14C45" },
-  { key: "pos", label: "Pos Komando", color: "#B08D4F" },
-  { key: "kodam", label: "Kodam", color: "#1F6B4A" },
-  { key: "kodim", label: "Kodim", color: "#1F6B4A" },
+  { key: "pos", label: "Pos Komando", color: "#B08D4F", nasional: true },
+  { key: "kodam", label: "Kodam", color: "#1F6B4A", nasional: true },
+  { key: "kodim", label: "Kodim", color: "#1F6B4A", nasional: true },
   { key: "heatzone", label: "Kepadatan Wilayah", color: "#3CF29A", swatch: "ramp" },
 ];
 
@@ -32,9 +44,13 @@ export function LayersPanel({
   onToggle,
   className,
   defaultCollapsed = false,
+  cakupanAktif = false,
 }: {
   layers: LayerVisibility;
   onToggle: (key: keyof LayerVisibility) => void;
+  /** true kalau dashboard sedang disaring ke satu provinsi — memunculkan penanda NASIONAL pada
+   * lapisan yang tidak ikut tersaring. */
+  cakupanAktif?: boolean;
   /** Posisi & lebar sengaja diserahkan ke pemanggil: di desktop panel ini melayang di atas peta,
    * di HP ia jadi kartu biasa di bawah peta (melayang di layar 390px cuma saling tumpang tindih). */
   className?: string;
@@ -90,7 +106,12 @@ export function LayersPanel({
                 ) : (
                   <span className="size-2 shrink-0 rounded-full" style={{ background: item.color }} />
                 )}
-                <span className="flex-1 tracking-wide">{item.label}</span>
+                <span className="flex-1 truncate tracking-wide">{item.label}</span>
+                {cakupanAktif && item.nasional && (
+                  <span className="shrink-0 rounded-[4px] border border-border px-[4px] py-px font-mono text-[8.5px] tracking-wider text-ink-3">
+                    NASIONAL
+                  </span>
+                )}
               </button>
             );
           })}

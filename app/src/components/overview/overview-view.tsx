@@ -305,6 +305,7 @@ export function OverviewView({
           layers={layers}
           onToggle={toggleLayer}
           className="absolute left-[14px] top-[14px] z-[500] hidden w-[250px] xl:block"
+          cakupanAktif={cakupan !== null}
         />
 
         <button
@@ -338,6 +339,7 @@ export function OverviewView({
           onToggle={toggleLayer}
           className="w-full"
           defaultCollapsed
+          cakupanAktif={cakupan !== null}
         />
         <FloatingPanel
           title="MISI TERBARU"
