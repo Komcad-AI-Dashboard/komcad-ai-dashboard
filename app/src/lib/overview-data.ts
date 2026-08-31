@@ -2,7 +2,7 @@
 // dari Server Component `app/(command)/overview/page.tsx`.
 
 import { prisma } from "@/lib/prisma";
-import { STATUS_MISI, STATUS_SIAGA } from "@/lib/constants";
+import { STATUS_MISI, STATUS_MISI_AKTIF, STATUS_SIAGA } from "@/lib/constants";
 
 export type MapAnggota = {
   id: string;
@@ -187,7 +187,7 @@ export async function getAiMobilizationSummary() {
         },
       },
     }),
-    prisma.misi.count({ where: { status: { in: [STATUS_MISI.DRAFT, STATUS_MISI.DIMOBILISASI] } } }),
+    prisma.misi.count({ where: { status: { in: STATUS_MISI_AKTIF } } }),
     prisma.misi.count({
       where: { dimobilisasiAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
     }),
@@ -209,7 +209,7 @@ export async function getAiMobilizationSummary() {
 
 export async function getTopbarKpi() {
   const [misiAktifCount, agg] = await Promise.all([
-    prisma.misi.count({ where: { status: { in: [STATUS_MISI.DRAFT, STATUS_MISI.DIMOBILISASI] } } }),
+    prisma.misi.count({ where: { status: { in: STATUS_MISI_AKTIF } } }),
     prisma.anggota.aggregate({ _avg: { readinessScore: true } }),
   ]);
   return {

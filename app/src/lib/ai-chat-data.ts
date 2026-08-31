@@ -2,7 +2,7 @@
 // Semua jawaban chat WAJIB dijawab dari snapshot ini (grounded), tidak pernah dikarang OpenAI.
 
 import { prisma } from "@/lib/prisma";
-import { STATUS_MISI, STATUS_SERTIFIKASI, STATUS_SIAGA } from "@/lib/constants";
+import { STATUS_MISI_AKTIF, STATUS_SERTIFIKASI, STATUS_SIAGA } from "@/lib/constants";
 import { computeSertifikasiStatus } from "@/lib/sertifikasi";
 import { getReadinessPerWilayah } from "@/lib/analitik-data";
 
@@ -29,7 +29,7 @@ export async function getChatContext() {
     prisma.anggota.aggregate({ _avg: { readinessScore: true } }),
     getReadinessPerWilayah(),
     prisma.misi.findMany({
-      where: { status: { in: [STATUS_MISI.DRAFT, STATUS_MISI.DIMOBILISASI] } },
+      where: { status: { in: STATUS_MISI_AKTIF } },
       select: { kodeMisi: true, jenisKejadian: true, lokasi: true, status: true, urgensi: true },
     }),
     prisma.sertifikasi.findMany({ select: { tanggalBerlaku: true } }),

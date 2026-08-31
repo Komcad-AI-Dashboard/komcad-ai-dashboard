@@ -1,7 +1,7 @@
 // Data-fetching untuk Modul Manajemen Misi & AI Mobilization (FR-08 s.d. FR-16). Server-only.
 
 import { prisma } from "@/lib/prisma";
-import { STATUS_MISI, STATUS_SIAGA } from "@/lib/constants";
+import { STATUS_MISI, STATUS_MISI_AKTIF, STATUS_SIAGA } from "@/lib/constants";
 import { haversineKm, estimateEtaMenit } from "@/lib/geo";
 
 export async function getMisiList() {
@@ -89,9 +89,9 @@ export async function getMisiKpi() {
   const awalBulan = new Date(now.getFullYear(), now.getMonth(), 1);
 
   const [misiAktif, kritisAktif, selesaiBulanIni, penugasanAktif] = await Promise.all([
-    prisma.misi.count({ where: { status: { in: [STATUS_MISI.DRAFT, STATUS_MISI.DIMOBILISASI] } } }),
+    prisma.misi.count({ where: { status: { in: STATUS_MISI_AKTIF } } }),
     prisma.misi.count({
-      where: { status: { in: [STATUS_MISI.DRAFT, STATUS_MISI.DIMOBILISASI] }, urgensi: "Kritis" },
+      where: { status: { in: STATUS_MISI_AKTIF }, urgensi: "Kritis" },
     }),
     prisma.misi.count({ where: { status: STATUS_MISI.SELESAI, selesaiAt: { gte: awalBulan } } }),
     prisma.penugasan.findMany({

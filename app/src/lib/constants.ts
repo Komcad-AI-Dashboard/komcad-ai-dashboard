@@ -49,6 +49,18 @@ export const STATUS_MISI = {
   DIBATALKAN: "Dibatalkan",
 } as const;
 
+/** Arti "Misi Aktif" — SATU sumber kebenaran, dipakai chip filter, KPI, badge sidebar, pill topbar,
+ * dan konteks AI Chat.
+ *
+ * Sebelumnya tiap tempat menuliskan sendiri [DRAFT, DIMOBILISASI], enam kali, dan hasilnya sebuah
+ * Misi yang belum dimobilisasi tetap terhitung "aktif" (temuan QA-06). Sekarang aktif berarti
+ * benar-benar sudah dimobilisasi.
+ *
+ * Kalau definisi ini berubah lagi, ubah DI SINI saja. Menambalnya di satu tempat itulah yang dulu
+ * membuat angka di topbar dan isi tabel bisa berbeda — dan yang paling gampang terlewat adalah
+ * AI Chat, yang menjawab "Saat ini ada N Misi aktif" dari daftar yang sama. */
+export const STATUS_MISI_AKTIF = [STATUS_MISI.DIMOBILISASI] as string[];
+
 export const URGENSI_MISI = {
   KRITIS: "Kritis",
   TINGGI: "Tinggi",

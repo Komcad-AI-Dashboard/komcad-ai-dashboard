@@ -6,13 +6,16 @@ import { Badge, statusMisiColor, urgensiColor } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Chip } from "@/components/ui/chip";
 import { Drawer } from "@/components/ui/drawer";
-import { STATUS_MISI } from "@/lib/constants";
+import { STATUS_MISI, STATUS_MISI_AKTIF } from "@/lib/constants";
 import type { Role } from "@/lib/constants";
 import type { MisiListItem, MisiKpi } from "@/lib/misi-data";
 import { formatEta } from "@/lib/geo";
 import { MisiDetailDrawerContent } from "./misi-detail-drawer-content";
 
-const FILTERS = ["Semua", "Aktif", "Kritis", "Tinggi", "Selesai"] as const;
+/** "Draft" berdiri sendiri sejak "Aktif" dipersempit jadi Dimobilisasi saja (temuan QA-06).
+ * Tanpa chip ini Misi Draft cuma bisa ditemukan lewat "Semua" — di alat manajemen Misi itu berarti
+ * Misi yang belum dimobilisasi gampang terlupakan, justru yang paling butuh ditindaklanjuti. */
+const FILTERS = ["Semua", "Aktif", "Draft", "Kritis", "Tinggi", "Selesai"] as const;
 
 function KpiCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
@@ -52,14 +55,19 @@ export function MisiView({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return misiList.filter((m) => {
+      // "Aktif" memakai STATUS_MISI_AKTIF, konstanta yang sama dengan KPI, badge sidebar, pill
+      // topbar, dan konteks AI Chat. Dulu daftar statusnya ditulis ulang di sini, jadi menambal
+      // chip-nya sendiri akan membuat isi tabel berbeda dari angka di topbar.
       const matchFilter =
         filter === "Semua"
           ? true
           : filter === "Aktif"
-            ? m.status === STATUS_MISI.DRAFT || m.status === STATUS_MISI.DIMOBILISASI
-            : filter === "Selesai"
-              ? m.status === STATUS_MISI.SELESAI
-              : m.urgensi === filter;
+            ? STATUS_MISI_AKTIF.includes(m.status)
+            : filter === "Draft"
+              ? m.status === STATUS_MISI.DRAFT
+              : filter === "Selesai"
+                ? m.status === STATUS_MISI.SELESAI
+                : m.urgensi === filter;
       const matchQuery =
         !q ||
         m.kodeMisi.toLowerCase().includes(q) ||
