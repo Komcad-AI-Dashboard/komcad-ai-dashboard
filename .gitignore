@@ -1,3 +1,7 @@
 # Per-user Claude Code settings (personal permissions). Shared team behaviour belongs
 # in .claude/settings.json, which IS tracked.
 .claude/settings.local.json
+
+# Local credential files. app/.gitignore only covers .env* inside app/, so a folder
+# of env files at the repo root would otherwise be committable.
+envs/
