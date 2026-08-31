@@ -16,6 +16,7 @@ const KODE_DIHAPUS = [
   "MISI-2026-003", // Longsor Jakarta Selatan — artefak uji coba
   "MISI-2026-004", // Banjir Jakarta Selatan — artefak uji coba
   "MISI-2026-023", // Banjir Kepulauan Riau — di-drop atas permintaan user (Fase 18 susulan)
+  "MISI-2026-032", // Kekeringan Lamongan (jenisKejadian "Lainnya") — di-drop atas permintaan user, tetap nongol di top 5 panel Misi Terbaru
 ];
 
 const prisma = bukaTargetDb();

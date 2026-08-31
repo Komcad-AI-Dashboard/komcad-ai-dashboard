@@ -184,12 +184,9 @@ export const MISI_BENCANA: MisiBencana[] = [
     personel: 8, slice: [112, 120], hari: 1, status: "Dimobilisasi",
     deskripsi: "Eskalasi lanjutan dari MISI-2026-011: titik panas melonjak tembus 5.391 per 31 Agustus 2026 (sumber BNPB), jauh meningkat dari kondisi awal bulan.",
   },
-  {
-    kode: "MISI-2026-032", komandan: "Mayor Inf. Nurul Huda", jenis: "Lainnya", urgensi: "Sedang",
-    lokasi: "Kabupaten Lamongan, Jawa Timur", lat: -7.1225, lng: 112.4169,
-    personel: 4, slice: [120, 124], hari: 3, status: "Dimobilisasi",
-    deskripsi: "Kekeringan puncak kemarau: BNPB salurkan 40.000 liter air bersih ke Kabupaten Lamongan. Salah satu dari 6 provinsi & 47 kabupaten/kota berstatus siaga darurat kekeringan.",
-  },
+  // MISI-2026-032 (Kekeringan Lamongan, jenisKejadian "Lainnya") di-drop atas permintaan user —
+  // tetap nongol di top 5 panel Misi Terbaru dan labelnya "Lainnya" kurang jelas dibanding
+  // "Kebakaran Hutan" yang lebih langsung menandakan narasi El Nino. Lihat hapus-misi-lama.ts.
 ];
 
 const hariLalu = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
