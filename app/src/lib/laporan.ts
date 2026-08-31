@@ -41,6 +41,135 @@ function pdfHeader(doc: PDFKit.PDFDocument, title: string, subtitle: string) {
   doc.moveDown(1);
 }
 
+// Warna cetak, bukan warna layar. Palet UI dibangun untuk latar hitam; di atas kertas putih
+// track gelapnya jadi blok pekat dan tulisannya tenggelam.
+const PDF_BAR_FILL = "#22C577";
+const PDF_BAR_TRACK = "#EAEEF0";
+const PDF_RULE = "#D5DBDF";
+const PDF_MUTED = "#666666";
+
+/** doc.text() otomatis menambah halaman kalau meluber; doc.rect()/doc.moveTo() TIDAK — keduanya
+ * akan menggambar terus melewati batas bawah, keluar halaman, tanpa error sama sekali. Semua bar
+ * dan garis di bawah digambar manual, jadi tiap baris wajib memeriksa sisa ruang lebih dulu. */
+function ensureSpace(doc: PDFKit.PDFDocument, needed: number, onNewPage?: () => void) {
+  if (doc.y + needed > doc.page.height - doc.page.margins.bottom) {
+    doc.addPage();
+    onNewPage?.();
+  }
+}
+
+function contentWidth(doc: PDFKit.PDFDocument) {
+  return doc.page.width - doc.page.margins.left - doc.page.margins.right;
+}
+
+/** Tabel dua kolom (label, nilai) untuk ringkasan angka. Menggantikan deretan doc.text() lepas
+ * yang tidak punya perataan sama sekali. */
+function pdfKeyValueTable(doc: PDFKit.PDFDocument, rows: { label: string; value: string }[]) {
+  const x = doc.page.margins.left;
+  const w = contentWidth(doc);
+  const valueW = 180;
+  const labelW = w - valueW;
+  const rowH = 18;
+
+  for (const r of rows) {
+    ensureSpace(doc, rowH);
+    const y = doc.y;
+    doc
+      .moveTo(x, y + rowH)
+      .lineTo(x + w, y + rowH)
+      .strokeColor(PDF_RULE)
+      .lineWidth(0.5)
+      .stroke();
+    doc.fontSize(9.5).fillColor(PDF_MUTED).text(r.label, x + 2, y + 5, { width: labelW, lineBreak: false });
+    doc
+      .fontSize(9.5)
+      .fillColor("#000000")
+      .text(r.value, x + labelW, y + 5, { width: valueW - 2, align: "right", lineBreak: false });
+    // doc.y digeser manual: menggambar teks di koordinat eksplisit tidak memajukan kursor
+    // seperti doc.text() biasa, jadi tanpa ini semua baris menumpuk di tempat yang sama.
+    doc.y = y + rowH;
+  }
+  // doc.x WAJIB dikembalikan ke margin kiri. Menulis teks di koordinat eksplisit meninggalkan
+  // doc.x di posisi terakhir, dan doc.text() berikutnya memakainya sebagai tepi kiri — judul
+  // sesudah tabel ini sempat tercetak menjempol ke kanan halaman karenanya.
+  doc.x = doc.page.margins.left;
+  doc.fillColor("#000000");
+}
+
+/** Bar horizontal per wilayah, diurutkan sesuai data yang masuk (FR-26). Tiap baris membawa
+ * angkanya sendiri — nama, bar, skor, jumlah anggota — jadi ini sekaligus tabel dan diagram,
+ * bukan dua blok berisi data yang sama. Tata letaknya mengikuti grafik di layar Analitik
+ * (app/(command)/analitik/page.tsx) supaya laporan dan dashboard tidak berbeda bahasa visual.
+ *
+ * `score` diasumsikan 0-100 (Readiness Score memang begitu), jadi lebar bar = skor% dari track. */
+function pdfBarChart(
+  doc: PDFKit.PDFDocument,
+  rows: { label: string; score: number; note: string }[],
+  opts: { average?: number | null; averageLabel?: string; onPageBreak?: () => void } = {}
+) {
+  const x = doc.page.margins.left;
+  const w = contentWidth(doc);
+  const rowH = 18;
+  const barH = 7;
+  const labelW = 130;
+  const scoreW = 26;
+  const noteW = 96;
+  const trackX = x + labelW + 8;
+  const trackW = w - labelW - 8 - scoreW - noteW - 16;
+
+  const avg = opts.average ?? null;
+  const avgX = avg !== null ? trackX + (Math.min(100, Math.max(0, avg)) / 100) * trackW : null;
+
+  function drawAverageRule(topY: number, bottomY: number) {
+    if (avgX === null || bottomY <= topY) return;
+    doc.save();
+    doc.dash(2, { space: 2 });
+    doc.moveTo(avgX, topY).lineTo(avgX, bottomY).strokeColor("#8B96A0").lineWidth(0.7).stroke();
+    doc.undash();
+    doc.restore();
+  }
+
+  // Garis rata-rata digambar per SEGMEN halaman, bukan sekali di akhir. Kalau digambar sekali
+  // saja, bar yang lanjut ke halaman berikutnya kehilangan garisnya dan segmen terakhirlah yang
+  // dapat — dan koordinat Y dari halaman sebelumnya tidak bisa dipakai lagi setelah addPage().
+  let blockTop = doc.y;
+  for (const r of rows) {
+    if (doc.y + rowH > doc.page.height - doc.page.margins.bottom) {
+      drawAverageRule(blockTop, doc.y);
+      doc.addPage();
+      opts.onPageBreak?.();
+      blockTop = doc.y;
+    }
+    const y = doc.y;
+    const pct = Math.min(100, Math.max(0, r.score)) / 100;
+
+    doc.fontSize(9).fillColor("#000000").text(r.label, x, y + 4, { width: labelW, lineBreak: false });
+    doc.rect(trackX, y + (rowH - barH) / 2, trackW, barH).fill(PDF_BAR_TRACK);
+    if (pct > 0) doc.rect(trackX, y + (rowH - barH) / 2, trackW * pct, barH).fill(PDF_BAR_FILL);
+    doc
+      .fontSize(9)
+      .fillColor("#000000")
+      .text(String(r.score), trackX + trackW + 8, y + 4, { width: scoreW, align: "right", lineBreak: false });
+    doc
+      .fontSize(8.5)
+      .fillColor(PDF_MUTED)
+      .text(r.note, trackX + trackW + 8 + scoreW + 8, y + 4, { width: noteW, align: "right", lineBreak: false });
+
+    doc.y = y + rowH;
+  }
+
+  drawAverageRule(blockTop, doc.y);
+
+  if (avg !== null && opts.averageLabel) {
+    ensureSpace(doc, 16);
+    doc.moveDown(0.3);
+    doc.fontSize(8).fillColor(PDF_MUTED).text(opts.averageLabel, x, doc.y, { width: w, lineBreak: false });
+    doc.y += 10;
+  }
+  doc.x = doc.page.margins.left; // lihat catatan yang sama di pdfKeyValueTable
+  doc.fillColor("#000000");
+}
+
 export async function generateLaporanKesiapsiagaanPdf(): Promise<Buffer> {
   const [kpi, wilayah] = await Promise.all([getAnalitikKpi(), getReadinessPerWilayah()]);
   const now = new Date();
@@ -52,26 +181,50 @@ export async function generateLaporanKesiapsiagaanPdf(): Promise<Buffer> {
       `Dibuat ${now.toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })} pukul ${now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB`
     );
 
-    doc.fontSize(12).text("Ringkasan KPI Nasional", { underline: true });
+    doc.fontSize(12).fillColor("#000000").text("Ringkasan KPI Nasional", { underline: true });
     doc.moveDown(0.5);
-    doc.fontSize(10);
-    doc.text(`Readiness Score Nasional: ${kpi.readinessNasional}`);
-    doc.text(`Misi Selesai (30 hari terakhir): ${kpi.misiSelesai30Hari}`);
-    doc.text(`Sertifikasi Kedaluwarsa: ${kpi.sertifikasiKedaluwarsa}`);
-    doc.text(
-      `AI Mobilization Uptime: ${kpi.aiUptimePersen === null ? "belum ada data" : `${kpi.aiUptimePersen}% dari ${kpi.totalGenerateAi} kali generate`}`
-    );
+    pdfKeyValueTable(doc, [
+      { label: "Readiness Score Nasional", value: String(kpi.readinessNasional) },
+      { label: "Misi Selesai (30 hari terakhir)", value: String(kpi.misiSelesai30Hari) },
+      { label: "Sertifikasi Kedaluwarsa", value: String(kpi.sertifikasiKedaluwarsa) },
+      {
+        label: "AI Mobilization Uptime",
+        value:
+          kpi.aiUptimePersen === null
+            ? "belum ada data"
+            : `${kpi.aiUptimePersen}% dari ${kpi.totalGenerateAi} kali generate`,
+      },
+    ]);
     doc.moveDown(1.2);
 
-    doc.fontSize(12).text("Readiness Score per Wilayah", { underline: true });
-    doc.moveDown(0.5);
-    doc.fontSize(10);
+    // Judul diulang tiap halaman lewat renderJudulWilayah() supaya bar yang lanjut ke halaman
+    // berikutnya tidak muncul sebagai deretan batang tanpa keterangan.
+    const renderJudulWilayah = () => {
+      doc.fontSize(12).fillColor("#000000").text("Readiness Score per Wilayah", { underline: true });
+      doc.moveDown(0.5);
+    };
+    renderJudulWilayah();
+
     if (wilayah.length === 0) {
-      doc.text("Belum ada data provinsi anggota.");
+      // Dipertahankan apa adanya: tanpa data, kerangka diagram kosong lebih membingungkan
+      // daripada satu kalimat yang menyebutkan datanya memang belum ada.
+      doc.fontSize(10).text("Belum ada data provinsi anggota.");
+      return;
     }
-    for (const w of wilayah) {
-      doc.text(`${w.provinsi.padEnd(24, " ")}  Skor ${w.score}  (${w.jumlahAnggota} anggota)`);
-    }
+
+    pdfBarChart(
+      doc,
+      wilayah.map((w) => ({
+        label: w.provinsi,
+        score: w.score,
+        note: `${w.jumlahAnggota} anggota`,
+      })),
+      {
+        average: kpi.readinessNasional,
+        averageLabel: `Garis putus-putus = rata-rata nasional (${kpi.readinessNasional}). Wilayah di kirinya berada di bawah rata-rata.`,
+        onPageBreak: renderJudulWilayah,
+      }
+    );
   });
 }
 
