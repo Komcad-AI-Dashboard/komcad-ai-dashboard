@@ -103,7 +103,10 @@ export function Topbar({
             <DropdownMenu.Content
               align="end"
               sideOffset={6}
-              className="z-50 max-h-[320px] min-w-[220px] overflow-y-auto rounded-[8px] border border-border bg-elevated py-1 shadow-[0_12px_40px_rgba(0,0,0,0.85)]"
+              // z-[2100] menyamai menu luapan di topbar ini juga — BUKAN z-50 bawaan Tailwind.
+              // Skala z-index app ini tinggi: panel melayang di atas peta saja sudah z-[500],
+              // modal & drawer z-[2000]. Dengan z-50 dropdown-nya tenggelam di belakang panel peta.
+              className="z-[2100] max-h-[320px] min-w-[220px] overflow-y-auto rounded-[8px] border border-border bg-elevated py-1 shadow-[0_12px_40px_rgba(0,0,0,0.85)]"
             >
               <DropdownMenu.Item
                 onSelect={() => pilihCakupan(CAKUPAN_NASIONAL)}
