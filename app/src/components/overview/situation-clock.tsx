@@ -12,7 +12,7 @@ function format(date: Date) {
   const tanggal = String(date.getDate()).padStart(2, "0");
   const bulan = BULAN[date.getMonth()];
   const tahun = date.getFullYear();
-  const jam = date.toLocaleTimeString("id-ID", { hour12: false });
+  const jam = date.toLocaleTimeString("id-ID", { hour12: false, timeZone: "Asia/Jakarta" });
   return `${hari.toUpperCase()}, ${tanggal} ${bulan.toUpperCase()} ${tahun} · ${jam} WIB`;
 }
 

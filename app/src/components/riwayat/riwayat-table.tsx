@@ -57,7 +57,7 @@ export function RiwayatTable({ rows }: { rows: RiwayatMobilisasiItem[] }) {
             <td data-label="Jenis" className="px-3 py-[10px] text-[12px]">{r.jenisKejadian}</td>
             <td data-label="Lokasi" className="px-3 py-[10px] text-[12px] text-ink-2">{r.lokasi}</td>
             <td data-label="Tanggal Selesai" className="px-3 py-[10px] text-[12px]">
-              {r.selesaiAt?.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) ?? "—"}
+              {r.selesaiAt?.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Jakarta" }) ?? "—"}
             </td>
             <td data-label="Personel" className="px-3 py-[10px] text-[12px]">{r.personel}</td>
             <td

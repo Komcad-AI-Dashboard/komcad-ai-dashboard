@@ -11,7 +11,7 @@ import { STATUS_SERTIFIKASI } from "@/lib/constants";
 import { getPengaturanSistem } from "@/lib/pengaturan-data";
 
 function judulReminder(jenisSertifikasi: string, tanggalBerlaku: Date): string {
-  const tgl = tanggalBerlaku.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+  const tgl = tanggalBerlaku.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Jakarta" });
   return `Sertifikasi Akan Kedaluwarsa: ${jenisSertifikasi} (s.d. ${tgl})`;
 }
 
@@ -40,7 +40,7 @@ export async function ensureReminderSertifikasi(anggotaId?: string): Promise<num
         data: {
           anggotaId: s.anggotaId,
           judul,
-          pesan: `Sertifikasi ${s.jenisSertifikasi} Anda akan kedaluwarsa pada ${s.tanggalBerlaku.toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })}. Segera ajukan perpanjangan.`,
+          pesan: `Sertifikasi ${s.jenisSertifikasi} Anda akan kedaluwarsa pada ${s.tanggalBerlaku.toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric", timeZone: "Asia/Jakarta" })}. Segera ajukan perpanjangan.`,
           channel: "Aplikasi",
           status: "Terkirim",
         },

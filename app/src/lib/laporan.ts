@@ -178,7 +178,7 @@ export async function generateLaporanKesiapsiagaanPdf(): Promise<Buffer> {
     pdfHeader(
       doc,
       "Laporan Kesiapsiagaan Nasional",
-      `Dibuat ${now.toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })} pukul ${now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB`
+      `Dibuat ${now.toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric", timeZone: "Asia/Jakarta" })} pukul ${now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" })} WIB`
     );
 
     doc.fontSize(12).fillColor("#000000").text("Ringkasan KPI Nasional", { underline: true });
@@ -261,9 +261,9 @@ export async function generateRekapMobilisasiXlsx(): Promise<Buffer> {
       urgensi: m.urgensi,
       status: m.status,
       personel: m._count.penugasan,
-      createdAt: m.createdAt.toLocaleDateString("id-ID"),
-      dimobilisasiAt: m.dimobilisasiAt?.toLocaleDateString("id-ID") ?? "",
-      selesaiAt: m.selesaiAt?.toLocaleDateString("id-ID") ?? "",
+      createdAt: m.createdAt.toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta" }),
+      dimobilisasiAt: m.dimobilisasiAt?.toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta" }) ?? "",
+      selesaiAt: m.selesaiAt?.toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta" }) ?? "",
       hasilEvaluasi: m.hasilEvaluasi ?? "",
     });
   }
@@ -284,7 +284,7 @@ export async function generateEvaluasiAiPdf(): Promise<Buffer> {
     pdfHeader(
       doc,
       "Evaluasi AI Mobilization",
-      `Rekap Misi selesai & rata-rata skor rekomendasi AI — dibuat ${now.toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })}`
+      `Rekap Misi selesai & rata-rata skor rekomendasi AI — dibuat ${now.toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric", timeZone: "Asia/Jakarta" })}`
     );
 
     doc.fontSize(10);
@@ -299,7 +299,7 @@ export async function generateEvaluasiAiPdf(): Promise<Buffer> {
       doc.font("Helvetica-Bold").text(`${m.kodeMisi} — ${m.jenisKejadian}, ${m.lokasi}`);
       doc.font("Helvetica");
       doc.text(
-        `Selesai: ${m.selesaiAt?.toLocaleDateString("id-ID") ?? "-"}  ·  Personel: ${m.penugasan.length}  ·  Rata-rata skor rekomendasi AI: ${skorRata ?? "-"}`
+        `Selesai: ${m.selesaiAt?.toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta" }) ?? "-"}  ·  Personel: ${m.penugasan.length}  ·  Rata-rata skor rekomendasi AI: ${skorRata ?? "-"}`
       );
       doc.text(`Evaluasi: ${m.hasilEvaluasi ?? "-"}`);
       doc.moveDown(0.8);
@@ -398,7 +398,7 @@ export async function generateLaporanPeriodeXlsx(dari: Date, sampai: Date): Prom
       lokasi: m.lokasi,
       status: m.status,
       personel: m._count.penugasan,
-      createdAt: m.createdAt.toLocaleDateString("id-ID"),
+      createdAt: m.createdAt.toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta" }),
     });
   }
   return Buffer.from(await workbook.xlsx.writeBuffer());

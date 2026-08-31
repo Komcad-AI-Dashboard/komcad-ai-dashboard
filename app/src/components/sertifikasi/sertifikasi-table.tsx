@@ -50,10 +50,10 @@ export function SertifikasiTable({ rows }: { rows: Row[] }) {
                 <td data-label="Anggota" className="px-3 py-[10px] text-[12px]">{r.anggotaLabel}</td>
                 <td data-label="Jenis Sertifikasi" className="px-3 py-[10px] text-[12px]">{r.jenisSertifikasi}</td>
                 <td data-label="Tanggal Terbit" className="px-3 py-[10px] text-[12px] text-ink-2">
-                  {r.tanggalTerbit.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
+                  {r.tanggalTerbit.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Jakarta" })}
                 </td>
                 <td data-label="Masa Berlaku" className="px-3 py-[10px] text-[12px] text-ink-2">
-                  {r.tanggalBerlaku.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
+                  {r.tanggalBerlaku.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Jakarta" })}
                 </td>
                 <td data-label="Status" className="px-3 py-[10px]">
                   <Badge color={statusSertifikasiColor(r.status)}>{r.status}</Badge>

@@ -237,7 +237,7 @@ export function AnggotaCvDrawerContent({
           <Field label="GOLONGAN DARAH" value={anggota.profilDemografi?.golonganDarah} />
           <Field
             label="BERGABUNG SEJAK"
-            value={anggota.createdAt.toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })}
+            value={anggota.createdAt.toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric", timeZone: "Asia/Jakarta" })}
           />
           <Field label="PENDIDIKAN" value={anggota.profilDemografi?.pendidikan} />
           <Field label="PEKERJAAN SIPIL" value={anggota.profilDemografi?.pekerjaanSipil} />
@@ -273,7 +273,7 @@ export function AnggotaCvDrawerContent({
             <div>
               <div className="text-[12px] font-semibold">{s.jenisSertifikasi}</div>
               <div className="text-[10.5px] text-ink-2">
-                Berlaku s.d. {s.tanggalBerlaku.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
+                Berlaku s.d. {s.tanggalBerlaku.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Jakarta" })}
               </div>
             </div>
             <Badge color={statusSertifikasiColor(s.status)}>{s.status}</Badge>
@@ -294,7 +294,7 @@ export function AnggotaCvDrawerContent({
             <div>
               <div className="text-[12px] font-semibold">{p.namaPelatihan}</div>
               <div className="text-[10.5px] text-ink-2">
-                {p.tanggal.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
+                {p.tanggal.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Jakarta" })}
               </div>
             </div>
             <Badge color={p.statusKelulusan === "Lulus" ? "green" : "amber"}>{p.statusKelulusan}</Badge>

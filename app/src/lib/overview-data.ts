@@ -161,7 +161,7 @@ export async function getMisiTerbaruFeed(provinsi?: string | null): Promise<Feed
       color,
       kodeMisi: m.kodeMisi,
       description,
-      time: m.updatedAt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+      time: m.updatedAt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" }),
       wilayah: wilayahFromLokasi(m.lokasi),
     };
   });

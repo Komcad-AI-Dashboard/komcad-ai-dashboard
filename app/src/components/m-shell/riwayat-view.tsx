@@ -49,7 +49,7 @@ export function RiwayatView({ profil }: { profil: SelfProfil }) {
           <div key={p.id} className="rounded-[10px] border border-border bg-surface p-3">
             <div className="mb-1 text-[12px] font-bold">{p.namaPelatihan}</div>
             <div className="flex items-center justify-between text-[10.5px] text-ink-2">
-              <span>{p.tanggal.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</span>
+              <span>{p.tanggal.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Jakarta" })}</span>
               {statusPill(p.statusKelulusan)}
             </div>
           </div>
@@ -77,7 +77,7 @@ export function RiwayatView({ profil }: { profil: SelfProfil }) {
           <div key={s.id} className="rounded-[10px] border border-border bg-surface p-3">
             <div className="mb-1 text-[12px] font-bold">{s.jenisSertifikasi}</div>
             <div className="flex items-center justify-between text-[10.5px] text-ink-2">
-              <span>Berlaku s.d. {s.tanggalBerlaku.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</span>
+              <span>Berlaku s.d. {s.tanggalBerlaku.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Jakarta" })}</span>
               {statusPill(s.status)}
             </div>
           </div>

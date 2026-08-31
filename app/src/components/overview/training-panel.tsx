@@ -36,7 +36,7 @@ export function TrainingPanelContent({
                 {t.lokasi}
               </span>
               <span className="font-mono text-ink-3">
-                {t.tanggal.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
+                {t.tanggal.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Jakarta" })}
               </span>
             </div>
             <div className="mt-[3px] text-[9.5px] font-bold text-amber">{t.peserta} peserta</div>

@@ -47,8 +47,8 @@ export function NotifCard({ notif }: { notif: SelfNotifikasiItem }) {
       <div className="mb-[6px] flex items-center gap-2">
         <span className={`rounded-full px-2 py-[2px] text-[9px] font-extrabold tracking-wide ${tag.style}`}>{tag.label}</span>
         <span className="ml-auto font-mono text-[9.5px] text-ink-3">
-          {notif.createdAt.toLocaleDateString("id-ID", { day: "2-digit", month: "short" })}{" "}
-          {notif.createdAt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+          {notif.createdAt.toLocaleDateString("id-ID", { day: "2-digit", month: "short", timeZone: "Asia/Jakarta" })}{" "}
+          {notif.createdAt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" })}
         </span>
       </div>
       <div className="mb-1 text-[12.5px] font-bold">

@@ -507,6 +507,7 @@ export function OverviewView({
                   day: "2-digit",
                   month: "long",
                   year: "numeric",
+                  timeZone: "Asia/Jakarta",
                 })}
               </div>
             </div>

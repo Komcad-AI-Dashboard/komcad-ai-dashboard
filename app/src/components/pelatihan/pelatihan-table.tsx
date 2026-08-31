@@ -50,7 +50,7 @@ export function PelatihanTable({ rows }: { rows: Row[] }) {
                 <td data-label="Anggota" className="px-3 py-[10px] text-[12px]">{r.anggotaLabel}</td>
                 <td data-label="Nama Pelatihan" className="px-3 py-[10px] text-[12px]">{r.namaPelatihan}</td>
                 <td data-label="Tanggal" className="px-3 py-[10px] text-[12px] text-ink-2">
-                  {r.tanggal.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
+                  {r.tanggal.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Jakarta" })}
                 </td>
                 <td data-label="Status Kelulusan" className="px-3 py-[10px]">
                   <Badge color={r.statusKelulusan === "Lulus" ? "green" : "amber"}>{r.statusKelulusan}</Badge>
