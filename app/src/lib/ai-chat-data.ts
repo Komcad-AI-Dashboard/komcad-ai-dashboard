@@ -59,6 +59,14 @@ export async function getChatContext() {
     readinessNasional: Math.round((readinessAgg._avg.readinessScore ?? 0) * 10) / 10,
     readinessPerWilayah: readinessWilayah,
     misiAktif,
+    // Jumlahnya dihitung DI SINI, bukan dibiarkan dihitung model dari panjang array.
+    //
+    // `misiAktif` sempat jadi satu-satunya angka di konteks ini yang tidak disertai hitungannya —
+    // semua yang lain (totalAnggota, jumlah per status/gender, sertifikasiKedaluwarsa) sudah
+    // berupa angka jadi. Akibatnya model harus mencacah sendiri isi array, dan itu meleset
+    // konsisten: 11 Misi dijawab "10 misi aktif" di tiga percobaan berturut-turut. Bukan
+    // ngawur acak — memang model buruk mencacah elemen, jadi jangan pernah disuruh mencacah.
+    misiAktifJumlah: misiAktif.length,
     sertifikasiKedaluwarsa,
     belumPelatihan3Bulan,
     totalAnggotaStatusSiagaAktif,

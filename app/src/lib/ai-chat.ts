@@ -53,7 +53,7 @@ export function fallbackAnswer(question: string, ctx: ChatContext): ChatAnswer {
     return {
       sumber: "fallback",
       cocok: true,
-      jawaban: `Saat ini ada ${ctx.misiAktif.length} Misi aktif.`,
+      jawaban: `Saat ini ada ${ctx.misiAktifJumlah} Misi aktif.`,
       tabel:
         ctx.misiAktif.length > 0
           ? { headers: ["ID", "Lokasi", "Status"], rows: ctx.misiAktif.map((m) => [m.kodeMisi, m.lokasi, m.status]) }
@@ -132,6 +132,12 @@ export async function askAiChat(question: string, ctx: ChatContext): Promise<Cha
           content:
             "Anda Asisten SIAGA — asisten data untuk Operator/Analis/Admin Command Center Komponen Cadangan (Komcad). " +
             "JAWAB HANYA berdasarkan data JSON yang diberikan di pesan user — JANGAN PERNAH mengarang angka atau menyebut entitas (anggota/Misi) yang tidak ada di data itu. " +
+            // Aturan ini ada karena kejadian nyata: dengan 11 Misi di `misiAktif` dan tanpa field
+            // hitungannya, model menjawab "10 misi aktif" tiga kali berturut-turut. Setiap angka
+            // yang bisa ditanyakan sudah disediakan jadi di data, jadi tidak ada alasan mencacah.
+            "JANGAN PERNAH menghitung sendiri jumlah elemen sebuah array. Untuk pertanyaan 'berapa', " +
+            "pakai field angka yang sudah disediakan (mis. misiAktifJumlah, totalAnggota, jumlah) — " +
+            "array yang menyertainya hanya untuk merinci isinya, bukan untuk dicacah. " +
             "Kalau pertanyaan di luar cakupan data yang diberikan (mis. soal umum tidak terkait Komcad), set cocok=false. " +
             "Gunakan tabel kalau jawabannya berupa breakdown/sebaran beberapa kategori, kalau tidak biarkan tabel null.",
         },
