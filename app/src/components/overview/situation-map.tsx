@@ -79,10 +79,23 @@ function attachBreathe(id: string) {
   };
 }
 
-function heatColor(count: number) {
-  if (count >= 6) return "#E14C45";
-  if (count >= 3) return "#E0A83E";
-  return "#3FA9C9";
+/** Kepadatan dibedakan lewat INTENSITAS satu warna, bukan lewat warna yang berganti-ganti.
+ *
+ * Versi lama mengembalikan #E14C45/#E0A83E/#3FA9C9 sesuai jumlah — persis warna Zona Misi,
+ * Anggota Siaga, dan elemen AI. Akibatnya zona padat tergambar dengan merah yang sama dengan
+ * Misi kritis, dan layer ini mustahil dibedakan dari layer lain (temuan QA-03). Memilih warna
+ * "yang belum dipakai" bukan jalan keluar: seluruh hue di palet sudah punya arti (lihat
+ * LAYER_ITEMS di layers-panel.tsx), jadi pembedanya harus bentuk, bukan hue.
+ *
+ * Hue-nya sengaja sama dengan anggota — layer ini memang kepadatan anggota, jadi warna senada
+ * itu jujur, bukan tabrakan. Yang membedakannya dari marker adalah wujudnya: bidang lebar
+ * tanpa garis tepi, bukan titik kecil terang. */
+const HEAT_HUE = "#3CF29A";
+
+/** Opacity naik bertahap sesuai jumlah lalu ditahan, supaya bin terpadat tidak jadi blok pekat
+ * yang menutupi marker di bawahnya. */
+function heatOpacity(count: number) {
+  return Math.min(0.08 + count * 0.035, 0.28);
 }
 
 /** Auto invalidateSize saat container berubah ukuran (mode layar penuh, toggle sidebar, dll) — FR-19/NFR-10. */
@@ -198,10 +211,13 @@ export function SituationMap({
             center={[b.lat, b.lng]}
             radius={18000 + Math.min(b.count, 10) * 6000}
             pathOptions={{
-              color: heatColor(b.count),
-              weight: 1,
-              fillColor: heatColor(b.count),
-              fillOpacity: Math.min(0.12 + b.count * 0.03, 0.35),
+              // weight 0 — garis tepi 1px itu yang bikin lingkaran bertumpuk terbaca sebagai
+              // cincin yang saling tabrak ("indikator menyatu" di temuan QA-03). Tanpa tepi,
+              // tumpukan cuma menambah intensitas, yang justru perilaku benar untuk kepadatan.
+              stroke: false,
+              weight: 0,
+              fillColor: HEAT_HUE,
+              fillOpacity: heatOpacity(b.count),
             }}
             interactive={false}
           />

@@ -5,14 +5,26 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { LayerVisibility } from "./situation-map";
 
-const LAYER_ITEMS: { key: keyof LayerVisibility; label: string; color: string }[] = [
+/** `swatch: "ramp"` untuk layer yang menggambarkan intensitas, bukan satu jenis titik.
+ *
+ * Kepadatan Wilayah sebelumnya memakai titik #E0A83E — warna yang sama persis dengan Anggota
+ * Siaga, padahal di peta ia dirender dalam tiga warna berbeda sesuai jumlah. Jadi legendanya
+ * salah untuk dua dari tiga keadaan, sekaligus menabrak layer lain (temuan QA-03). Sekarang
+ * peta memakai satu hue dengan opacity bertingkat, dan legendanya ikut: bilah gradien yang
+ * menunjukkan renggang → padat, bukan titik yang mengaku mewakili satu warna saja. */
+const LAYER_ITEMS: {
+  key: keyof LayerVisibility;
+  label: string;
+  color: string;
+  swatch?: "dot" | "ramp";
+}[] = [
   { key: "anggota", label: "Anggota Siap", color: "#3CF29A" },
   { key: "siaga", label: "Anggota Siaga", color: "#E0A83E" },
   { key: "misi", label: "Zona Misi", color: "#E14C45" },
   { key: "pos", label: "Pos Komando", color: "#B08D4F" },
   { key: "kodam", label: "Kodam", color: "#1F6B4A" },
   { key: "kodim", label: "Kodim", color: "#1F6B4A" },
-  { key: "heatzone", label: "Kepadatan Wilayah", color: "#E0A83E" },
+  { key: "heatzone", label: "Kepadatan Wilayah", color: "#3CF29A", swatch: "ramp" },
 ];
 
 export function LayersPanel({
@@ -68,7 +80,16 @@ export function LayersPanel({
                 >
                   {on && "✓"}
                 </span>
-                <span className="size-2 shrink-0 rounded-full" style={{ background: item.color }} />
+                {item.swatch === "ramp" ? (
+                  <span
+                    className="h-2 w-5 shrink-0 rounded-[2px]"
+                    style={{
+                      background: `linear-gradient(to right, ${item.color}1F, ${item.color}80)`,
+                    }}
+                  />
+                ) : (
+                  <span className="size-2 shrink-0 rounded-full" style={{ background: item.color }} />
+                )}
                 <span className="flex-1 tracking-wide">{item.label}</span>
               </button>
             );
