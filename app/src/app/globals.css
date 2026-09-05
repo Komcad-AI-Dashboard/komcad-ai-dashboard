@@ -160,14 +160,68 @@ body {
   }
 }
 
-.animate-overlay-show {
-  animation: overlay-show 150ms ease-out;
+/* Animasi keluar. Radix menahan elemennya tetap ter-mount sampai animasi `data-[state=closed]`
+ * selesai, jadi cukup mendaftarkan kelasnya di sini — tanpa ini drawer & modal hilang seketika
+ * padahal munculnya beranimasi, dan penutupannya terasa seperti patah.
+ *
+ * Transform saja, TANPA menyentuh properti `translate`: pemusatan modal memakai utility
+ * -translate-x-1/2/-translate-y-1/2 milik Tailwind v4 yang menulis ke properti `translate`
+ * terpisah. Menganimasikan `transform` membiarkan pemusatannya utuh; menganimasikan `translate`
+ * akan melemparkan modal ke sudut layar selama animasi berjalan. */
+@keyframes overlay-hide {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
-.animate-modal-show {
-  animation: modal-show 180ms ease-out;
+
+@keyframes modal-hide {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
 }
-.animate-drawer-slide-in {
-  animation: drawer-slide-in 200ms ease-out;
+
+@keyframes drawer-slide-out {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* Didaftarkan sebagai token tema, BUKAN kelas CSS biasa. Varian Tailwind seperti
+ * data-[state=closed]:animate-drawer-slide-out cuma bisa dibentuk dari utility yang memang
+ * dihasilkan Tailwind; kelas tulisan tangan dengan nama yang sama tidak akan pernah ikut
+ * ter-prefix, dan animasinya diam-diam tidak jalan sama sekali. */
+@theme {
+  --animate-overlay-show: overlay-show 150ms ease-out;
+  --animate-modal-show: modal-show 180ms ease-out;
+  --animate-drawer-slide-in: drawer-slide-in 200ms ease-out;
+  --animate-overlay-hide: overlay-hide 140ms ease-in;
+  --animate-modal-hide: modal-hide 140ms ease-in;
+  --animate-drawer-slide-out: drawer-slide-out 180ms ease-in;
+}
+
+/* Pengguna yang meminta pengurangan gerak tetap harus bisa menutup panel. Durasinya dipangkas
+ * jadi hampir nol, bukan animasinya dihapus: Radix menunggu `animationend` sebelum melepas
+ * elemennya, dan animation:none membuat event itu tidak pernah terjadi. */
+/* Dicocokkan lewat [class*=], bukan nama kelasnya langsung: yang benar-benar terpasang di elemen
+ * adalah bentuk varian (data-[state=closed]:animate-drawer-slide-out), sehingga selector
+ * .animate-drawer-slide-out tidak pernah kena. */
+@media (prefers-reduced-motion: reduce) {
+  [class*="animate-overlay-"],
+  [class*="animate-modal-"],
+  [class*="animate-drawer-"] {
+    animation-duration: 1ms;
+  }
 }
 
 /* =====================================================================

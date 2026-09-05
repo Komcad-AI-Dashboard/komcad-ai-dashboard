@@ -20,10 +20,10 @@ export function Drawer({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[2000] bg-black/70 backdrop-blur-sm animate-overlay-show" />
+        <Dialog.Overlay className="fixed inset-0 z-[2000] bg-black/70 backdrop-blur-sm data-[state=open]:animate-overlay-show data-[state=closed]:animate-overlay-hide" />
         <Dialog.Content
           className={cn(
-            "fixed right-0 top-0 z-[2001] h-screen w-full max-w-[440px] overflow-y-auto border-l border-border bg-gradient-to-b from-[#070a0b] to-black shadow-[-30px_0_70px_rgba(0,0,0,0.9)] animate-drawer-slide-in",
+            "fixed right-0 top-0 z-[2001] h-screen w-full max-w-[440px] overflow-y-auto border-l border-border bg-gradient-to-b from-[#070a0b] to-black shadow-[-30px_0_70px_rgba(0,0,0,0.9)] data-[state=open]:animate-drawer-slide-in data-[state=closed]:animate-drawer-slide-out",
             className
           )}
         >

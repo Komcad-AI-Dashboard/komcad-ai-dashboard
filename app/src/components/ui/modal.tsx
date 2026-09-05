@@ -22,10 +22,10 @@ export function Modal({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[2000] bg-black/70 backdrop-blur-sm animate-overlay-show" />
+        <Dialog.Overlay className="fixed inset-0 z-[2000] bg-black/70 backdrop-blur-sm data-[state=open]:animate-overlay-show data-[state=closed]:animate-overlay-hide" />
         <Dialog.Content
           className={cn(
-            "hud-brk fixed left-1/2 top-1/2 z-[2001] w-full max-w-[540px] -translate-x-1/2 -translate-y-1/2 rounded-[14px] border border-border bg-gradient-to-b from-[#080b0d] to-[#020304] shadow-[0_40px_100px_rgba(0,0,0,0.92),0_0_60px_rgba(60,242,154,0.08)] animate-modal-show",
+            "hud-brk fixed left-1/2 top-1/2 z-[2001] w-full max-w-[540px] -translate-x-1/2 -translate-y-1/2 rounded-[14px] border border-border bg-gradient-to-b from-[#080b0d] to-[#020304] shadow-[0_40px_100px_rgba(0,0,0,0.92),0_0_60px_rgba(60,242,154,0.08)] data-[state=open]:animate-modal-show data-[state=closed]:animate-modal-hide",
             className
           )}
         >
