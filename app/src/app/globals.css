@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+/* Layar pendek. Bukan cuma laptop 720p/768p: penskalaan tampilan Windows ikut memotong tinggi
+ * viewport CSS, jadi layar 1080p pada 125% jadi 864px dan pada 150% jadi 720px, dan layar 768p
+ * pada 150% jadi 512px. Dipakai halaman login untuk merapatkan jarak vertikal supaya formnya
+ * tetap muat satu layar, tanpa menyentuh tampilan di layar tinggi. */
+@custom-variant pendek (@media (max-height: 800px));
+
+/* Tingkat kedua untuk layar yang benar-benar pendek, mis. layar 768p pada penskalaan 150%
+ * (512px CSS). Di bawah ini form login memang tidak bisa muat utuh tanpa mengecilkan teks di
+ * bawah ambang keterbacaan, jadi sisanya dibiarkan ter-scroll. */
+@custom-variant sangat-pendek (@media (max-height: 640px));
+
 /*
  * Token warna & tipografi — 1:1 dengan FRD §10.2/10.3 dan mockup komcad-dashboard.html.
  * JANGAN diubah tanpa mengecek CLAUDE.md §5 dulu. Full black dark mode, tidak ada mode terang.

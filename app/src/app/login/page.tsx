@@ -86,7 +86,7 @@ export default function LoginPage() {
             daftar fitur didorong ke bawah dengan `mt-auto`, jadi tidak ada yang menahan keduanya:
             di 1280x720 peta tergambar menembus teks empat kartu fitur pertama. Sekarang peta
             mengecil mengikuti sisa ruang, bukan menumpuk. */}
-        <div className="relative z-10 flex h-full flex-col p-12 [@media(min-width:1280px)_and_(max-height:800px)]:p-8">
+        <div className="relative z-10 flex h-full flex-col p-12 pendek:p-8">
           <div className="flex items-start justify-between gap-8">
             <div className="max-w-[380px]">
               <Wordmark size="lg" />
@@ -144,11 +144,17 @@ export default function LoginPage() {
         </div>
       </section>
 
-      {/* Panel form. Kartunya butuh 682px, jadi di layar 1280x720 satu halaman kurang 42px dan
-          harus di-scroll sedikit. Paddingnya dirapatkan khusus di layar pendek (bukan di semua
-          ukuran) supaya laptop 720p/768p muat utuh tanpa mengubah tampilan di layar besar. */}
-      <section className="flex w-full items-center justify-center p-6 xl:w-[520px] xl:shrink-0 xl:border-l xl:border-border-soft xl:bg-gradient-to-b xl:from-[#080b0d] xl:to-[#020304] xl:p-10 [@media(min-width:1280px)_and_(max-height:800px)]:p-6">
-        <div className="hud-brk hud-panel w-full max-w-[400px] rounded-[16px] border border-border p-7 shadow-[0_40px_100px_rgba(0,0,0,0.92),0_0_60px_rgba(60,242,154,0.06)] [@media(min-width:1280px)_and_(max-height:800px)]:p-5">
+      {/* Panel form. Kartunya butuh 682px, lebih tinggi daripada banyak layar nyata: 1280x720
+          kurang 42px, dan di bawah lebar xl (mis. 1152x648, 1024x640) kurang 82 sampai 90px.
+          Penskalaan tampilan Windows memperparah karena memotong tinggi viewport CSS: 1080p pada
+          125% jadi 864px, pada 150% jadi 720px.
+
+          Karena itu jaraknya dirapatkan lewat varian tinggi `pendek` dan `sangat-pendek`
+          (globals.css), BUKAN lewat breakpoint lebar — yang kurang di sini tingginya, bukan
+          lebarnya. Ukuran kartu jadi 682 -> 572 -> 536px. Tampilan di layar tinggi tidak berubah
+          sama sekali. */}
+      <section className="flex w-full items-center justify-center p-6 xl:w-[520px] xl:shrink-0 xl:border-l xl:border-border-soft xl:bg-gradient-to-b xl:from-[#080b0d] xl:to-[#020304] xl:p-10 pendek:p-4 sangat-pendek:p-3 xl:pendek:p-6">
+        <div className="hud-brk hud-panel w-full max-w-[400px] rounded-[16px] border border-border p-7 shadow-[0_40px_100px_rgba(0,0,0,0.92),0_0_60px_rgba(60,242,154,0.06)] pendek:p-5 sangat-pendek:p-4">
           <div className="flex flex-col items-center text-center">
             <Image
               src="/brand/logo-komcad.png"
@@ -156,16 +162,16 @@ export default function LoginPage() {
               width={92}
               height={92}
               priority
-              className="size-[92px] object-contain"
+              className="size-[92px] object-contain pendek:size-[64px] sangat-pendek:size-[48px]"
             />
-            <div className="mt-4 text-[24px] font-black tracking-[0.13em]">KOMCAD</div>
+            <div className="mt-4 text-[24px] font-black tracking-[0.13em] pendek:mt-3">KOMCAD</div>
             <div className="mt-[3px] text-[9.5px] font-bold tracking-[0.4em] text-accent-bright">
               COMMAND CENTER
             </div>
-            <div className="my-5 h-px w-12 bg-border" />
+            <div className="my-5 h-px w-12 bg-border pendek:my-3" />
           </div>
 
-          <form action={formAction} className="flex flex-col gap-[18px]">
+          <form action={formAction} className="flex flex-col gap-[18px] pendek:gap-3 sangat-pendek:gap-2">
             <div>
               <Label htmlFor="email">Email / User ID</Label>
               <div className="relative">
@@ -241,7 +247,7 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="my-5 flex items-center gap-3">
+          <div className="my-5 flex items-center gap-3 pendek:my-3">
             <div className="h-px flex-1 bg-border" />
             <span className="text-[9px] font-extrabold tracking-[0.26em] text-ink-3">
               AKSES TERBATAS
@@ -261,12 +267,12 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="mt-5 flex items-center justify-center gap-[6px] text-[9.5px] font-bold tracking-[0.14em] text-ink-3">
+          <div className="mt-5 flex items-center justify-center gap-[6px] text-[9.5px] font-bold tracking-[0.14em] text-ink-3 pendek:mt-3">
             <ShieldCheck className="size-[13px] text-accent" strokeWidth={1.5} />
             SECURE ENCRYPTED CONNECTION
           </div>
 
-          <p className="mt-4 text-center text-[10px] leading-relaxed text-ink-3">
+          <p className="mt-4 text-center text-[10px] leading-relaxed text-ink-3 pendek:mt-3">
             Akun demo (data dummy): admin · operator · analis · anggota
             <span className="text-ink-3">@komcad.mil.id</span> — kata sandi{" "}
             <span className="font-mono">komcad123</span>
