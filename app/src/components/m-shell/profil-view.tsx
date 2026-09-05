@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState, useTransition } from "react";
-import { Phone, Mail, MessageCircle, AtSign, Link2, MapPin, Lock } from "lucide-react";
+import { Phone, Mail, MessageCircle, AtSign, Link2, MapPin, Lock, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { calcUsia } from "@/lib/usia";
 import { updateProfilSelfAction, updateLokasiSelfAction } from "@/lib/anggota-mobile-actions";
@@ -112,7 +112,7 @@ export function ProfilView({ profil }: { profil: SelfProfil }) {
         return;
       }
       setNikMenunggu(res.nikMenunggu);
-      setStatus(res.nikMenunggu ? "Profil disimpan. Perubahan NIK menunggu persetujuan Admin." : "✓ Profil berhasil disimpan");
+      setStatus(res.nikMenunggu ? "Profil disimpan. Perubahan NIK menunggu persetujuan Admin." : "Profil berhasil disimpan.");
     });
   }
 
@@ -130,7 +130,7 @@ export function ProfilView({ profil }: { profil: SelfProfil }) {
             longitude: pos.coords.longitude,
           });
           if (res.error) setError(res.error);
-          else setStatus("✓ Lokasi berhasil diperbarui");
+          else setStatus("Lokasi berhasil diperbarui.");
         });
       },
       () => setError("Izin lokasi ditolak — aktifkan GPS/izin lokasi untuk memperbarui.")
@@ -320,25 +320,49 @@ export function ProfilView({ profil }: { profil: SelfProfil }) {
         Kompetensi diturunkan dari Sertifikasi resmi yang tercatat, belum bisa ditambahkan sendiri di sini.
       </p>
 
-      {error && <div className="rounded-[8px] border border-red bg-red/10 px-3 py-2 text-[11.5px] text-[#F5A9A5]">{error}</div>}
-      {status && <div className="rounded-[8px] border border-accent-bright/30 bg-accent-bright/10 px-3 py-2 text-[11.5px] text-accent-bright">{status}</div>}
+      {/* Pesan hasil simpan ikut di dalam bilah sticky, bukan di aliran normal di atasnya.
+          Sebelumnya pesannya tergambar di posisi dokumen paling bawah sementara tombol Simpan
+          ikut menempel di layar, jadi setelah menekan Simpan dari tengah halaman Anggota tidak
+          melihat konfirmasi apa pun sampai dia menggulir ke bawah.
 
-      <div className="sticky bottom-[var(--mnav-h)] flex gap-[10px] pt-1 xl:bottom-0">
-        <button
-          type="button"
-          onClick={() => window.location.reload()}
-          className="rounded-[10px] border border-border bg-elevated px-[18px] py-[13px] text-[13px] font-bold text-ink-2"
-        >
-          Batal
-        </button>
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={pending}
-          className="flex-1 rounded-[10px] bg-accent-bright py-[13px] text-[13px] font-extrabold text-[#00170C] disabled:opacity-50"
-        >
-          {pending ? "Menyimpan..." : "Simpan Perubahan"}
-        </button>
+          Bilahnya sekarang berlatar dan melebar sampai tepi (`-mx-4`/`xl:-mx-8` menetralkan
+          padding <main> di member-shell.tsx), supaya isi halaman tidak terbaca menembus tombol. */}
+      <div className="sticky bottom-[var(--mnav-h)] z-10 -mx-4 flex flex-col gap-[10px] border-t border-border bg-base/95 px-4 py-3 backdrop-blur-sm xl:-mx-8 xl:bottom-0 xl:px-8">
+        {error && (
+          <div role="alert" className="rounded-[8px] border border-red bg-red/10 px-3 py-2 text-[11.5px] text-[#F5A9A5]">
+            {error}
+          </div>
+        )}
+        {status && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex items-start gap-2 rounded-[8px] border border-accent-bright/30 bg-accent-bright/10 px-3 py-2 text-[11.5px] text-accent-bright"
+          >
+            {/* Ikon dari lucide, bukan karakter centang di dalam string: CLAUDE.md melarang emoji
+                di mana pun yang dilihat pengguna, dan ikon ikut ukuran & warna teksnya. */}
+            <Check aria-hidden className="mt-[1px] size-[14px] shrink-0" strokeWidth={2} />
+            <span>{status}</span>
+          </div>
+        )}
+
+        <div className="flex gap-[10px]">
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="rounded-[10px] border border-border bg-elevated px-[18px] py-[13px] text-[13px] font-bold text-ink-2"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={pending}
+            className="flex-1 rounded-[10px] bg-accent-bright py-[13px] text-[13px] font-extrabold text-[#00170C] disabled:opacity-50"
+          >
+            {pending ? "Menyimpan..." : "Simpan Perubahan"}
+          </button>
+        </div>
       </div>
     </>
   );
