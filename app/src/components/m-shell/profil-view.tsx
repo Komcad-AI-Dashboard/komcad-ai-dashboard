@@ -1,23 +1,70 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Phone, Mail, MessageCircle, AtSign, Link2, MapPin } from "lucide-react";
+import { useId, useState, useTransition } from "react";
+import { Phone, Mail, MessageCircle, AtSign, Link2, MapPin, Lock } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { calcUsia } from "@/lib/usia";
 import { updateProfilSelfAction, updateLokasiSelfAction } from "@/lib/anggota-mobile-actions";
 import { AvatarPlaceholder } from "@/components/anggota/avatar-placeholder";
 import type { SelfProfil } from "@/lib/anggota-mobile-data";
 
+/** `terkunci` = nilainya datang dari sumber lain dan tidak bisa diketik di sini (temuan QA-08).
+ *
+ * Penandanya sengaja TIGA lapis dan tidak satu pun mengandalkan warna atau kecerahan saja: ikon
+ * gembok, permukaan yang beda (bg-base, bukan bg-elevated), dan `catatan` yang menyebut alasannya.
+ * Sebelumnya cuma `disabled:opacity-60` — di latar gelap selisihnya tipis dan di layar dengan
+ * brightness rendah field terkunci dan field biasa terbaca sama saja.
+ *
+ * Dipakai `readOnly`, BUKAN `disabled`: `disabled` mengeluarkan field dari urutan tab sehingga
+ * pengguna keyboard & screen reader tidak pernah sampai ke nilainya. Aman karena nilai field
+ * terkunci memang tidak pernah ikut dikirim — lihat objek `form` di bawah, tidak ada `nama`,
+ * `usia`, maupun `unitAsal` di sana, dan updateProfilSelfAction juga tidak menulis ketiganya. */
 function Field({
   label,
+  terkunci,
+  catatan,
+  aksi,
   ...props
-}: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+}: {
+  label: string;
+  terkunci?: boolean;
+  catatan?: string;
+  /** Kontrol yang mengubah nilai lewat jalur lain, mis. tombol GPS di Titik Lokasi Terkini. */
+  aksi?: React.ReactNode;
+} & React.InputHTMLAttributes<HTMLInputElement>) {
+  const generatedId = useId();
+  const id = props.id ?? generatedId;
   return (
     <div className="mb-[14px]">
-      <label className="mb-[6px] block text-[10px] font-extrabold uppercase tracking-wide text-ink-2">{label}</label>
-      <input
-        {...props}
-        className="w-full rounded-[8px] border border-border bg-elevated px-3 py-[11px] text-[13px] text-ink placeholder:text-ink-3 focus:border-accent-bright focus:outline-none disabled:opacity-60"
-      />
+      <label
+        htmlFor={id}
+        className="mb-[6px] block text-[10px] font-extrabold uppercase tracking-wide text-ink-2"
+      >
+        {label}
+      </label>
+      <div className="relative">
+        <input
+          {...props}
+          id={id}
+          readOnly={terkunci || props.readOnly}
+          aria-readonly={terkunci || undefined}
+          className={cn(
+            "w-full rounded-[8px] border px-3 py-[11px] text-[13px] placeholder:text-ink-3 focus:outline-none disabled:opacity-60",
+            terkunci
+              ? "cursor-default border-border-soft bg-base pr-9 text-ink-2 focus:border-border"
+              : "border-border bg-elevated text-ink focus:border-accent-bright"
+          )}
+        />
+        {terkunci && (
+          <Lock
+            aria-hidden
+            strokeWidth={1.5}
+            className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2 text-ink-3"
+          />
+        )}
+      </div>
+      {catatan && <div className="mt-1 text-[9.5px] text-ink-3">{catatan}</div>}
+      {aksi}
     </div>
   );
 }
@@ -26,6 +73,10 @@ export function ProfilView({ profil }: { profil: SelfProfil }) {
   const usia = calcUsia(profil.profilDemografi?.tanggalLahir);
   const lokasiTerkini = profil.lokasiHistori[0];
   const nikMenungguAwal = profil.permintaanUbahData.some((p) => p.field === "nik");
+  // Empat kontrol di bawah ini digambar manual (bukan lewat <Field>) karena bentuknya select/
+  // textarea atau punya hint sendiri. Label-nya sempat tidak menunjuk ke input mana pun, jadi
+  // tidak terbaca screen reader dan klik label tidak memfokuskan field-nya.
+  const uid = useId();
 
   const [form, setForm] = useState({
     nik: nikMenungguAwal ? profil.permintaanUbahData.find((p) => p.field === "nik")!.nilaiBaru : profil.nik,
@@ -103,11 +154,12 @@ export function ProfilView({ profil }: { profil: SelfProfil }) {
       </div>
 
       <div className="text-[10px] font-extrabold uppercase tracking-wide text-ink-3">Data Pribadi</div>
-      <Field label="Nama Lengkap" value={profil.nama} disabled />
+      <Field label="Nama Lengkap" value={profil.nama} terkunci catatan="Diatur oleh satuan." />
       <div className="grid grid-cols-2 gap-[10px]">
         <div>
-          <label className="mb-[6px] block text-[10px] font-extrabold uppercase tracking-wide text-ink-2">NIK</label>
+          <label htmlFor={`${uid}-nik`} className="mb-[6px] block text-[10px] font-extrabold uppercase tracking-wide text-ink-2">NIK</label>
           <input
+            id={`${uid}-nik`}
             value={form.nik}
             onChange={(e) => set("nik", e.target.value)}
             maxLength={16}
@@ -116,8 +168,9 @@ export function ProfilView({ profil }: { profil: SelfProfil }) {
           {nikMenunggu && <div className="mt-1 text-[9.5px] text-amber">Menunggu persetujuan Admin</div>}
         </div>
         <div>
-          <label className="mb-[6px] block text-[10px] font-extrabold uppercase tracking-wide text-ink-2">Golongan Darah</label>
+          <label htmlFor={`${uid}-goldar`} className="mb-[6px] block text-[10px] font-extrabold uppercase tracking-wide text-ink-2">Golongan Darah</label>
           <select
+            id={`${uid}-goldar`}
             value={form.golonganDarah}
             onChange={(e) => set("golonganDarah", e.target.value)}
             className="w-full rounded-[8px] border border-border bg-elevated px-3 py-[11px] text-[13px] focus:border-accent-bright focus:outline-none"
@@ -132,8 +185,9 @@ export function ProfilView({ profil }: { profil: SelfProfil }) {
       </div>
       <div className="grid grid-cols-2 gap-[10px]">
         <div>
-          <label className="mb-[6px] block text-[10px] font-extrabold uppercase tracking-wide text-ink-2">Jenis Kelamin</label>
+          <label htmlFor={`${uid}-jk`} className="mb-[6px] block text-[10px] font-extrabold uppercase tracking-wide text-ink-2">Jenis Kelamin</label>
           <select
+            id={`${uid}-jk`}
             value={form.jenisKelamin}
             onChange={(e) => set("jenisKelamin", e.target.value)}
             className="w-full rounded-[8px] border border-border bg-elevated px-3 py-[11px] text-[13px] focus:border-accent-bright focus:outline-none"
@@ -142,38 +196,44 @@ export function ProfilView({ profil }: { profil: SelfProfil }) {
             <option>Perempuan</option>
           </select>
         </div>
-        <Field label="Usia" value={usia !== null ? `${usia} tahun` : "—"} disabled />
+        <Field
+          label="Usia"
+          value={usia !== null ? `${usia} tahun` : "—"}
+          terkunci
+          catatan="Dihitung dari tanggal lahir."
+        />
       </div>
       <Field label="Pendidikan Terakhir" value={form.pendidikan} onChange={(e) => set("pendidikan", e.target.value)} />
       <Field label="Pekerjaan Sipil" value={form.pekerjaanSipil} onChange={(e) => set("pekerjaanSipil", e.target.value)} />
-      <Field label="Unit / Satuan Asal" value={profil.unitAsal} disabled />
+      <Field label="Unit / Satuan Asal" value={profil.unitAsal} terkunci catatan="Diatur oleh satuan." />
 
       <div className="text-[10px] font-extrabold uppercase tracking-wide text-ink-3">Alamat & Lokasi</div>
       <div className="mb-[14px]">
-        <label className="mb-[6px] block text-[10px] font-extrabold uppercase tracking-wide text-ink-2">Alamat Domisili</label>
+        <label htmlFor={`${uid}-alamat`} className="mb-[6px] block text-[10px] font-extrabold uppercase tracking-wide text-ink-2">Alamat Domisili</label>
         <textarea
+          id={`${uid}-alamat`}
           value={form.alamatDomisili}
           onChange={(e) => set("alamatDomisili", e.target.value)}
           className="min-h-[70px] w-full rounded-[8px] border border-border bg-elevated px-3 py-[11px] text-[13px] focus:border-accent-bright focus:outline-none"
         />
       </div>
-      <div className="mb-[14px]">
-        <label className="mb-[6px] block text-[10px] font-extrabold uppercase tracking-wide text-ink-2">Titik Lokasi Terkini</label>
-        <input
-          disabled
-          value={lokasiTerkini ? `${lokasiTerkini.latitude.toFixed(4)}, ${lokasiTerkini.longitude.toFixed(4)}` : "Belum ada data"}
-          className="w-full rounded-[8px] border border-border bg-elevated px-3 py-[11px] text-[13px] opacity-60"
-        />
-        <button
-          type="button"
-          onClick={handleUpdateLokasi}
-          disabled={lokasiPending}
-          className="mt-[6px] flex items-center gap-[6px] text-[10.5px] font-bold text-accent-bright disabled:opacity-50"
-        >
-          <MapPin className="size-3.5" strokeWidth={1.5} />
-          {lokasiPending ? "Mengambil lokasi..." : "Perbarui lokasi dari GPS perangkat"}
-        </button>
-      </div>
+      <Field
+        label="Titik Lokasi Terkini"
+        value={lokasiTerkini ? `${lokasiTerkini.latitude.toFixed(4)}, ${lokasiTerkini.longitude.toFixed(4)}` : "Belum ada data"}
+        terkunci
+        catatan="Tidak bisa diketik manual."
+        aksi={
+          <button
+            type="button"
+            onClick={handleUpdateLokasi}
+            disabled={lokasiPending}
+            className="mt-[6px] flex items-center gap-[6px] text-[10.5px] font-bold text-accent-bright disabled:opacity-50"
+          >
+            <MapPin className="size-3.5" strokeWidth={1.5} />
+            {lokasiPending ? "Mengambil lokasi..." : "Perbarui lokasi dari GPS perangkat"}
+          </button>
+        }
+      />
 
       <div className="text-[10px] font-extrabold uppercase tracking-wide text-ink-3">Kontak & Sosial Media</div>
       {/* Grid 2 kolom cuma di desktop (xl:) — di HP tetap tumpuk 1 kolom seperti semula, tiap
