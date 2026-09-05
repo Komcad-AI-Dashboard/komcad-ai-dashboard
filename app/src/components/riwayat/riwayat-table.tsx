@@ -39,7 +39,7 @@ export function RiwayatTable({ rows }: { rows: RiwayatMobilisasiItem[] }) {
         {rows.map((r) => (
           <tr
             key={r.id}
-            onClick={() => router.push(`/misi?openId=${r.id}`)}
+            onClick={() => router.push(`/misi?openId=${r.id}&dari=/riwayat`)}
             // Baris tabel tidak bisa difokus keyboard sendiri; tabIndex + handler Enter/Space
             // membuatnya setara tombol, bukan cuma target mouse (NFR-10 aksesibilitas).
             tabIndex={0}
@@ -48,7 +48,7 @@ export function RiwayatTable({ rows }: { rows: RiwayatMobilisasiItem[] }) {
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
-                router.push(`/misi?openId=${r.id}`);
+                router.push(`/misi?openId=${r.id}&dari=/riwayat`);
               }
             }}
             className="cursor-pointer border-b border-border-soft last:border-b-0 hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none"
