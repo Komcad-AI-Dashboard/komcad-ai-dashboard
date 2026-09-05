@@ -6,7 +6,7 @@ import { Badge, statusMisiColor, urgensiColor } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Chip } from "@/components/ui/chip";
 import { Drawer } from "@/components/ui/drawer";
-import { COMMAND_NAV, STATUS_MISI, STATUS_MISI_AKTIF } from "@/lib/constants";
+import { STATUS_MISI, STATUS_MISI_AKTIF } from "@/lib/constants";
 import type { Role } from "@/lib/constants";
 import type { MisiListItem, MisiKpi } from "@/lib/misi-data";
 import { formatEta } from "@/lib/geo";
@@ -16,14 +16,6 @@ import { MisiDetailDrawerContent } from "./misi-detail-drawer-content";
  * Tanpa chip ini Misi Draft cuma bisa ditemukan lewat "Semua" — di alat manajemen Misi itu berarti
  * Misi yang belum dimobilisasi gampang terlupakan, justru yang paling butuh ditindaklanjuti. */
 const FILTERS = ["Semua", "Aktif", "Draft", "Kritis", "Tinggi", "Selesai"] as const;
-
-/** Tujuan yang boleh dipakai parameter `dari` saat drawer ditutup. Diambil dari COMMAND_NAV supaya
- * ikut terurus sendiri kalau menunya bertambah.
- *
- * Dibatasi daftar putih, BUKAN dipakai apa adanya: `dari` datang dari URL, dan menavigasi ke
- * nilainya begitu saja membuat tautan seperti `?openId=x&dari=//situs-lain` memindahkan pengguna
- * ke luar aplikasi hanya dengan menutup drawer. */
-const RUTE_KEMBALI = new Set(COMMAND_NAV.flatMap((g) => g.items.map((i) => i.href)));
 
 function KpiCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
@@ -90,14 +82,7 @@ export function MisiView({
 
   function closeDrawer() {
     setSelectedId(null);
-    if (!openIdParam) return;
-    // Drawer ini dipakai bersama oleh beberapa halaman lewat ?openId= (Riwayat Mobilisasi,
-    // pencarian global, feed Overview). Yang datang membawa ?dari= dikembalikan ke halaman
-    // asalnya; tanpa ini menutup drawer meninggalkan pengguna di Manajemen Misi, bukan di tempat
-    // ia menekan barisnya.
-    const dari = searchParams.get("dari");
-    if (dari && RUTE_KEMBALI.has(dari)) router.push(dari);
-    else router.replace(pathname);
+    if (openIdParam) router.replace(pathname);
   }
 
   return (

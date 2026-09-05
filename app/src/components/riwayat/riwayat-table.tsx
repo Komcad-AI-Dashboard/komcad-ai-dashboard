@@ -1,21 +1,48 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import type { RiwayatMobilisasiItem } from "@/lib/misi-data";
+import { useState, useTransition } from "react";
+import { Drawer } from "@/components/ui/drawer";
+import { MisiDetailDrawerContent } from "@/components/misi/misi-detail-drawer-content";
+import { getMisiDetailAction } from "@/lib/overview-actions";
+import type { Role } from "@/lib/constants";
+import type { MisiListItem, RiwayatMobilisasiItem } from "@/lib/misi-data";
 
-/** Baris membuka drawer detail Misi lewat ?openId= — jalur yang sama dipakai modal pencarian
- * global (lib/search-actions.ts), jadi tidak ada drawer kedua yang dibangun. Drawer itu sudah
- * merender hasilEvaluasi utuh untuk Misi berstatus Selesai, yang persis teks yang terpotong
- * di kolom Evaluasi. Truncate-nya sengaja dipertahankan: sekarang cuma ringkasan, bukan
- * satu-satunya jalan membaca teksnya.
+/** Baris membuka drawer detail Misi DI HALAMAN INI, bukan dengan berpindah ke /misi.
+ *
+ * Versi pertama (temuan QA-04) memakai ulang drawer di /misi lewat router.push("?openId="),
+ * yang berarti kliknya benar-benar berpindah halaman: latar di belakang drawer berubah jadi
+ * tabel Manajemen Misi, dan menutup drawer meninggalkan pengguna di sana. Sekarang drawernya
+ * dirender di sini, jadi latarnya tetap Riwayat Mobilisasi dan menutupnya tidak ke mana-mana.
+ *
+ * Detail lengkap Misi diambil saat baris diklik (pola sama seperti drawer peta Overview),
+ * bukan ikut dimuat bersama tabel: tabel ini cuma butuh ringkasan tiap baris.
  *
  * Client component mengikuti pola PelatihanTable/SertifikasiTable — page.tsx tetap server
  * component yang query lalu mengoper rows ke sini. */
-export function RiwayatTable({ rows }: { rows: RiwayatMobilisasiItem[] }) {
-  const router = useRouter();
+export function RiwayatTable({ rows, role }: { rows: RiwayatMobilisasiItem[]; role: Role | undefined }) {
+  const [dipilih, setDipilih] = useState<RiwayatMobilisasiItem | null>(null);
+  const [detail, setDetail] = useState<MisiListItem | null>(null);
+  const [gagalMuat, setGagalMuat] = useState(false);
+  const [, startDetailTransition] = useTransition();
+
+  function bukaDetail(row: RiwayatMobilisasiItem) {
+    setDipilih(row);
+    setDetail(null);
+    setGagalMuat(false);
+    startDetailTransition(async () => {
+      try {
+        const data = await getMisiDetailAction(row.id);
+        if (data) setDetail(data);
+        else setGagalMuat(true);
+      } catch {
+        setGagalMuat(true);
+      }
+    });
+  }
 
   return (
-    <table className="hud-table-responsive w-full border-collapse text-left">
+    <>
+      <table className="hud-table-responsive w-full border-collapse text-left">
       <thead>
         <tr className="hud-head">
           {["ID MISI", "JENIS", "LOKASI", "TANGGAL SELESAI", "PERSONEL", "CATATAN", "EVALUASI"].map((h) => (
@@ -39,16 +66,16 @@ export function RiwayatTable({ rows }: { rows: RiwayatMobilisasiItem[] }) {
         {rows.map((r) => (
           <tr
             key={r.id}
-            onClick={() => router.push(`/misi?openId=${r.id}&dari=/riwayat`)}
+            onClick={() => bukaDetail(r)}
             // Baris tabel tidak bisa difokus keyboard sendiri; tabIndex + handler Enter/Space
             // membuatnya setara tombol, bukan cuma target mouse (NFR-10 aksesibilitas).
             tabIndex={0}
-            role="link"
+            role="button"
             aria-label={`Buka detail ${r.kodeMisi}`}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
-                router.push(`/misi?openId=${r.id}&dari=/riwayat`);
+                bukaDetail(r);
               }
             }}
             className="cursor-pointer border-b border-border-soft last:border-b-0 hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none"
@@ -75,6 +102,23 @@ export function RiwayatTable({ rows }: { rows: RiwayatMobilisasiItem[] }) {
           </tr>
         ))}
       </tbody>
-    </table>
+      </table>
+
+      <Drawer
+        open={dipilih !== null}
+        onOpenChange={(o) => !o && setDipilih(null)}
+        title={dipilih ? `${dipilih.kodeMisi} · ${dipilih.jenisKejadian}` : "Detail Misi"}
+      >
+        {gagalMuat ? (
+          <div className="py-8 text-center text-[12px] text-ink-2">
+            Detail Misi gagal dimuat. Tutup lalu buka lagi.
+          </div>
+        ) : detail ? (
+          <MisiDetailDrawerContent misi={detail} role={role} />
+        ) : (
+          <div className="py-8 text-center text-[12px] text-ink-2">Memuat detail Misi...</div>
+        )}
+      </Drawer>
+    </>
   );
 }

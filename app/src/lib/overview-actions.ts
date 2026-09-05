@@ -53,7 +53,7 @@ export async function getAnggotaCvAction(id: string): Promise<AnggotaFull | null
   return getAnggotaDetail(id);
 }
 
-export async function getMisiDetailForOverviewAction(id: string): Promise<MisiListItem | null> {
+export async function getMisiDetailAction(id: string): Promise<MisiListItem | null> {
   const session = await requireCommandCenterSession();
   if (!session) return null;
   return getMisiDetail(id);

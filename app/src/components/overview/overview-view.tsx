@@ -20,7 +20,7 @@ import { AnggotaCvDrawerContent } from "@/components/anggota/anggota-cv-drawer-c
 import { MisiDetailDrawerContent } from "@/components/misi/misi-detail-drawer-content";
 import {
   getAnggotaCvAction,
-  getMisiDetailForOverviewAction,
+  getMisiDetailAction,
   getOverviewLiveDataAction,
 } from "@/lib/overview-actions";
 import type { AnggotaFull } from "@/lib/anggota-data";
@@ -177,7 +177,7 @@ export function OverviewView({
     } else if (selection?.type === "misi") {
       const id = selection.data.id;
       startDetailTransition(async () => {
-        const data = await getMisiDetailForOverviewAction(id);
+        const data = await getMisiDetailAction(id);
         setFullMisi(data);
       });
     }
