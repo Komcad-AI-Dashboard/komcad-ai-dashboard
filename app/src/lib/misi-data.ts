@@ -126,7 +126,10 @@ export async function getRiwayatMobilisasi() {
   const misi = await prisma.misi.findMany({
     where: { status: STATUS_MISI.SELESAI },
     orderBy: { selesaiAt: "desc" },
-    include: { _count: { select: { penugasan: true } } },
+    // catatanAnalis dihitung, bukan diambil isinya: tabel Riwayat cuma perlu tahu ADA atau
+    // tidak, supaya Analis tidak harus membuka satu per satu untuk menemukan Misi yang sudah
+    // dibahas. Isinya baru diambil saat drawer dibuka (lib/catatan-analis-actions.ts).
+    include: { _count: { select: { penugasan: true, catatanAnalis: true } } },
   });
   return misi.map((m) => ({
     id: m.id,
@@ -136,6 +139,7 @@ export async function getRiwayatMobilisasi() {
     selesaiAt: m.selesaiAt,
     personel: m._count.penugasan,
     hasilEvaluasi: m.hasilEvaluasi,
+    catatan: m._count.catatanAnalis,
   }));
 }
 

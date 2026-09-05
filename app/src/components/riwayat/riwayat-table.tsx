@@ -18,7 +18,7 @@ export function RiwayatTable({ rows }: { rows: RiwayatMobilisasiItem[] }) {
     <table className="hud-table-responsive w-full border-collapse text-left">
       <thead>
         <tr className="hud-head">
-          {["ID MISI", "JENIS", "LOKASI", "TANGGAL SELESAI", "PERSONEL", "EVALUASI"].map((h) => (
+          {["ID MISI", "JENIS", "LOKASI", "TANGGAL SELESAI", "PERSONEL", "CATATAN", "EVALUASI"].map((h) => (
             <th
               key={h}
               className="border-b border-border px-3 py-[10px] text-[9px] font-extrabold tracking-[0.16em] text-ink-3"
@@ -31,7 +31,7 @@ export function RiwayatTable({ rows }: { rows: RiwayatMobilisasiItem[] }) {
       <tbody>
         {rows.length === 0 && (
           <tr>
-            <td colSpan={6} className="px-3 py-4 text-[11px] text-ink-3">
+            <td colSpan={7} className="px-3 py-4 text-[11px] text-ink-3">
               Belum ada Misi yang selesai.
             </td>
           </tr>
@@ -60,6 +60,11 @@ export function RiwayatTable({ rows }: { rows: RiwayatMobilisasiItem[] }) {
               {r.selesaiAt?.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Jakarta" }) ?? "—"}
             </td>
             <td data-label="Personel" className="px-3 py-[10px] text-[12px]">{r.personel}</td>
+            {/* Angka saja, tanpa warna, karena "ada catatan" bukan status baik/buruk — cuma
+                penanda supaya Misi yang sudah dibahas Analis tidak perlu dibuka satu per satu. */}
+            <td data-label="Catatan" className="px-3 py-[10px] text-[12px]">
+              {r.catatan > 0 ? r.catatan : <span className="text-ink-3">—</span>}
+            </td>
             <td
               data-label="Evaluasi"
               className="px-3 py-[10px] text-[12px] text-ink-2 xl:max-w-[280px] xl:truncate"

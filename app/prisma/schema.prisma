@@ -32,6 +32,7 @@ model User {
 
   auditLogs     AuditLog[]
   permintaanDiproses PermintaanUbahData[]
+  catatanAnalis CatatanAnalis[]
 }
 
 // ================= ANGGOTA (Big Data Komcad) =================
@@ -182,6 +183,7 @@ model Misi {
 
   penugasan  Penugasan[]
   notifikasi Notifikasi[]
+  catatanAnalis CatatanAnalis[]
 
   @@index([status])
   @@index([urgensi])
@@ -208,6 +210,25 @@ model Penugasan {
   @@unique([misiId, anggotaId])
   @@index([misiId])
   @@index([anggotaId])
+}
+
+/// Catatan bebas dari Analis/Evaluator atas sebuah Misi yang sudah Selesai (temuan QA-12).
+///
+/// Sengaja TERPISAH dari Misi.hasilEvaluasi: yang itu ditulis Operator sekali saat menutup Misi
+/// (FR-16) dan mewakili hasil resmi, sedangkan yang ini komentar analisis yang bisa bertambah
+/// kapan saja, oleh beberapa orang, dan tiap barisnya membawa nama penulis serta waktunya sendiri.
+model CatatanAnalis {
+  id        String @id @default(cuid())
+  misiId    String
+  misi      Misi   @relation(fields: [misiId], references: [id], onDelete: Cascade)
+  // Tanpa onDelete: catatan yang sudah ditulis tidak ikut hilang kalau akun penulisnya dihapus,
+  // sama seperti AuditLog.user dan PermintaanUbahData.diprosesOleh.
+  penulisId String
+  penulis   User   @relation(fields: [penulisId], references: [id])
+  isi       String
+  createdAt DateTime @default(now())
+
+  @@index([misiId, createdAt])
 }
 
 model ReadinessScoreHistory {
