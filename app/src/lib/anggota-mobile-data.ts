@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { ROLES } from "@/lib/constants";
 import { computeSertifikasiStatus } from "@/lib/sertifikasi";
-import { STATUS_SERTIFIKASI } from "@/lib/constants";
+import { STATUS_MISI, STATUS_SERTIFIKASI } from "@/lib/constants";
 import { decryptSensitive } from "@/lib/crypto";
 
 /** Ambil anggotaId dari sesi login, cuma untuk role ANGGOTA. Server Action/data-fetcher Sisi
@@ -50,11 +50,16 @@ export async function getSelfProfil(anggotaId: string) {
 export type SelfProfil = NonNullable<Awaited<ReturnType<typeof getSelfProfil>>>;
 
 export async function getSelfQuickStats(anggotaId: string) {
+  // Sama seperti tab Riwayat > Penugasan (components/m-shell/riwayat-view.tsx): Penugasan pada
+  // Misi yang masih Draft belum pernah sampai ke Anggota, jadi tidak dihitung. Tanpa ini kartu
+  // "Riwayat Penugasan" di Beranda menyebut angka yang lebih besar daripada isi tab Riwayat, dan
+  // "hari sejak tugas terakhir" ikut ter-reset oleh rekomendasi AI yang belum disetujui Operator.
+  const bukanDraft = { anggotaId, misi: { status: { not: STATUS_MISI.DRAFT } } };
   const [sertifikasi, pelatihanCount, penugasanTerakhir, penugasanCount] = await Promise.all([
     prisma.sertifikasi.findMany({ where: { anggotaId }, select: { tanggalBerlaku: true } }),
     prisma.pelatihan.count({ where: { anggotaId } }),
-    prisma.penugasan.findFirst({ where: { anggotaId }, orderBy: { createdAt: "desc" }, select: { createdAt: true } }),
-    prisma.penugasan.count({ where: { anggotaId } }),
+    prisma.penugasan.findFirst({ where: bukanDraft, orderBy: { createdAt: "desc" }, select: { createdAt: true } }),
+    prisma.penugasan.count({ where: bukanDraft }),
   ]);
 
   const sertifikasiAktif = sertifikasi.filter(
