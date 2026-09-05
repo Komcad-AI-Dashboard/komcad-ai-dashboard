@@ -67,7 +67,12 @@ export function MemberShell({ children, unreadCount }: { children: React.ReactNo
         {/* Sidebar desktop — meniru bahasa visual Sidebar Command Center (src/components/shell/
             sidebar.tsx: gradient tipis + garis aksen kiri + glow saat aktif) supaya SIAGA terasa
             satu produk konsisten, bukan bikin paradigma nav ketiga (tab atas). */}
-        <aside className="hidden shrink-0 flex-col border-r border-border-soft bg-gradient-to-b from-[#070a0b] to-black xl:flex xl:w-[220px]">
+        {/* sticky + h-screen: sidebar-nya anak flex-row, jadi tanpa ini tingginya ikut memanjang
+            mengikuti isi halaman dan tombol Keluar di kakinya tergambar jauh di bawah lipatan —
+            di /m/profil ia berada di y=1546 pada layar setinggi 900, artinya harus digulir dulu
+            baru bisa diklik. Sekarang tingginya dipatok setinggi layar dan ikut menempel saat
+            halaman digulir. */}
+        <aside className="hidden shrink-0 flex-col border-r border-border-soft bg-gradient-to-b from-[#070a0b] to-black xl:sticky xl:top-0 xl:flex xl:h-screen xl:w-[220px]">
           <div className="flex items-center gap-[9px] border-b border-border-soft p-4">
             <Image
               src="/brand/logo-komcad.png"
@@ -84,7 +89,9 @@ export function MemberShell({ children, unreadCount }: { children: React.ReactNo
             </div>
           </div>
 
-          <nav className="flex-1 p-[10px] pt-[14px]">
+          {/* min-h-0 + overflow-y-auto: kalau daftar menunya suatu saat lebih panjang daripada
+              layar, yang menggulir daftarnya sendiri, bukan mendorong Keluar keluar layar lagi. */}
+          <nav className="min-h-0 flex-1 overflow-y-auto p-[10px] pt-[14px]">
             {MEMBER_NAV.map((item) => {
               const active = pathname === item.href;
               const showBadge = item.href === "/m/notifikasi" && unreadCount > 0;
