@@ -28,8 +28,13 @@ export type TitikTren = { label: string; readiness: number | null; sertifikasiKe
 /** Rata-rata Readiness nasional & jumlah sertifikasi kedaluwarsa per bulan, terlama lebih dulu. */
 export async function getTrenKesiapsiagaan(jumlahBulan = 6): Promise<TitikTren[]> {
   const sekarang = new Date();
+  const paling_awal = awalBulan(jumlahBulan - 1, sekarang);
   const [riwayat, sertifikasi] = await Promise.all([
+    // DIBATASI tanggal di query, bukan disaring setelah semuanya diambil. Tabel ini bertambah
+    // tiap kali Readiness dihitung ulang (tiap perubahan status kehadiran), jadi mengambil
+    // seluruh isinya akan makin mahal seiring waktu tanpa pernah terlihat salah.
     prisma.readinessScoreHistory.findMany({
+      where: { dihitungPada: { gte: paling_awal } },
       select: { anggotaId: true, skor: true, dihitungPada: true },
       orderBy: { dihitungPada: "asc" },
     }),
@@ -102,4 +107,32 @@ export async function getReadinessPerWilayahBulanLalu(): Promise<Map<string, num
     perProvinsi.set(provinsi, e);
   }
   return new Map([...perProvinsi].map(([p, { total, jumlah }]) => [p, Math.round(total / jumlah)]));
+}
+
+/** Selisih Readiness nasional terhadap bulan lalu, TANPA menghitung seluruh KPI Analitik.
+ *
+ * Ada karena panel Overview di-poll tiap 5 detik. Sempat ia memanggil getAnalitikKpi() cuma untuk
+ * mengambil satu angka ini, dan itu berarti seluruh rangkaian query Analitik (termasuk tren enam
+ * bulan dan log audit) ikut jalan tiap lima detik untuk tiap tab yang terbuka. */
+export async function getSelisihReadinessNasional(): Promise<Selisih> {
+  const sekarang = new Date();
+  const mulai = awalBulan(1, sekarang);
+  const batas = awalBulan(0, sekarang);
+
+  const [agg, riwayat] = await Promise.all([
+    prisma.anggota.aggregate({ _avg: { readinessScore: true } }),
+    prisma.readinessScoreHistory.findMany({
+      where: { dihitungPada: { gte: mulai, lt: batas } },
+      select: { anggotaId: true, skor: true },
+      orderBy: { dihitungPada: "asc" },
+    }),
+  ]);
+  if (riwayat.length === 0) return null;
+
+  const terakhirPerAnggota = new Map<string, number>();
+  for (const r of riwayat) terakhirPerAnggota.set(r.anggotaId, r.skor);
+  const nilai = [...terakhirPerAnggota.values()];
+  const bulanLalu = Math.round((nilai.reduce((s, v) => s + v, 0) / nilai.length) * 10) / 10;
+
+  return hitungSelisih(Math.round((agg._avg.readinessScore ?? 0) * 10) / 10, bulanLalu, true);
 }
