@@ -4,7 +4,13 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { writeAuditLog } from "@/lib/audit-log";
-import { HUBUNGAN_KONTAK_DARURAT, STATUS_KEHADIRAN, STATUS_SIAGA } from "@/lib/constants";
+import {
+  HUBUNGAN_KONTAK_DARURAT,
+  HUBUNGAN_LAINNYA,
+  POLA_HUBUNGAN_LAIN,
+  STATUS_KEHADIRAN,
+  STATUS_SIAGA,
+} from "@/lib/constants";
 import { requireSelfAnggotaId } from "@/lib/anggota-mobile-data";
 import { decryptSensitive, encryptSensitive, hashSensitive } from "@/lib/crypto";
 import { recalculateReadinessScore } from "@/lib/readiness";
@@ -26,13 +32,21 @@ const profilSelfSchema = z.object({
   // Hubungan divalidasi ke daftar resminya karena memang berperilaku seperti enum; nomornya
   // dibiarkan bebas, sama seperti telepon & whatsapp di atas. Memperketat validasi nomor cuma
   // di satu field akan bikin aturan yang tidak konsisten dengan tetangganya.
-  // refine, bukan z.enum(...).or(z.literal("")): bentuk union itu melaporkan galat union-nya
-  // ("Invalid input"), bukan pesan enum-nya, jadi anggota tidak pernah tahu apa yang salah.
+  // Yang disimpan adalah hubungan sebenarnya: salah satu dari daftar resmi, ATAU teks bebas yang
+  // ditulis anggota saat memilih "Lainnya" di form. Penanda "Lainnya" sendiri ditolak — menyimpan
+  // kata itu sama saja dengan tidak mengisi, dari sudut pandang Operator yang membacanya nanti.
+  //
+  // refine, bukan z.enum(...).or(z.literal("")): bentuk union melaporkan galat union-nya
+  // ("Invalid input") alih-alih pesan yang menjelaskan, jadi anggota tidak tahu apa yang salah.
   kontakDaruratHubungan: z
     .string()
-    .refine((v) => v === "" || (HUBUNGAN_KONTAK_DARURAT as readonly string[]).includes(v), {
-      message: "Hubungan kontak darurat tidak dikenali.",
-    })
+    .refine(
+      (v) =>
+        v === "" ||
+        (HUBUNGAN_KONTAK_DARURAT as readonly string[]).includes(v) ||
+        (v !== HUBUNGAN_LAINNYA && POLA_HUBUNGAN_LAIN.test(v)),
+      { message: "Hubungan hanya boleh huruf dan spasi, 3 sampai 25 karakter." }
+    )
     .optional(),
   kontakDaruratTelepon: z.string().optional(),
 });

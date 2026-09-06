@@ -90,12 +90,18 @@ export const JENIS_KEJADIAN_OPTIONS = [
   "Lainnya",
 ] as const;
 
-/** Pilihan hubungan Kontak Darurat (temuan QA-09). Lima yang pertama adalah nilai yang memang
- * sudah ada di seluruh data lama; "Lainnya" ditambahkan supaya anggota yang kontak daruratnya di
- * luar kelima itu tidak dipaksa memilih hubungan yang salah.
- *
- * Satu sumber kebenaran — prisma/data-pools.ts mengimpor ini, jangan duplikasi daftar di seed. */
-export const HUBUNGAN_KONTAK_DARURAT = ["Istri", "Suami", "Ayah", "Ibu", "Kakak", "Lainnya"] as const;
+/** Pilihan hubungan Kontak Darurat (temuan QA-09) — kelima nilai yang memang sudah ada di seluruh
+ * data lama. Satu sumber kebenaran; prisma/data-pools.ts mengimpor ini, jangan duplikasi di seed. */
+export const HUBUNGAN_KONTAK_DARURAT = ["Istri", "Suami", "Ayah", "Ibu", "Kakak"] as const;
+
+/** Penanda di dropdown, BUKAN nilai yang disimpan. Memilihnya memunculkan isian bebas, dan yang
+ * tersimpan adalah teks yang ditulis anggota. Kalau "Lainnya" sendiri yang tersimpan, ia tidak
+ * memberi tahu apa pun ke Operator yang justru sedang perlu menghubungi seseorang. */
+export const HUBUNGAN_LAINNYA = "Lainnya";
+
+/** Huruf dan spasi saja, 3 sampai 25 karakter. Tidak ada validasi yang bisa menyaring teks tak
+ * bermakna, tapi ini menahan angka, simbol, dan ketikan asal yang terlalu pendek. */
+export const POLA_HUBUNGAN_LAIN = /^[A-Za-z ]{3,25}$/;
 
 /** Taksonomi kompetensi anggota (dipakai sertifikasi seed & scoring AI Mobilization). Satu sumber
  * kebenaran — prisma/data-pools.ts mengimpor ini, jangan duplikasi daftar terpisah di seed. */

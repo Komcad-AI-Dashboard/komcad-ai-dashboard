@@ -3,7 +3,7 @@
 import { useId, useState, useTransition } from "react";
 import { Phone, Mail, MessageCircle, AtSign, Link2, MapPin, Lock, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { HUBUNGAN_KONTAK_DARURAT } from "@/lib/constants";
+import { HUBUNGAN_KONTAK_DARURAT, HUBUNGAN_LAINNYA, POLA_HUBUNGAN_LAIN } from "@/lib/constants";
 import { calcUsia } from "@/lib/usia";
 import { updateProfilSelfAction, updateLokasiSelfAction } from "@/lib/anggota-mobile-actions";
 import { AvatarPlaceholder } from "@/components/anggota/avatar-placeholder";
@@ -79,6 +79,9 @@ export function ProfilView({ profil }: { profil: SelfProfil }) {
   // tidak terbaca screen reader dan klik label tidak memfokuskan field-nya.
   const uid = useId();
 
+  const hubunganTersimpan = profil.kontakDaruratHubungan ?? "";
+  const hubunganDikenal = (HUBUNGAN_KONTAK_DARURAT as readonly string[]).includes(hubunganTersimpan);
+
   const [form, setForm] = useState({
     nik: nikMenungguAwal ? profil.permintaanUbahData.find((p) => p.field === "nik")!.nilaiBaru : profil.nik,
     golonganDarah: profil.profilDemografi?.golonganDarah ?? "",
@@ -91,7 +94,11 @@ export function ProfilView({ profil }: { profil: SelfProfil }) {
     whatsapp: profil.whatsapp ?? "",
     instagram: profil.instagram ?? "",
     linkedin: profil.linkedin ?? "",
-    kontakDaruratHubungan: profil.kontakDaruratHubungan ?? "",
+    // Yang tersimpan cuma satu nilai. Kalau ia di luar daftar resmi, berarti anggota dulu
+    // mengisinya lewat "Lainnya" — dropdown dikembalikan ke Lainnya dan teksnya dimunculkan lagi
+    // di isian bebas, bukan hilang begitu saja.
+    kontakDaruratHubungan: hubunganTersimpan === "" || hubunganDikenal ? hubunganTersimpan : HUBUNGAN_LAINNYA,
+    kontakDaruratHubunganLain: hubunganDikenal ? "" : hubunganTersimpan,
     kontakDaruratTelepon: profil.kontakDaruratTelepon ?? "",
   });
   const [pending, startTransition] = useTransition();
@@ -107,8 +114,26 @@ export function ProfilView({ profil }: { profil: SelfProfil }) {
   function handleSave() {
     setError(null);
     setStatus(null);
+
+    // "Lainnya" tidak pernah dikirim ke server — yang dikirim teks yang ditulis anggota. Dicek di
+    // sini juga supaya kasus "pilih Lainnya lalu dibiarkan kosong" tidak diam-diam tersimpan
+    // sebagai hubungan kosong; server tidak bisa membedakannya dari field yang memang dilewati.
+    const { kontakDaruratHubunganLain, ...sisa } = form;
+    const memilihLainnya = form.kontakDaruratHubungan === HUBUNGAN_LAINNYA;
+    const hubunganLain = kontakDaruratHubunganLain.trim();
+    if (memilihLainnya && hubunganLain === "") {
+      setError("Sebutkan hubungan kontak daruratnya.");
+      return;
+    }
+    if (memilihLainnya && !POLA_HUBUNGAN_LAIN.test(hubunganLain)) {
+      setError("Hubungan hanya boleh huruf dan spasi, 3 sampai 25 karakter.");
+      return;
+    }
+
+    const data = { ...sisa, kontakDaruratHubungan: memilihLainnya ? hubunganLain : form.kontakDaruratHubungan };
+
     startTransition(async () => {
-      const res = await updateProfilSelfAction(form);
+      const res = await updateProfilSelfAction(data);
       if (res.error) {
         setError(res.error);
         return;
@@ -315,11 +340,15 @@ export function ProfilView({ profil }: { profil: SelfProfil }) {
             onChange={(e) => set("kontakDaruratHubungan", e.target.value)}
             className="w-full rounded-[8px] border border-border bg-elevated px-3 py-[11px] text-[13px] focus:border-accent-bright focus:outline-none"
           >
-            {["", ...HUBUNGAN_KONTAK_DARURAT].map((h) => (
+            {/* Opsi kosongnya diberi label "Belum diisi", bukan tanda pisah: field ini memang
+                boleh kosong, dan sebuah garis di daftar pilihan terbaca seperti nilai. */}
+            <option value="">Belum diisi</option>
+            {HUBUNGAN_KONTAK_DARURAT.map((h) => (
               <option key={h} value={h}>
-                {h || "—"}
+                {h}
               </option>
             ))}
+            <option value={HUBUNGAN_LAINNYA}>{HUBUNGAN_LAINNYA}</option>
           </select>
         </div>
         <Field
@@ -330,6 +359,20 @@ export function ProfilView({ profil }: { profil: SelfProfil }) {
           onChange={(e) => set("kontakDaruratTelepon", e.target.value)}
         />
       </div>
+
+      {/* Muncul hanya saat "Lainnya" dipilih. Tanpa isian ini, memilih Lainnya cuma menyimpan kata
+          "Lainnya", yang tidak memberi tahu apa pun ke Operator yang sedang perlu menghubungi
+          seseorang. Yang tersimpan adalah teks di sini, bukan kata "Lainnya". */}
+      {form.kontakDaruratHubungan === HUBUNGAN_LAINNYA && (
+        <Field
+          label="Sebutkan Hubungan"
+          placeholder="mis. Rekan kerja"
+          maxLength={25}
+          value={form.kontakDaruratHubunganLain}
+          onChange={(e) => set("kontakDaruratHubunganLain", e.target.value)}
+          catatan="Huruf dan spasi saja, 3 sampai 25 karakter."
+        />
+      )}
 
       <div className="text-[10px] font-extrabold uppercase tracking-wide text-ink-3">Kompetensi & Spesialisasi</div>
       <div className="flex flex-wrap gap-[6px]">

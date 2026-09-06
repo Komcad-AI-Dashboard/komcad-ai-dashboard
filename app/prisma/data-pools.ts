@@ -53,9 +53,8 @@ export const KOMPETENSI: string[] = [...KOMPETENSI_OPTIONS];
 export const PEKERJAAN_SIPIL = ["Wiraswasta", "Guru", "Perawat", "Teknisi", "Kontraktor", "PNS Non-TNI", "Karyawan Swasta"];
 // Namanya dulu NAMA_KONTAK_DARURAT, padahal isinya HUBUNGAN, bukan nama orang — salah nama itu
 // yang kemungkinan besar melahirkan placeholder "Nama (Hubungan) ..." yang tidak pernah cocok
-// dengan datanya. "Lainnya" dibuang dari pool seed: itu pilihan untuk anggota, bukan nilai yang
-// masuk akal diisikan otomatis ke 175 baris dummy.
-export const HUBUNGAN_DARURAT: string[] = HUBUNGAN_KONTAK_DARURAT.filter((h) => h !== "Lainnya");
+// dengan datanya.
+export const HUBUNGAN_DARURAT: string[] = [...HUBUNGAN_KONTAK_DARURAT];
 
 export function pick<T>(arr: T[], seed: number): T {
   return arr[seed % arr.length];
