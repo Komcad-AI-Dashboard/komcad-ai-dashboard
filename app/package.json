@@ -17,6 +17,7 @@
     "db:misi-bencana": "tsx prisma/tambah-misi-bencana.ts",
     "db:hapus-misi-lama": "tsx prisma/hapus-misi-lama.ts",
     "db:riwayat-readiness": "tsx prisma/riwayat-readiness.ts",
+    "db:evaluasi-penugasan": "tsx prisma/evaluasi-penugasan.ts",
     "db:studio": "prisma studio"
   },
   "prisma": {

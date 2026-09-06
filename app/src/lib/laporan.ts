@@ -4,7 +4,7 @@
 import PDFDocument from "pdfkit";
 import ExcelJS from "exceljs";
 import { prisma } from "@/lib/prisma";
-import { PRODUK_KEPANJANGAN, PRODUK_NAMA, STATUS_MISI } from "@/lib/constants";
+import { NILAI_KINERJA, PRODUK_KEPANJANGAN, PRODUK_NAMA, STATUS_MISI } from "@/lib/constants";
 import { getAnalitikKpi, getReadinessPerWilayah } from "@/lib/analitik-data";
 
 function pdfToBuffer(build: (doc: PDFKit.PDFDocument) => void): Promise<Buffer> {
@@ -309,8 +309,15 @@ export async function generateEvaluasiAiPdf(): Promise<Buffer> {
           : null;
       doc.font("Helvetica-Bold").text(`${m.kodeMisi} — ${m.jenisKejadian}, ${m.lokasi}`);
       doc.font("Helvetica");
+      // Kinerja nyata disandingkan langsung dengan skor yang diramalkan AI (temuan QA-13). Sebelum
+      // ini laporan ini cuma memuat skornya, sementara penilaian kinerjanya tidak ada di mana pun.
+      const dinilai = m.penugasan.filter((p) => p.hasilEvaluasi !== null);
+      const kinerjaRata =
+        dinilai.length > 0
+          ? Math.round((dinilai.reduce((sum, p) => sum + (NILAI_KINERJA[p.hasilEvaluasi!] ?? 0), 0) / dinilai.length) * 100) / 100
+          : null;
       doc.text(
-        `Selesai: ${m.selesaiAt?.toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta" }) ?? "-"}  ·  Personel: ${m.penugasan.length}  ·  Rata-rata skor rekomendasi AI: ${skorRata ?? "-"}`
+        `Selesai: ${m.selesaiAt?.toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta" }) ?? "-"}  ·  Personel: ${m.penugasan.length}  ·  Rata-rata skor rekomendasi AI: ${skorRata ?? "-"}  ·  Rata-rata kinerja: ${kinerjaRata !== null ? `${kinerjaRata} dari 4` : "belum dinilai"}`
       );
       doc.text(`Evaluasi: ${m.hasilEvaluasi ?? "-"}`);
       doc.moveDown(0.8);

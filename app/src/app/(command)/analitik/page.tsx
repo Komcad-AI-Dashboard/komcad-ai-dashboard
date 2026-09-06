@@ -1,5 +1,7 @@
 import { getAnalitikKpi, getReadinessPerWilayah } from "@/lib/analitik-data";
 import { DeltaBulanLalu, Sparkline, trenKe } from "@/components/analitik/tren";
+import { EvaluasiRekomendasiAi } from "@/components/analitik/evaluasi-ai";
+import { getEvaluasiRekomendasiAi } from "@/lib/analitik-evaluasi";
 
 function KpiCard({
   label,
@@ -24,7 +26,11 @@ function KpiCard({
 }
 
 export default async function AnalitikPage() {
-  const [kpi, readiness] = await Promise.all([getAnalitikKpi(), getReadinessPerWilayah()]);
+  const [kpi, readiness, evaluasi] = await Promise.all([
+    getAnalitikKpi(),
+    getReadinessPerWilayah(),
+    getEvaluasiRekomendasiAi(),
+  ]);
 
   return (
     <div className="flex-1 overflow-y-auto p-5">
@@ -112,6 +118,20 @@ export default async function AnalitikPage() {
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="hud-brk hud-panel mt-4 rounded-[10px] border border-border p-[16px]">
+        <h3 className="hud-label mb-1 text-[9px] font-extrabold tracking-[0.18em] text-ink-3">
+          EVALUASI REKOMENDASI AI
+        </h3>
+        {/* Provenance ditulis di layar, bukan cuma di kode: separuh perbandingan ini nyata dan
+            separuh lagi data demo, dan pembacanya berhak tahu yang mana. */}
+        <p className="mb-3 text-[9.5px] leading-relaxed text-ink-3">
+          Skor rekomendasi adalah angka yang benar-benar dikeluarkan AI Mobilization saat Misi
+          dibuat. Penilaian kinerjanya data demo yang dibangkitkan skrip, karena sistem belum punya
+          alur untuk mencatat penilaian saat Misi ditutup.
+        </p>
+        <EvaluasiRekomendasiAi band={evaluasi.band} misi={evaluasi.misi} />
       </div>
     </div>
   );

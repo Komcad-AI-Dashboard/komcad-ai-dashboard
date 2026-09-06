@@ -90,6 +90,21 @@ export const JENIS_KEJADIAN_OPTIONS = [
   "Lainnya",
 ] as const;
 
+/** Penilaian kinerja personel setelah Misi selesai, disimpan di Penugasan.hasilEvaluasi (temuan
+ * QA-13). String biasa + konstanta, bukan enum Prisma — mengikuti aturan di kepala schema.prisma.
+ *
+ * Urut dari terbaik supaya indeksnya bisa langsung dipakai mengurutkan tampilan. */
+export const PENILAIAN_KINERJA = ["Sangat Baik", "Baik", "Cukup", "Kurang"] as const;
+
+/** Nilai angka untuk merata-ratakan penilaian. Skala 4 = terbaik, sengaja bukan 0-100 supaya tidak
+ * tertukar dengan skorRekomendasi AI yang memang 0-100. */
+export const NILAI_KINERJA: Record<string, number> = {
+  "Sangat Baik": 4,
+  Baik: 3,
+  Cukup: 2,
+  Kurang: 1,
+};
+
 /** Pilihan hubungan Kontak Darurat (temuan QA-09) — kelima nilai yang memang sudah ada di seluruh
  * data lama. Satu sumber kebenaran; prisma/data-pools.ts mengimpor ini, jangan duplikasi di seed. */
 export const HUBUNGAN_KONTAK_DARURAT = ["Istri", "Suami", "Ayah", "Ibu", "Kakak"] as const;
