@@ -1,16 +1,23 @@
 # Komentar untuk slide laporan QA
 
-Satu blok per slide, siap tempel. Semua sudah masuk `staging`, belum production.
+Satu blok per slide, siap tempel.
+
+Laporan 31 Agustus sudah live di production sejak 1 September. Laporan 5 September masih di
+`staging`, menunggu merge.
 
 ---
 
 ### Buat Misi Baru: Page Couldn't Load
 
-**Belum bisa diperbaiki, butuh bantuan.**
+**Sudah. Ternyata bukan soal Safari sama sekali.**
 
-Pesannya "server error", jadi gagalnya di server, padahal harusnya tidak tergantung browser. Aneh, dan justru itu yang bikin susah ditebak.
+Kami reproduksi langsung di production: empat percobaan, tiga pakai mesin Safari dan satu pakai Chrome. Keempatnya gagal dengan error yang sama persis. Jadi browsernya tidak ada hubungannya, kebetulan saja waktu itu sedang dipakai Safari.
 
-Mesin dev kami Windows, Safari tidak ada versinya. Bisa minta tolong submit sekali lagi di Safari, lalu ambil log fungsi di Vercel pas gagal itu? Dari stack trace-nya biasanya langsung ketahuan.
+Penyebabnya: AI kadang menyebut orang yang sama dua kali dalam satu jawaban. Sistem melarang satu orang ditugaskan dua kali ke Misi yang sama, jadi seluruh proses gagal sebelum apa pun tersimpan. Terukur 5 dari 6 panggilan mengandung duplikat, dan satu orang pernah muncul lima kali sekaligus.
+
+Sekarang duplikatnya dibuang sebelum disimpan. Diuji ulang 8 kali, nol duplikat lolos.
+
+**Satu permintaan kecil.** Kalau log Vercel dari kegagalan waktu itu masih ada, kami ingin melihatnya (kode error 2097309456). Bukan karena ragu perbaikannya, tapi untuk memastikan tidak ada penyebab kedua yang tertutup oleh yang ini.
 
 ---
 
@@ -88,3 +95,89 @@ Ringkasan KPI sengaja dibiarkan tabel, tidak dikasih diagram. Isinya cuma empat 
 **Soal catatan "cek semua tabel dengan struktur serupa": sudah disisir, hasilnya aman.** Dari tujuh tabel di Command Center, cuma Riwayat Mobilisasi yang menyembunyikan data.
 
 Tabel Pelatihan dan Sertifikasi memang tidak bisa diklik, tapi semua kolomnya tampil utuh dan tidak punya halaman detail untuk dibuka. Kalau dikasih klik di situ jadinya bikin fitur baru, bukan nambal bug. Jadi dibiarkan.
+
+---
+---
+
+# Laporan 5 September 2026
+
+Halaman 1 sampai 10 sama persis dengan laporan 31 Agustus, jadi bagian Admin tidak dikomentari ulang. Yang di bawah untuk halaman 12 sampai 16.
+
+Semua masih di `staging`, belum production.
+
+---
+
+### Profil: field terkunci tanpa penanda visual
+
+**Sudah.** Field yang tidak bisa diedit sekarang punya tiga penanda sekaligus: ikon gembok, latar lebih gelap, dan keterangan alasannya. Tidak lagi cuma soal terang atau redup, jadi tetap kebaca di layar yang brightness-nya rendah.
+
+Alasannya ditulis per field karena memang beda-beda. Nama Lengkap dan Unit diatur satuan, Usia dihitung dari tanggal lahir, Titik Lokasi diperbarui lewat tombol GPS.
+
+**Ada temuan lain yang lebih serius dari slide ini.** Keempat field itu dulu dilewati sama sekali oleh tombol Tab, jadi pengguna keyboard dan pembaca layar tidak pernah bisa sampai ke nilainya. Sekarang bisa dijangkau.
+
+---
+
+### Profil: struktur field Kontak Darurat tidak konsisten
+
+**Sudah.** Dipecah jadi dropdown Hubungan dan kolom Nomor Telepon, sejajar dengan field kontak lain di halaman yang sama.
+
+175 data lama dipindahkan otomatis ke struktur baru. Nol baris gagal, dan nilai aslinya tetap disimpan sebagai cadangan.
+
+Placeholder lamanya berbunyi "Nama (Hubungan) lalu Nomor Telepon", padahal tidak ada satu pun data tersimpan yang memuat nama orang. Itu teks sisa dari mockup, ikut dihapus.
+
+Dua tambahan di luar yang diminta. Memilih "Lainnya" sekarang memunculkan isian bebas (huruf saja, 3 sampai 25 karakter), supaya yang tersimpan bukan kata "Lainnya" yang tidak memberi tahu apa-apa. Dan kedua bagian harus lengkap atau kosong dua-duanya, karena nomor tanpa keterangan siapa pemiliknya tidak berguna justru saat dibutuhkan.
+
+---
+
+### Riwayat Penugasan menampilkan misi belum direspons
+
+**Sudah.** Penugasan pada Misi berstatus Draft tidak ditampilkan lagi. Sisanya dipisah dua bagian seperti yang disarankan: "Menunggu Respons" dan "Riwayat".
+
+**Masalahnya ternyata lebih dalam dari yang terlihat di layar.** Penugasan dibuat saat AI menyusun kandidat, sedangkan notifikasi ke Anggota baru dikirim ketika Operator memobilisasi Misi. Padahal merespons butuh notifikasi itu. Jadi selama Misinya masih Draft, Anggota melihat permintaan respons yang belum pernah dikirim dan memang tidak ada tombolnya. Efek sampingnya, daftar kandidat AI kelihatan sebelum Operator memutuskan.
+
+Dua hal lain diperbaiki sekalian. Badge "Menunggu Respons" dan "Dikonfirmasi" dulu tampil merah seperti error. Dan status kehadiran Anggota hilang begitu Misi punya hasil evaluasi, sehingga yang menolak penugasan tetap terbaca seolah ikut turun.
+
+Yang perlu diketahui: angka "Riwayat Penugasan" di Beranda Anggota ikut turun, karena Misi Draft tidak lagi dihitung.
+
+---
+
+### Review Peran Analis, poin 1: tidak ada perbandingan lintas waktu
+
+**Sudah.** Kartu Readiness Nasional dan Sertifikasi Kedaluwarsa sekarang menampilkan selisih dari bulan lalu, ditambah grafik enam bulan terakhir. Selisih per provinsi juga muncul di daftar wilayah, dan laporan PDF Kesiapsiagaan ikut mencetaknya.
+
+Dua angka itu asalnya beda, dan sengaja tidak kami samarkan. **Sertifikasi kedaluwarsa dihitung dari tanggal berlaku tiap sertifikasi**, jadi angkanya nyata. **Readiness bulan-bulan sebelumnya direkonstruksi** memakai formula Readiness yang asli pada tanggal itu: dua dari tiga komponennya benar-benar terhitung ulang, satu komponen (riwayat penugasan) dibawa dari keadaan sekarang karena sistem tidak menyimpan kapan status kehadiran berubah. Keterangan ini juga tertulis di halamannya.
+
+**Ketemu satu cacat lain waktu mengerjakan ini.** Skor Readiness yang tersimpan ternyata basi di 90 dari 175 anggota. Ia cuma dihitung ulang saat status kehadiran berubah, sementara Misi ditambahkan massal lewat skrip tanpa memicu perhitungan itu. Jadi dashboard selama ini menampilkan angka yang tidak lagi cocok dengan datanya sendiri. Sudah disegarkan, dan mulai sekarang riwayatnya ikut tercatat otomatis.
+
+---
+
+### Review Peran Analis, poin 2: tidak ada tempat catatan evaluasi
+
+**Sudah.** Di drawer detail Misi yang sudah Selesai ada bagian "Catatan Analis". Tiap catatan membawa nama penulis, perannya, dan waktunya, jadi beberapa Analis bisa menambah tanpa saling menimpa.
+
+Analis dan Super Admin bisa menulis. Operator bisa membaca tapi tidak menulis, karena Operator sudah punya jalurnya sendiri lewat Hasil Evaluasi saat menutup Misi.
+
+Tabel Riwayat Mobilisasi dapat kolom "Catatan" berisi cacahnya, supaya tidak perlu membuka satu per satu untuk tahu Misi mana yang sudah dibahas.
+
+Catatan hanya bisa ditambahkan pada Misi yang sudah Selesai, jadi aturan "Analis tanpa hak ubah Misi aktif" tetap utuh.
+
+---
+
+### Review Peran Analis, poin 3: tidak ada cross-check skor AI dengan hasil misi
+
+**Sudah.** Halaman Analitik Kesiapsiagaan punya bagian baru di bawah, "Evaluasi Rekomendasi AI". Isinya dua tabel: ringkasan per rentang skor AI, lalu rincian per Misi selesai lengkap dengan rata-rata skor, rata-rata kinerja, durasi, dan evaluasinya.
+
+Hasilnya kelihatan. Personel berskor 90 sampai 100 rata-rata dinilai 3,56 dari 4, sedangkan yang 70 sampai 79 rata-rata 1,71. Korelasinya nyata tapi tidak mutlak, dan pengecualiannya sengaja dibiarkan terlihat karena justru itu yang berguna buat Analis.
+
+**Perlu dijelaskan apa adanya.** Skor rekomendasinya angka yang memang dikeluarkan sistem. Penilaian kinerjanya data demo yang kami bangkitkan, karena sistem belum punya alur untuk mencatat penilaian saat Misi ditutup. Membangun alur pencatatan itu keputusan terpisah.
+
+Kalau memakai data apa adanya, tampilan ini justru menyesatkan: rekomendasi terbaik AI terlihat paling buruk kinerjanya, karena data contoh sengaja membiarkan kandidat peringkat teratas tiap Misi berjalan tanpa respons. Analisisnya karena itu dibatasi ke Misi yang sudah Selesai saja.
+
+---
+
+### Dua angka yang bergerak, mohon tidak kaget
+
+Bukan temuan QA, tapi akibat langsung dari pekerjaan di atas.
+
+1. **MISI AKTIF turun**, di staging dari 15 jadi 9. Enam Misi ditutup jadi Selesai supaya bagian Evaluasi Rekomendasi AI punya bahan analisis. Angka Selesai bulan ini otomatis naik dari 3 jadi 9.
+2. **Readiness Nasional bergeser** dari 45,7 jadi 47,0. Itu koreksi skor yang sudah basi, bukan efek fitur barunya.
