@@ -83,13 +83,30 @@ export function Sparkline({
         />
       </svg>
       {/* Angka tetap ditulis di bawah garisnya — sparkline menunjukkan bentuk, bukan nilai, dan
-          tanpa ini tidak ada cara membaca titiknya. */}
-      <div className="mt-1 flex justify-between font-mono text-[9px] text-ink-3">
-        {terisi.map((t) => (
-          <span key={t.label}>
-            {t.label} {t.nilai}
-          </span>
-        ))}
+          tanpa ini tidak ada cara membaca titiknya.
+
+          Nilai dan bulannya SENGAJA ditumpuk, bukan disandingkan dalam satu baris. Waktu ditulis
+          "Apr 49.9" berdampingan, keduanya terbaca sebagai satu satuan (dikira tanggal), dan
+          pembaca harus melihat dua kali untuk sadar 49.9 itu nilainya. Titik terakhir ditebalkan
+          karena itulah angka yang sama dengan yang besar di kartu KPI di atas. */}
+      <div className="mt-[6px] flex justify-between gap-1">
+        {terisi.map((t, i) => {
+          const terakhir = i === terisi.length - 1;
+          return (
+            <div key={t.label} className="flex flex-col items-center leading-tight">
+              <span
+                className={
+                  terakhir
+                    ? "font-mono text-[11px] font-bold text-accent-bright"
+                    : "font-mono text-[10.5px] text-ink-2"
+                }
+              >
+                {t.nilai}
+              </span>
+              <span className="mt-[1px] text-[8.5px] uppercase tracking-wide text-ink-3">{t.label}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

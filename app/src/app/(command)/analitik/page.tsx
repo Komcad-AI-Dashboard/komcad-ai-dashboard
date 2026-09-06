@@ -63,7 +63,7 @@ export default async function AnalitikPage() {
       <div className="mb-4 grid gap-3 xl:grid-cols-2">
         <div className="hud-brk hud-panel rounded-[10px] border border-border p-[16px]">
           <h3 className="hud-label mb-3 text-[9px] font-extrabold tracking-[0.18em] text-ink-3">
-            TREN READINESS NASIONAL
+            TREN READINESS NASIONAL <span className="text-ink-3/70">· 6 BULAN TERAKHIR</span>
           </h3>
           <Sparkline titik={trenKe(kpi.tren, "readiness")} label="Tren Readiness nasional" />
           {/* Disebut terang-terangan: titik yang lebih tua adalah rekonstruksi data demo, bukan
@@ -75,7 +75,7 @@ export default async function AnalitikPage() {
         </div>
         <div className="hud-brk hud-panel rounded-[10px] border border-border p-[16px]">
           <h3 className="hud-label mb-3 text-[9px] font-extrabold tracking-[0.18em] text-ink-3">
-            TREN SERTIFIKASI KEDALUWARSA
+            TREN SERTIFIKASI KEDALUWARSA <span className="text-ink-3/70">· 6 BULAN TERAKHIR</span>
           </h3>
           <Sparkline titik={trenKe(kpi.tren, "sertifikasiKedaluwarsa")} label="Tren sertifikasi kedaluwarsa" />
           <p className="mt-2 text-[9.5px] leading-relaxed text-ink-3">
