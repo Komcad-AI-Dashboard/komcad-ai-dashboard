@@ -3,7 +3,7 @@
 // kebenaran supaya kedua skrip tidak diam-diam divergen. SEMUA data FIKTIF, bukan data personel
 // TNI/Komcad sungguhan.
 
-import { KOMPETENSI_OPTIONS } from "../src/lib/constants";
+import { HUBUNGAN_KONTAK_DARURAT, KOMPETENSI_OPTIONS } from "../src/lib/constants";
 
 export const PROVINSI_UTAMA = [
   { nama: "DKI Jakarta", kab: "Jakarta Selatan", lat: -6.2615, lng: 106.781 },
@@ -51,7 +51,11 @@ export const NAMA_BELAKANG = [
 export const UNIT = ["Komcad Yon Zeni 1", "Komcad Yon Kav 2", "Komcad Yon Arhanud 3", "Komcad Batalyon Infanteri 5"];
 export const KOMPETENSI: string[] = [...KOMPETENSI_OPTIONS];
 export const PEKERJAAN_SIPIL = ["Wiraswasta", "Guru", "Perawat", "Teknisi", "Kontraktor", "PNS Non-TNI", "Karyawan Swasta"];
-export const NAMA_KONTAK_DARURAT = ["Istri", "Suami", "Ayah", "Ibu", "Kakak"];
+// Namanya dulu NAMA_KONTAK_DARURAT, padahal isinya HUBUNGAN, bukan nama orang — salah nama itu
+// yang kemungkinan besar melahirkan placeholder "Nama (Hubungan) ..." yang tidak pernah cocok
+// dengan datanya. "Lainnya" dibuang dari pool seed: itu pilihan untuk anggota, bukan nilai yang
+// masuk akal diisikan otomatis ke 175 baris dummy.
+export const HUBUNGAN_DARURAT: string[] = HUBUNGAN_KONTAK_DARURAT.filter((h) => h !== "Lainnya");
 
 export function pick<T>(arr: T[], seed: number): T {
   return arr[seed % arr.length];

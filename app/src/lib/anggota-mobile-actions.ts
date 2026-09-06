@@ -4,7 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { writeAuditLog } from "@/lib/audit-log";
-import { STATUS_KEHADIRAN, STATUS_SIAGA } from "@/lib/constants";
+import { HUBUNGAN_KONTAK_DARURAT, STATUS_KEHADIRAN, STATUS_SIAGA } from "@/lib/constants";
 import { requireSelfAnggotaId } from "@/lib/anggota-mobile-data";
 import { decryptSensitive, encryptSensitive, hashSensitive } from "@/lib/crypto";
 import { recalculateReadinessScore } from "@/lib/readiness";
@@ -23,7 +23,18 @@ const profilSelfSchema = z.object({
   whatsapp: z.string().optional(),
   instagram: z.string().optional(),
   linkedin: z.string().optional(),
-  kontakDarurat: z.string().optional(),
+  // Hubungan divalidasi ke daftar resminya karena memang berperilaku seperti enum; nomornya
+  // dibiarkan bebas, sama seperti telepon & whatsapp di atas. Memperketat validasi nomor cuma
+  // di satu field akan bikin aturan yang tidak konsisten dengan tetangganya.
+  // refine, bukan z.enum(...).or(z.literal("")): bentuk union itu melaporkan galat union-nya
+  // ("Invalid input"), bukan pesan enum-nya, jadi anggota tidak pernah tahu apa yang salah.
+  kontakDaruratHubungan: z
+    .string()
+    .refine((v) => v === "" || (HUBUNGAN_KONTAK_DARURAT as readonly string[]).includes(v), {
+      message: "Hubungan kontak darurat tidak dikenali.",
+    })
+    .optional(),
+  kontakDaruratTelepon: z.string().optional(),
 });
 
 /** FR-37: field bebas langsung diterapkan; NIK (data sensitif) TIDAK langsung ditulis ke Anggota —
@@ -77,7 +88,10 @@ export async function updateProfilSelfAction(input: unknown): Promise<ActionStat
         whatsapp: data.whatsapp || null,
         instagram: data.instagram || null,
         linkedin: data.linkedin || null,
-        kontakDarurat: data.kontakDarurat || null,
+        // Kolom lama `kontakDarurat` sengaja TIDAK ikut ditulis — lihat catatan BEKU di
+        // schema.prisma. Nilainya dibiarkan apa adanya sebagai cadangan hasil pemisahan.
+        kontakDaruratHubungan: data.kontakDaruratHubungan || null,
+        kontakDaruratTelepon: data.kontakDaruratTelepon || null,
         profilDemografi: {
           upsert: {
             create: {

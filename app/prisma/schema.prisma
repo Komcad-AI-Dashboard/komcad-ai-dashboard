@@ -55,7 +55,13 @@ model Anggota {
   whatsapp   String?
   instagram  String?
   linkedin   String?
+  /// BEKU — jangan ditulis lagi. Dulu satu string gabungan "Istri · 081200000000"; dipisah jadi
+  /// dua kolom di bawah (temuan QA-09). Kolom ini sengaja disimpan sebagai cadangan sampai hasil
+  /// pemisahan terkonfirmasi di production, baru dihapus lewat migrasi tersendiri.
   kontakDarurat String?
+  /// Salah satu dari HUBUNGAN_KONTAK_DARURAT (src/lib/constants.ts), divalidasi di Server Action.
+  kontakDaruratHubungan String?
+  kontakDaruratTelepon  String?
 
   readinessScore    Int      @default(0) // hasil cache dari kalkulasi terakhir (FR-04)
   readinessUpdatedAt DateTime?

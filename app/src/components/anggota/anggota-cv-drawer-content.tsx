@@ -256,7 +256,11 @@ export function AnggotaCvDrawerContent({
             />
           )}
           <Field label="TELEPON" value={anggota.telepon} />
-          <Field label="KONTAK DARURAT" value={anggota.kontakDarurat} />
+          {/* Dua baris, bukan satu string yang dirakit ulang: kalau digabung lagi di sini, bentuk
+              yang dikeluhkan QA-09 cuma pindah dari form ke tampilan. Field merender "—" untuk
+              nilai kosong, jadi anggota yang belum mengisi tetap aman ditampilkan. */}
+          <Field label="KONTAK DARURAT" value={anggota.kontakDaruratTelepon} />
+          <Field label="HUBUNGAN" value={anggota.kontakDaruratHubungan} />
         </div>
       </div>
 

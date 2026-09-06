@@ -18,7 +18,7 @@ import {
   UNIT,
   KOMPETENSI,
   PEKERJAAN_SIPIL,
-  NAMA_KONTAK_DARURAT,
+  HUBUNGAN_DARURAT,
   pick,
   nikDummy,
 } from "./data-pools";
@@ -59,7 +59,8 @@ async function main() {
         whatsapp: `62${(8100000000 + i).toString()}`,
         instagram: `@${nama.toLowerCase().replace(/\s+/g, ".")}`,
         linkedin: nama.toLowerCase().replace(/\s+/g, "-"),
-        kontakDarurat: `${pick(NAMA_KONTAK_DARURAT, i)} · 08${(1200000000 + i).toString().slice(0, 10)}`,
+        kontakDaruratHubungan: pick(HUBUNGAN_DARURAT, i),
+        kontakDaruratTelepon: `08${(1200000000 + i).toString().slice(0, 10)}`,
         profilDemografi: {
           create: {
             tanggalLahir: new Date(1985 + (i % 20), i % 12, 5 + (i % 20)),

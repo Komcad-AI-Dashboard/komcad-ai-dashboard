@@ -3,6 +3,7 @@
 import { useId, useState, useTransition } from "react";
 import { Phone, Mail, MessageCircle, AtSign, Link2, MapPin, Lock, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { HUBUNGAN_KONTAK_DARURAT } from "@/lib/constants";
 import { calcUsia } from "@/lib/usia";
 import { updateProfilSelfAction, updateLokasiSelfAction } from "@/lib/anggota-mobile-actions";
 import { AvatarPlaceholder } from "@/components/anggota/avatar-placeholder";
@@ -90,7 +91,8 @@ export function ProfilView({ profil }: { profil: SelfProfil }) {
     whatsapp: profil.whatsapp ?? "",
     instagram: profil.instagram ?? "",
     linkedin: profil.linkedin ?? "",
-    kontakDarurat: profil.kontakDarurat ?? "",
+    kontakDaruratHubungan: profil.kontakDaruratHubungan ?? "",
+    kontakDaruratTelepon: profil.kontakDaruratTelepon ?? "",
   });
   const [pending, startTransition] = useTransition();
   const [lokasiPending, startLokasiTransition] = useTransition();
@@ -295,12 +297,39 @@ export function ProfilView({ profil }: { profil: SelfProfil }) {
           />
         </div>
       </div>
-      <Field
-        label="Kontak Darurat"
-        placeholder="Nama (Hubungan) · Nomor Telepon"
-        value={form.kontakDarurat}
-        onChange={(e) => set("kontakDarurat", e.target.value)}
-      />
+      {/* Dulu satu kotak teks bebas berisi hubungan dan nomor sekaligus, dipisah titik tengah —
+          satu-satunya field kontak di halaman ini yang tidak berdiri sendiri (temuan QA-09).
+          Placeholder lamanya bahkan menyuruh mengisi nama orang, padahal tidak ada satu pun data
+          tersimpan yang memuat nama; itu teks sisa dari mockup dan ikut dihapus. */}
+      <div className="grid grid-cols-2 gap-[10px]">
+        <div>
+          <label
+            htmlFor={`${uid}-hubungan-darurat`}
+            className="mb-[6px] block text-[10px] font-extrabold uppercase tracking-wide text-ink-2"
+          >
+            Kontak Darurat
+          </label>
+          <select
+            id={`${uid}-hubungan-darurat`}
+            value={form.kontakDaruratHubungan}
+            onChange={(e) => set("kontakDaruratHubungan", e.target.value)}
+            className="w-full rounded-[8px] border border-border bg-elevated px-3 py-[11px] text-[13px] focus:border-accent-bright focus:outline-none"
+          >
+            {["", ...HUBUNGAN_KONTAK_DARURAT].map((h) => (
+              <option key={h} value={h}>
+                {h || "—"}
+              </option>
+            ))}
+          </select>
+        </div>
+        <Field
+          label="Nomor Telepon"
+          inputMode="tel"
+          placeholder="08xxxxxxxxxx"
+          value={form.kontakDaruratTelepon}
+          onChange={(e) => set("kontakDaruratTelepon", e.target.value)}
+        />
+      </div>
 
       <div className="text-[10px] font-extrabold uppercase tracking-wide text-ink-3">Kompetensi & Spesialisasi</div>
       <div className="flex flex-wrap gap-[6px]">
