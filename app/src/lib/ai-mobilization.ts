@@ -163,6 +163,7 @@ export async function generateAiMobilizationRecommendation(params: {
           content:
             "Anda adalah AI Mobilization Komcad — sistem pendukung keputusan Operator Komando untuk memobilisasi personel cadangan (Komcad) saat bencana/kedaruratan. " +
             "Anda HANYA boleh merekomendasikan personel dari daftar kandidat yang diberikan (identitas via anggotaId) — jangan pernah mengarang atau menyebut personel di luar daftar itu. " +
+            "Tiap anggotaId muncul PALING BANYAK SATU KALI di dalam kandidat; jangan pernah mengulang orang yang sama. " +
             "Untuk tiap kandidat, beri skor kecocokan 0-100 dan alasan berupa 3-5 poin singkat yang mengutip angka nyata dari data (jarak km, Readiness Score, kompetensi/sertifikasi, jeda penugasan terakhir) — jangan mengarang angka baru. " +
             `Bobot prioritas yang diatur Admin (total 100%, gunakan sebagai panduan urutan skor, bukan aturan matematis ketat): Readiness Score ${bobot.readiness}%, jarak/ETA ${bobot.jarak}%, kompetensi/sertifikasi ${bobot.kompetensi}%.` +
             (kompetensiDibutuhkan.length > 0
@@ -191,7 +192,7 @@ export async function generateAiMobilizationRecommendation(params: {
 
     const validIds = new Set(candidateIds);
     const poolById = new Map(kandidatPool.map((k) => [k.anggotaId, k]));
-    const kandidat = parsed.kandidat
+    const terurut = parsed.kandidat
       .filter((k) => validIds.has(k.anggotaId))
       .map((k) => ({
         anggotaId: k.anggotaId,
@@ -202,6 +203,31 @@ export async function generateAiMobilizationRecommendation(params: {
             : buildAlasanFallback(poolById.get(k.anggotaId)!, kompetensiDibutuhkan),
       }))
       .sort((a, b) => b.skor - a.skor);
+
+    // Model sering menyebut anggotaId yang sama lebih dari sekali — diukur di data production:
+    // 5 dari 6 panggilan, satu anggota sampai muncul 5 kali dalam satu jawaban. Menyaring ke pool
+    // yang valid saja TIDAK cukup, karena duplikat pun valid.
+    //
+    // Ini penyebab temuan QA-01 ("Buat Misi: Page Couldn't Load"): daftar ini masuk langsung ke
+    // `penugasan: { create: [...] }`, dan Penugasan punya @@unique([misiId, anggotaId]), jadi
+    // duplikatnya menabrak constraint dan seluruh Server Action gagal dengan 500. Terlihat seperti
+    // bug Safari cuma karena kebetulan browser mana yang dipakai saat model mengulang.
+    //
+    // Sudah diurutkan skor menurun, jadi kemunculan PERTAMA adalah skor tertinggi — itu yang
+    // dipertahankan.
+    const terlihat = new Set<string>();
+    const kandidat = terurut.filter((k) => {
+      if (terlihat.has(k.anggotaId)) return false;
+      terlihat.add(k.anggotaId);
+      return true;
+    });
+
+    if (terurut.length !== kandidat.length) {
+      console.warn(
+        `[ai-mobilization] Model mengembalikan ${terurut.length - kandidat.length} kandidat duplikat, dibuang. ` +
+          `Tersisa ${kandidat.length} kandidat unik.`
+      );
+    }
 
     if (kandidat.length === 0) throw new Error("AI tidak mengembalikan kandidat valid");
 
