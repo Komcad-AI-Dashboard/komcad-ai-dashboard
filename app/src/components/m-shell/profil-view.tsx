@@ -130,7 +130,20 @@ export function ProfilView({ profil }: { profil: SelfProfil }) {
       return;
     }
 
-    const data = { ...sisa, kontakDaruratHubungan: memilihLainnya ? hubunganLain : form.kontakDaruratHubungan };
+    const hubunganAkhir = memilihLainnya ? hubunganLain : form.kontakDaruratHubungan.trim();
+    const teleponDarurat = form.kontakDaruratTelepon.trim();
+    // Kedua bagian harus lengkap atau kosong dua-duanya. Aturannya juga ditegakkan di server
+    // (superRefine di anggota-mobile-actions.ts); di sini supaya pesannya muncul seketika.
+    if (hubunganAkhir && !teleponDarurat) {
+      setError("Nomor telepon kontak darurat belum diisi.");
+      return;
+    }
+    if (!hubunganAkhir && teleponDarurat) {
+      setError("Pilih hubungan kontak daruratnya.");
+      return;
+    }
+
+    const data = { ...sisa, kontakDaruratHubungan: hubunganAkhir, kontakDaruratTelepon: teleponDarurat };
 
     startTransition(async () => {
       const res = await updateProfilSelfAction(data);

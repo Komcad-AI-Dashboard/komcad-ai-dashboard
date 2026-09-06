@@ -49,7 +49,30 @@ const profilSelfSchema = z.object({
     )
     .optional(),
   kontakDaruratTelepon: z.string().optional(),
-});
+})
+  // Sebelum dipisah, kontak darurat mustahil terisi separuh: satu kolom, jadi ada dua-duanya atau
+  // tidak sama sekali. Memisahnya menghilangkan jaminan itu, dan dua keadaan separuh yang lahir
+  // dari situ sama-sama tidak berguna saat dibutuhkan: hubungan tanpa nomor yang bisa dihubungi,
+  // atau nomor tanpa keterangan siapa pemiliknya. Kosong dua-duanya tetap boleh — tidak ada
+  // anggota yang dipaksa mengarang kontak darurat.
+  .superRefine((data, ctx) => {
+    const hubungan = (data.kontakDaruratHubungan ?? "").trim();
+    const telepon = (data.kontakDaruratTelepon ?? "").trim();
+    if (hubungan && !telepon) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["kontakDaruratTelepon"],
+        message: "Nomor telepon kontak darurat belum diisi.",
+      });
+    }
+    if (!hubungan && telepon) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["kontakDaruratHubungan"],
+        message: "Pilih hubungan kontak daruratnya.",
+      });
+    }
+  });
 
 /** FR-37: field bebas langsung diterapkan; NIK (data sensitif) TIDAK langsung ditulis ke Anggota —
  * dicatat sebagai PermintaanUbahData Menunggu, baru berlaku setelah Admin/Operator menyetujui. */
@@ -104,8 +127,8 @@ export async function updateProfilSelfAction(input: unknown): Promise<ActionStat
         linkedin: data.linkedin || null,
         // Kolom lama `kontakDarurat` sengaja TIDAK ikut ditulis — lihat catatan BEKU di
         // schema.prisma. Nilainya dibiarkan apa adanya sebagai cadangan hasil pemisahan.
-        kontakDaruratHubungan: data.kontakDaruratHubungan || null,
-        kontakDaruratTelepon: data.kontakDaruratTelepon || null,
+        kontakDaruratHubungan: data.kontakDaruratHubungan?.trim() || null,
+        kontakDaruratTelepon: data.kontakDaruratTelepon?.trim() || null,
         profilDemografi: {
           upsert: {
             create: {
