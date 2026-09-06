@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { STATUS_MISI, STATUS_MISI_AKTIF, STATUS_SIAGA } from "@/lib/constants";
 import { lokasiCocokProvinsi } from "@/lib/cakupan";
 import { wilayahFromLokasi } from "@/lib/wilayah-region";
+import { getAnalitikKpi } from "@/lib/analitik-data";
 
 export type MapAnggota = {
   id: string;
@@ -200,6 +201,9 @@ export async function getAiMobilizationSummary(provinsi?: string | null) {
     })),
     misiAktifCount,
     misiSevenDaysCount,
+    // Δ Readiness dari bulan lalu. Panel ini sudah lama punya kotak kosong bertuliskan "belum ada
+    // data historis" — datanya sekarang ada (temuan QA-11), jadi kotaknya diisi.
+    selisihReadiness: (await getAnalitikKpi()).selisihReadiness,
   };
 }
 

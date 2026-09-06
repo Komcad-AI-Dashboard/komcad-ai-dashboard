@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import type { getAiMobilizationSummary } from "@/lib/overview-data";
 
 type AiSummary = Awaited<ReturnType<typeof getAiMobilizationSummary>>;
@@ -66,9 +67,24 @@ export function AiPanelContent({ data }: { data: AiSummary }) {
             <div className="text-[9px] leading-tight text-ink-2">Mobilisasi 7 hari</div>
           </div>
           <div>
-            <div className="font-mono text-[19px] font-extrabold text-ink-3">—</div>
+            <div
+              className={cn(
+                "font-mono text-[19px] font-extrabold",
+                data.selisihReadiness === null
+                  ? "text-ink-3"
+                  : data.selisihReadiness.nilai > 0
+                    ? "text-accent-bright"
+                    : data.selisihReadiness.nilai < 0
+                      ? "text-amber"
+                      : "text-ink"
+              )}
+            >
+              {data.selisihReadiness === null
+                ? "—"
+                : `${data.selisihReadiness.nilai > 0 ? "+" : data.selisihReadiness.nilai < 0 ? "-" : ""}${Math.abs(data.selisihReadiness.nilai)}`}
+            </div>
             <div className="text-[9px] leading-tight text-ink-2">
-              Δ Readiness (belum ada data historis)
+              {data.selisihReadiness === null ? "Δ Readiness (belum ada data historis)" : "Δ Readiness vs bulan lalu"}
             </div>
           </div>
         </div>

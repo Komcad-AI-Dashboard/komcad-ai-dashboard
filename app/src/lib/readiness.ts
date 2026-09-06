@@ -20,10 +20,18 @@ const BOBOT_KEHADIRAN: Record<string, number> = {
   [STATUS_KEHADIRAN.DITOLAK]: 20,
 };
 
+export type KomponenReadiness = { kompetensi: number; pelatihan: number; penugasan: number };
+
 /** Kompetensi 40% (proporsi sertifikasi Aktif) + Pelatihan 30% (recency kelulusan terakhir) +
  * Penugasan 30% (keandalan riwayat kehadiran). Netral (bukan 0) untuk anggota tanpa rekam jejak
- * di salah satu komponen, supaya anggota baru tidak otomatis dapat skor terendah. */
-export function computeReadinessScore(input: ReadinessInput, now: Date = new Date()): number {
+ * di salah satu komponen, supaya anggota baru tidak otomatis dapat skor terendah.
+ *
+ * Rinciannya ikut dikembalikan karena ReadinessScoreHistory.komponen menyimpannya — tanpa itu,
+ * satu titik riwayat cuma angka tanpa keterangan kenapa naik atau turun. */
+export function computeReadinessBreakdown(
+  input: ReadinessInput,
+  now: Date = new Date()
+): { skor: number; komponen: KomponenReadiness } {
   const skorKompetensi =
     input.sertifikasi.length === 0
       ? 50
@@ -47,7 +55,18 @@ export function computeReadinessScore(input: ReadinessInput, now: Date = new Dat
   }
 
   const total = 0.4 * skorKompetensi + 0.3 * skorPelatihan + 0.3 * skorPenugasan;
-  return Math.max(0, Math.min(100, Math.round(total)));
+  return {
+    skor: Math.max(0, Math.min(100, Math.round(total))),
+    komponen: {
+      kompetensi: Math.round(skorKompetensi),
+      pelatihan: Math.round(skorPelatihan),
+      penugasan: Math.round(skorPenugasan),
+    },
+  };
+}
+
+export function computeReadinessScore(input: ReadinessInput, now: Date = new Date()): number {
+  return computeReadinessBreakdown(input, now).skor;
 }
 
 /** Hitung ulang & simpan Readiness Score satu anggota dari data terkini di DB — dipanggil setelah
@@ -62,9 +81,20 @@ export async function recalculateReadinessScore(anggotaId: string): Promise<void
     },
   });
   if (!anggota) return;
-  const skor = computeReadinessScore(anggota);
-  await prisma.anggota.update({
-    where: { id: anggotaId },
-    data: { readinessScore: skor, readinessUpdatedAt: new Date() },
-  });
+  const { skor, komponen } = computeReadinessBreakdown(anggota);
+  await Promise.all([
+    prisma.anggota.update({
+      where: { id: anggotaId },
+      data: { readinessScore: skor, readinessUpdatedAt: new Date() },
+    }),
+    // Riwayatnya ikut ditulis, bukan cuma nilai terkininya. Tanpa ini ReadinessScoreHistory tetap
+    // kosong selamanya (memang begitu keadaannya sampai temuan QA-11) dan perbandingan "naik atau
+    // turun dari bulan lalu" tidak akan pernah punya pembanding untuk bulan-bulan berikutnya.
+    //
+    // Ditulis tiap kali skor dihitung ulang, bukan sekali sebulan: pembacanya mengambil baris
+    // TERAKHIR sebelum awal bulan, jadi baris rapat maupun jarang sama-sama benar.
+    prisma.readinessScoreHistory.create({
+      data: { anggotaId, skor, komponen: JSON.stringify(komponen) },
+    }),
+  ]);
 }

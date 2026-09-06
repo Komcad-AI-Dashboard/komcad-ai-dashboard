@@ -16,6 +16,7 @@
     "db:tambah-anggota-timur": "tsx prisma/tambah-anggota-timur.ts",
     "db:misi-bencana": "tsx prisma/tambah-misi-bencana.ts",
     "db:hapus-misi-lama": "tsx prisma/hapus-misi-lama.ts",
+    "db:riwayat-readiness": "tsx prisma/riwayat-readiness.ts",
     "db:studio": "prisma studio"
   },
   "prisma": {

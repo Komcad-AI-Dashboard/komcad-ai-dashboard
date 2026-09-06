@@ -183,10 +183,21 @@ export async function generateLaporanKesiapsiagaanPdf(): Promise<Buffer> {
 
     doc.fontSize(12).fillColor("#000000").text("Ringkasan KPI Nasional", { underline: true });
     doc.moveDown(0.5);
+    // Selisihnya ikut dicetak, bukan cuma angka hari ini: laporan ini yang dibawa Analis ke rapat,
+    // dan "naik atau turun dari bulan lalu" persis yang ditanyakan di temuan QA-11.
+    const selisihTeks = (s: { nilai: number } | null) =>
+      s === null ? " (belum ada pembanding bulan lalu)" : s.nilai === 0 ? " (tetap dari bulan lalu)" : ` (${s.nilai > 0 ? "+" : "-"}${Math.abs(s.nilai)} dari bulan lalu)`;
+
     pdfKeyValueTable(doc, [
-      { label: "Readiness Score Nasional", value: String(kpi.readinessNasional) },
+      {
+        label: "Readiness Score Nasional",
+        value: `${kpi.readinessNasional}${selisihTeks(kpi.selisihReadiness)}`,
+      },
       { label: "Misi Selesai (30 hari terakhir)", value: String(kpi.misiSelesai30Hari) },
-      { label: "Sertifikasi Kedaluwarsa", value: String(kpi.sertifikasiKedaluwarsa) },
+      {
+        label: "Sertifikasi Kedaluwarsa",
+        value: `${kpi.sertifikasiKedaluwarsa}${selisihTeks(kpi.selisihSertifikasiKedaluwarsa)}`,
+      },
       {
         label: "AI Mobilization Uptime",
         value:
