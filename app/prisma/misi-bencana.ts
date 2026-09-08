@@ -109,21 +109,24 @@ export const MISI_BENCANA: MisiBencana[] = [
     deskripsi: "Kebakaran 10 ha di kawasan savana Bromo, berpotensi meluas ke area wisata saat angin kencang.",
   },
 
-  // — Kekeringan & krisis air bersih —
+  // — Kekeringan & krisis air bersih — jenis "Kekeringan" (bukan "Lainnya", diganti Fase 18
+  // susulan ketiga: label "Lainnya" bikin bingung di panel Misi Terbaru — lihat komentar di
+  // KODE_DIHAPUS untuk MISI-2026-032). DB lama (kode ini sudah ada) di-update lewat
+  // prisma/relabel-kekeringan.ts, bukan seedMisiBencana (yang cuma skip kode yang sudah ada).
   {
-    kode: "MISI-2026-015", komandan: "Letkol Inf. Bagus Priyanto", jenis: "Lainnya", urgensi: "Tinggi",
+    kode: "MISI-2026-015", komandan: "Letkol Inf. Bagus Priyanto", jenis: "Kekeringan", urgensi: "Tinggi",
     lokasi: "Kabupaten Malang, Jawa Timur", lat: -8.13, lng: 112.57,
     personel: 6, slice: [64, 69], hari: 18, status: "Dimobilisasi",
     deskripsi: "Kekeringan: 363.800 liter air bersih tersalurkan sejak 8 Agustus. Pengawalan distribusi harian ke desa terdampak.",
   },
   {
-    kode: "MISI-2026-016", komandan: "Mayor Inf. Sigit Nugroho", jenis: "Lainnya", urgensi: "Sedang",
+    kode: "MISI-2026-016", komandan: "Mayor Inf. Sigit Nugroho", jenis: "Kekeringan", urgensi: "Sedang",
     lokasi: "Kabupaten Gunungkidul, Daerah Istimewa Yogyakarta", lat: -7.97, lng: 110.6,
     personel: 5, slice: [69, 73], hari: 14, status: "Dimobilisasi",
     deskripsi: "Krisis air bersih di wilayah karst, sumur warga mengering. Dukungan tangki air dan pendataan kepala keluarga terdampak.",
   },
   {
-    kode: "MISI-2026-017", komandan: "Mayor Inf. Sigit Nugroho", jenis: "Lainnya", urgensi: "Sedang",
+    kode: "MISI-2026-017", komandan: "Mayor Inf. Sigit Nugroho", jenis: "Kekeringan", urgensi: "Sedang",
     lokasi: "Kabupaten Grobogan, Jawa Tengah", lat: -7.09, lng: 110.91,
     personel: 4, slice: [73, 77], hari: null, status: "Draft",
     deskripsi: "Jawa Tengah provinsi terbanyak terdampak kekeringan (35 kabupaten/kota). Grobogan disiapkan sebagai titik distribusi berikutnya.",
@@ -137,12 +140,9 @@ export const MISI_BENCANA: MisiBencana[] = [
     evaluasi: "Pembersihan material dan perbaikan atap rumah warga selesai, satu korban jiwa dievakuasi.",
     deskripsi: "Angin kencang merusak puluhan rumah, satu warga meninggal tertimpa pohon kelapa. Pembersihan material dan perbaikan darurat.",
   },
-  {
-    kode: "MISI-2026-019", komandan: "Letkol Inf. Parlindungan Siregar", jenis: "Banjir", urgensi: "Tinggi",
-    lokasi: "Kabupaten Agam, Sumatera Barat", lat: -0.31, lng: 100.03,
-    personel: 7, slice: [81, 86], hari: 20, status: "Dimobilisasi",
-    deskripsi: "Banjir dan cuaca ekstrem merendam permukiman di kaki Gunung Marapi. Evakuasi warga dan pengamanan jalur logistik.",
-  },
+  // MISI-2026-019 (Banjir Kabupaten Agam) di-drop atas permintaan user — dashboard tidak boleh
+  // menampilkan Misi Banjir sama sekali, narasi bencana difokuskan ke karhutla/kekeringan/erupsi
+  // gunung yang sesuai kondisi El Nino sungguhan. Lihat prisma/hapus-misi-lama.ts.
 
   // — Fase 18: kejadian tambahan (permintaan partner, "misi sesuai bencana terbaru") —
   {
@@ -187,6 +187,26 @@ export const MISI_BENCANA: MisiBencana[] = [
   // MISI-2026-032 (Kekeringan Lamongan, jenisKejadian "Lainnya") di-drop atas permintaan user —
   // tetap nongol di top 5 panel Misi Terbaru dan labelnya "Lainnya" kurang jelas dibanding
   // "Kebakaran Hutan" yang lebih langsung menandakan narasi El Nino. Lihat hapus-misi-lama.ts.
+
+  // — Fase 18 susulan ketiga: realisme penuh per 8 September 2026 (permintaan user, "jangan ada
+  // Banjir sama sekali") — riset WebSearch tertanggal, sumber BMKG/BNPB/ESDM/media resmi.
+  // jenisKejadian "Erupsi Gunung Berapi" adalah nilai baru, di luar JENIS_KEJADIAN_OPTIONS (kolom
+  // DB cuma String, bukan enum — lihat schema.prisma). Konsekuensinya HANYA: Misi ini tidak akan
+  // dapat saran kompetensi otomatis di modal Buat Misi (JENIS_KEJADIAN_KOMPETENSI fallback ke [])
+  // dan tidak muncul sebagai pilihan bikin Misi baru sejenis — keduanya tidak masalah untuk data
+  // seed yang dibuat lewat script, bukan lewat form.
+  {
+    kode: "MISI-2026-034", komandan: "Kolonel Inf. Herman Wijaya", jenis: "Erupsi Gunung Berapi", urgensi: "Kritis",
+    lokasi: "Kabupaten Lampung Selatan, Lampung", lat: -5.7833, lng: 105.5667,
+    personel: 7, slice: [120, 127], hari: 2, status: "Dimobilisasi",
+    deskripsi: "Erupsi menerus Gunung Anak Krakatau 4-6 September 2026 (sumber Badan Geologi ESDM/BMKG), lava fountain & kolom abu 50.000 kaki menyebar ke Lampung-Banten-Jabar-Jakarta, status Level III Siaga, sejumlah bandara sempat ditutup. Evakuasi warga pesisir Selat Sunda dan distribusi masker.",
+  },
+  {
+    kode: "MISI-2026-035", komandan: "Kolonel Inf. Untung Suropati", jenis: "Kebakaran Hutan", urgensi: "Kritis",
+    lokasi: "Kalimantan Barat", lat: -0.0263, lng: 109.3425,
+    personel: 5, slice: [127, 132], hari: 2, status: "Dimobilisasi",
+    deskripsi: "Wilayah karhutla terparah nasional: 38.310,86 ha terbakar sepanjang Agustus 2026 (sumber BNPB, per 6 September). Puncak kemarau/El Nino kuat diproyeksikan bertahan hingga awal 2027 (BMKG). Dukungan pemadaman darat lanjutan dan pendinginan lahan gambut.",
+  },
 ];
 
 const hariLalu = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);

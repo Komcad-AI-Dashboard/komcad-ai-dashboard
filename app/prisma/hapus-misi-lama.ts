@@ -17,6 +17,17 @@ const KODE_DIHAPUS = [
   "MISI-2026-004", // Banjir Jakarta Selatan — artefak uji coba
   "MISI-2026-023", // Banjir Kepulauan Riau — di-drop atas permintaan user (Fase 18 susulan)
   "MISI-2026-032", // Kekeringan Lamongan (jenisKejadian "Lainnya") — di-drop atas permintaan user, tetap nongol di top 5 panel Misi Terbaru
+
+  // Fase 18 susulan ketiga (8 September 2026): user minta dashboard tidak menampilkan Misi Banjir
+  // SAMA SEKALI (out of touch dari realita El Nino/kemarau sedang berlangsung).
+  "MISI-2026-019", // Banjir Kabupaten Agam, Sumatera Barat — data seed (misi-bencana.ts)
+  "MISI-2026-024", // Banjir Way Kambas, Lampung Timur — dibuat manual saat QA fitur Buat Misi (hanya ada di database production)
+  "MISI-2026-025", // Banjir Panjang Utara, Bandar Lampung — dibuat manual saat QA fitur Buat Misi (hanya ada di database production)
+  "MISI-2026-026", // Banjir Teluk Betung, Bandar Lampung — SEBELUMNYA sengaja dipertahankan sebagai bukti
+                    // dokumentasi QA (lihat docs/qc_qa/komentar-untuk-slide.md, bug ambiguitas geocoding
+                    // "Teluk Betung"). Temuannya sudah tertulis lengkap di dokumen itu, jadi hapus baris
+                    // Misi ini tidak menghilangkan buktinya — cuma menghapus dari live dashboard.
+  "MISI-2026-027", // Banjir JPO Dipo Tanjung Karang, Bandar Lampung — dibuat manual saat QA fitur Buat Misi (hanya ada di database production)
 ];
 
 const prisma = bukaTargetDb();
